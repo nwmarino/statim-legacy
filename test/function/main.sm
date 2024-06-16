@@ -1,0 +1,11 @@
+// Exit success.
+
+fn main() -> bool {
+    return true;
+}
+
+// Exit failure.
+
+fn main() -> bool {
+    return false;
+}
