@@ -1,7 +1,10 @@
-#include <iostream>
+#include <string>
 
-using namespace::std;
+#include "./lex/lexer.h"
+
+using std::string;
 
 int main() {
-  cout << "hello" << '\n';
+  string path("../test/function/main.statim");
+  Lexer lex(path);
 }
