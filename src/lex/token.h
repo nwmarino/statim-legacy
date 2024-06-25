@@ -13,11 +13,12 @@ enum {
   END_BLOCK,
   START_PARAM,
   END_PARAM,
+  SEMICOLON,
+  ARROW,
   KEYWORD,
   IDENTIFIER,
   BOOLEAN,
-  INTEGER,
-  SEMICOLON
+  INTEGER
 } TokenType;
 
 typedef

@@ -3,16 +3,21 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <string>
+#include <exception>
+#include <vector>
 
-using std::fstream;
+#include "token.h"
+
 using std::string;
+using std::vector;
 
 class Lexer {
   public:
     Lexer(string __srcpath);
+    vector<Token> tokenize();
 
   private:
     string src;

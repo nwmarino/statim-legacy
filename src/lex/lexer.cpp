@@ -1,18 +1,18 @@
 // Copyright (c) 2024 Nick Marino (github.com/nwmarino)
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <exception>
-#include <algorithm>
+#include <vector>
 
 #include "lexer.h"
+#include "token.h"
 
 using std::ifstream;
 using std::string;
 
 Lexer::Lexer(string __srcpath) {
-
   ifstream file(__srcpath);
 
   if (!file.is_open()) {
@@ -23,4 +23,9 @@ Lexer::Lexer(string __srcpath) {
   while (getline(file, line)) {
     src.append(line);
   }
+}
+
+vector<Token> Lexer::tokenize()
+{
+  return vector<Token>();
 }

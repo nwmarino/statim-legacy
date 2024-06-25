@@ -1,3 +1,5 @@
+// Copyright (c) 2024 Nick Marino (github.com/nwmarino)
+
 #include <string>
 
 #include "./lex/lexer.h"
