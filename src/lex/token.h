@@ -18,7 +18,8 @@ enum {
   KEYWORD,
   IDENTIFIER,
   BOOLEAN,
-  INTEGER
+  INTEGER,
+  END_STREAM
 } TokenType;
 
 typedef
