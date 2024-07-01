@@ -61,6 +61,12 @@ tstream Lexer::tokenize() {
       case ':':
         token.type = Separator;
         break;
+      case '\'':
+        tokens.push_back(tokenize_char());
+        continue;
+      case '"':
+        tokens.push_back(tokenize_string());
+        continue;
       case '=':
         token.type = AssignOperator;
         break;
@@ -117,6 +123,9 @@ Token Lexer::tokenize_id() {
   keywords["return"] = ReturnKeyword;
   keywords["bool"] = BoolKeyword;
   keywords["int"] = IntKeyword;
+  keywords["float"] = FloatKeyword;
+  keywords["string"] = StringKeyword;
+  keywords["char"] = CharKeyword;
   keywords["let"] = LetKeyword;
   keywords["fix"] = FixKeyword;
 
@@ -145,8 +154,6 @@ Token Lexer::tokenize_numerical() {
 
   string numerical;
   while (iter < src.size() && src[iter] != ' ' && src[iter] != ';') {
-
-
     if (!isdigit(src[iter]) && src[iter] != '.') {
       throw_with_nested(invalid_argument("Unresolved numerical " + numerical));
     }
@@ -161,5 +168,39 @@ Token Lexer::tokenize_numerical() {
   }
 
   token.value = numerical;
+  return token;
+}
+
+Token Lexer::tokenize_string() {
+  Token token;
+  token.type = String;
+  string contents;
+  iter++;  // skip first delimiter
+  while (iter < src.size() && src[iter] != '"') {
+    contents.push_back(src[iter]);
+    iter++;
+  }
+
+  if (src[iter] != '"') {
+    throw_with_nested(invalid_argument("Unresolved string " + contents));
+  }
+
+  token.value = contents;
+  iter++;
+  return token;
+}
+
+Token Lexer::tokenize_char() {
+  Token token;
+  token.type = Char;
+
+  iter++;
+  token.value = src[iter];
+
+  if (src[iter + 1] != '\'') {
+    throw_with_nested(invalid_argument("Unresolved char " + token.value));
+  }
+
+  iter += 2;
   return token;
 }

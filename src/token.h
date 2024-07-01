@@ -24,8 +24,11 @@ enum {
   DivOperator,
   PowerOperator,
 
-  IntKeyword,
   BoolKeyword,
+  IntKeyword,
+  StringKeyword,
+  FloatKeyword,
+  CharKeyword,
   LetKeyword,
   FixKeyword,
   FunctionKeyword,
@@ -34,6 +37,8 @@ enum {
   Boolean,
   Integer,
   Float,
+  String,
+  Char,
 
   Comment,
   Identifier,

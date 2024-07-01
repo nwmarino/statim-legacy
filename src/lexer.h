@@ -16,6 +16,8 @@ class Lexer {
     tstream tokenize();
     Token tokenize_id();
     Token tokenize_numerical();
+    Token tokenize_string();
+    Token tokenize_char();
 
   private:
     string src;

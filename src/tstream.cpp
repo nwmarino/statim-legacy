@@ -87,6 +87,12 @@ string tstream::debugstr() {
       case Boolean:
         result.append("Boolean " + this->__tokens[i].value + "\n");
         break;
+      case String:
+        result.append("String " + this->__tokens[i].value + "\n");
+        break;
+      case Char:
+        result.append("Char " + this->__tokens[i].value + "\n");
+        break;
       case FunctionKeyword:
         result.append("FunctionKeyword\n");
         break;
@@ -98,6 +104,15 @@ string tstream::debugstr() {
         break;
       case IntKeyword:
         result.append("IntKeyword\n");
+        break;
+      case FloatKeyword:
+        result.append("FloatKeyword\n");
+        break;
+      case StringKeyword:
+        result.append("StringKeyword\n");
+        break;
+      case CharKeyword:
+        result.append("CharKeyword\n");
         break;
       case LetKeyword:
         result.append("LetKeyword\n");
