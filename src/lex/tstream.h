@@ -15,6 +15,7 @@ class tstream {
     tstream(vector<Token> __tokens);
     Token next();
     size_t size();
+    string debugstr();
 
   private:
     vector<Token> __tokens;

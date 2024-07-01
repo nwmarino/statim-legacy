@@ -3,24 +3,23 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-#include <fstream>
-#include <iostream>
 #include <string>
-#include <exception>
-#include <vector>
 
 #include "token.h"
+#include "tstream.h"
 
 using std::string;
-using std::vector;
 
 class Lexer {
   public:
     Lexer(string __srcpath);
-    vector<Token> tokenize();
+    tstream tokenize();
+    Token tokenize_id();
+    Token tokenize_numerical();
 
   private:
     string src;
+    int iter;
 };
 
 #endif  // LEXER_H

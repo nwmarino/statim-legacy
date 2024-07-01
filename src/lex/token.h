@@ -9,17 +9,35 @@ using std::string;
 
 typedef
 enum {
-  START_BLOCK,
-  END_BLOCK,
-  START_PARAM,
-  END_PARAM,
-  SEMICOLON,
-  ARROW,
-  KEYWORD,
-  IDENTIFIER,
-  BOOLEAN,
-  INTEGER,
-  END_STREAM
+  SetBrace,
+  EndBrace,
+  SetParen,
+  EndParen,
+  Separator,
+  Semicolon,
+  Arrow,
+
+  AssignOperator,
+  AddOperator,
+  SubOperator,
+  MultOperator,
+  DivOperator,
+  PowerOperator,
+
+  IntKeyword,
+  BoolKeyword,
+  LetKeyword,
+  FixKeyword,
+  FunctionKeyword,
+  ReturnKeyword,
+  
+  Boolean,
+  Integer,
+  Float,
+
+  Comment,
+  Identifier,
+  Terminate
 } TokenType;
 
 typedef

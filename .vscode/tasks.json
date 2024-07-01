@@ -2,21 +2,21 @@
   "tasks": [
     {
       "type": "cppbuild",
-      "label": "C/C++: cl.exe build active file",
-      "command": "cl.exe",
+      "label": "C/C++: c++.exe build active file",
+      "command": "C:/msys64/ucrt64/bin/c++.exe",
       "args": [
-        "/Zi",
-        "/EHsc",
-        "/nologo",
-        "/Fe${fileDirname}\\${fileBasenameNoExtension}.exe",
+        "-fdiagnostics-color=always",
+        "-g",
         "${file}",
-        "${fileDirname}\\lex\\*.cpp"
+        "${fileDirname}\\lex\\*.cpp",
+        "-o",
+        "${fileDirname}\\${fileBasenameNoExtension}.exe"
       ],
       "options": {
-        "cwd": "${fileDirname}"
+        
       },
       "problemMatcher": [
-        "$msCompile"
+        "$gcc"
       ],
       "group": {
         "kind": "build",
