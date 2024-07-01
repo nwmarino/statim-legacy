@@ -1,4 +1,5 @@
-# noral
+# statim compiler
+***
 
 # Types
 
@@ -101,4 +102,3 @@ let z: int = x ** y;
 
 assert(z == 16);
 ```
-
