@@ -25,6 +25,18 @@ Token tstream::next() {
   return __tokens[__currit - 1];
 }
 
+Token tstream::curr() {
+  return __tokens[__currit];
+}
+
+void tstream::skip(size_t __count) {
+  int i = 0;
+  while (__tokens[__currit].type != Terminate && i < __count) {
+    i++;
+    __currit++;
+  }
+}
+
 size_t tstream::size() {
   return __tokens.size();
 }

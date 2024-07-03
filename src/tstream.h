@@ -14,6 +14,8 @@ class tstream {
   public:
     tstream(vector<Token> __tokens);
     Token next();
+    Token curr();
+    void skip(size_t __count);
     size_t size();
     string debugstr();
 
