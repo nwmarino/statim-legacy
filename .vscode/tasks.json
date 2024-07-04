@@ -8,7 +8,7 @@
         "-fdiagnostics-color=always",
         "-g",
         "${file}",
-        "${fileDirname}\\lex\\*.cpp",
+        "${fileDirname}\\*.cpp",
         "-o",
         "${fileDirname}\\${fileBasenameNoExtension}.exe"
       ],

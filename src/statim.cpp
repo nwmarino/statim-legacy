@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "lexer.h"
+#include "tstream.h"
 
 using std::string;
 
