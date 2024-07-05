@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "lexer.h"
+#include "parser.h"
 #include "tstream.h"
 
 using std::string;
@@ -15,4 +16,6 @@ int main() {
   tstream tokens = lex.tokenize();
 
   std::cout << tokens.debugstr() << '\n';
+
+  parse(tokens);
 }

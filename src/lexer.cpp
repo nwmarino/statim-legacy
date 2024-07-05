@@ -58,6 +58,9 @@ tstream Lexer::tokenize() {
       case ';':
         token.type = Semicolon;
         break;
+      case ',':
+        token.type = Comma;
+        break;
       case ':':
         token.type = Separator;
         break;

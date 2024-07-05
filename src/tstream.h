@@ -11,17 +11,15 @@ using std::vector;
 using std::size_t;
 
 class tstream {
+  vector<Token> __tokens;
+  int __currit;
+
   public:
     tstream(vector<Token> __tokens);
-    Token next();
-    Token curr();
-    void skip(size_t __count);
+    Token curr;
+    void next();
     size_t size();
     string debugstr();
-
-  private:
-    vector<Token> __tokens;
-    int __currit;
 };
 
 #endif  // TSTREAM_H

@@ -5,10 +5,7 @@
 #include "token.h"
 #include "tstream.h"
 
-using std::vector;
-using std::size_t;
-
-tstream::tstream(vector<Token> __tokens) {
+tstream::tstream(std::vector<Token> __tokens) {
   Token terminate;
   terminate.type = Terminate;
   __tokens.push_back(terminate);
@@ -17,31 +14,19 @@ tstream::tstream(vector<Token> __tokens) {
   this->__currit = 0;
 }
 
-Token tstream::next() {
+void tstream::next() {
   if (__tokens[__currit].type == Terminate) {
-    return __tokens[__currit];
+    return;
   }
-  __currit++;
-  return __tokens[__currit - 1];
+  this->__currit++;
+  this->curr = __tokens[__currit];
 }
 
-Token tstream::curr() {
-  return __tokens[__currit];
-}
-
-void tstream::skip(size_t __count) {
-  int i = 0;
-  while (__tokens[__currit].type != Terminate && i < __count) {
-    i++;
-    __currit++;
-  }
-}
-
-size_t tstream::size() {
+std::size_t tstream::size() {
   return __tokens.size();
 }
 
-string tstream::debugstr() {
+std::string tstream::debugstr() {
   string result;
   for (int i = 0; i < this->__tokens.size(); i++) {
     switch (this->__tokens[i].type) {
@@ -89,6 +74,9 @@ string tstream::debugstr() {
         break;
       case Comment:
         result.append("Comment\n");
+        break;
+      case Comma:
+        result.append("Comma\n");
         break;
       case Integer:
         result.append("Integer " + this->__tokens[i].value + "\n");

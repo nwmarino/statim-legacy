@@ -15,6 +15,7 @@ enum {
   EndParen,
   Separator,
   Semicolon,
+  Comma,
   Arrow,
 
   AssignOperator,
