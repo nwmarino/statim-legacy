@@ -6,10 +6,8 @@
 #include "ast.h"
 #include "tstream.h"
 
-void parse(tstream cc);
-std::unique_ptr<Expr> parseBinOp(tstream cc, int expPrec,
-                                        std::unique_ptr<Expr> lhs);
-int getPrecedence(tstream cc);
-std::unique_ptr<Expr> parsePrimary(tstream cc);
+#include <memory>
+
+void parse(std::shared_ptr<tstream> cc);
 
 #endif  // PARSER_H

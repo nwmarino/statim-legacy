@@ -19,11 +19,18 @@ tstream::tstream(std::vector<Token> __tokens)
 
 void tstream::next()
 {
-  if (__tokens[__currit].type == Terminate)
+  if (curr.type == Terminate)
     return;
 
   this->__currit++;
   this->curr = __tokens[__currit];
+}
+
+Token tstream::peek()
+{
+  if (curr.type == Terminate)
+    return curr;
+  return __tokens[__currit + 1];
 }
 
 std::size_t tstream::size()

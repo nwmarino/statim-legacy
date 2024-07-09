@@ -15,6 +15,7 @@ class tstream {
     tstream(std::vector<Token> __tokens);
     Token curr;
     void next();
+    Token peek();
     std::size_t size();
     void print();
 };

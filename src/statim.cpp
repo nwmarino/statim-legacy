@@ -13,9 +13,7 @@ int main() {
   std::string path("../test/function/main.statim");
   Lexer lex(path);
 
-  std::shared_ptr<tstream> tbuf = lex.tokenize();
+  std::shared_ptr<tstream> cc = lex.tokenize();
 
-  // (*cc).print();
-
-  //parse(tokens);
+  (*cc).print();
 }
