@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Nick Marino
+// Copyright (c) 2024 Nick Marino (github.com/nwmarino)
 
 #include <string>
 #include <memory>
