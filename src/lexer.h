@@ -4,6 +4,7 @@
 #define LEXER_H
 
 #include <string>
+#include <memory>
 
 #include "token.h"
 #include "tstream.h"
@@ -13,7 +14,7 @@ using std::string;
 class Lexer {
   public:
     Lexer(string __srcpath);
-    tstream tokenize();
+    std::shared_ptr<tstream> tokenize();
     Token tokenize_id();
     Token tokenize_numerical();
     Token tokenize_string();

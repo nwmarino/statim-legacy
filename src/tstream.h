@@ -7,19 +7,16 @@
 
 #include "token.h"
 
-using std::vector;
-using std::size_t;
-
 class tstream {
-  vector<Token> __tokens;
-  int __currit;
+  std::vector<Token> __tokens;
+  std::size_t __currit;
 
   public:
-    tstream(vector<Token> __tokens);
+    tstream(std::vector<Token> __tokens);
     Token curr;
     void next();
-    size_t size();
-    string debugstr();
+    std::size_t size();
+    void print();
 };
 
 #endif  // TSTREAM_H

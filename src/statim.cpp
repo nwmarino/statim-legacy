@@ -2,20 +2,20 @@
 
 #include <string>
 #include <iostream>
+#include <memory>
+#include <utility>
 
 #include "lexer.h"
-#include "parser.h"
 #include "tstream.h"
-
-using std::string;
+//#include "parser.h"
 
 int main() {
-  string path("../test/function/main.statim");
+  std::string path("../test/function/main.statim");
   Lexer lex(path);
 
-  tstream tokens = lex.tokenize();
+  std::shared_ptr<tstream> tbuf = lex.tokenize();
 
-  std::cout << tokens.debugstr() << '\n';
+  // (*cc).print();
 
-  parse(tokens);
+  //parse(tokens);
 }
