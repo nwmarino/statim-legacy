@@ -27,14 +27,51 @@ static std::unique_ptr<IRBuilder<>> Builder(TheContext);
 static std::unique_ptr<Module> TheModule;
 static std::map<std::string, Value*> NamedValues;
 
-Value *Numerical::codegen() {
+Value *NumericalExpr::codegen() {
   return ConstantFP::get(*TheContext, APFloat(value));
 }
 
-Value *Variable::codegen() {
+Value *VariableExpr::codegen() {
   Value *val = NamedValues[name];
   if (!val)
     logErrorV("Unresolved variable name.");
   return val;
 }
 
+Value *BinaryExpr::codegen() {
+  Value *L = leftSide->codegen();
+  Value *R = rightSide->codegen();
+
+  if (!L || !R)
+    return nullptr;
+
+  switch (op) {
+    case '+':
+      return Builder->CreateFAdd(L, R, "addtmp");
+    case '-':
+      return Builder->CreateFSub(L, R, "subtmp");
+    case '*':
+      return Builder->CreateFMul(L, R, "multmp");
+    default:
+      return logErrorV("Unresolved binary operator.");
+  }
+}
+
+Value *FunctionCallExpr::codegen() {
+  Function *calleeF = TheModule->getFunction(callee);
+
+  if (!calleeF)
+    return logErrorV("Unresolved function reference.");
+
+  if (calleeF->arg_size() != args.size())
+    return logErrorV("Bad argument count");
+
+  std::vector<Value *> argsV;
+  for (unsigned i = 0, e = args.size(); i != e; ++i) {
+    argsV.push_back(args[i]->codegen());
+    if (!argsV.back())
+      return nullptr;
+  }
+
+  return Builder->CreateCall(calleeF, argsV, "calltmp");
+}

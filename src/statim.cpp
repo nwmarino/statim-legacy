@@ -14,6 +14,5 @@ int main() {
   Lexer lex(path);
 
   std::shared_ptr<tstream> cc = lex.tokenize();
-
-  (*cc).print();
+  cc->print();
 }
