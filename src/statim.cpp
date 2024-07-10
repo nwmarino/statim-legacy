@@ -7,7 +7,6 @@
 
 #include "lexer.h"
 #include "tstream.h"
-//#include "parser.h"
 
 int main() {
   std::string path("../test/function/main.statim");
