@@ -125,6 +125,8 @@ Token Lexer::tokenize_id() {
   keywords["char"] = CharKeyword;
   keywords["let"] = LetKeyword;
   keywords["fix"] = FixKeyword;
+  keywords["if"] = IfKeyword;
+  keywords["else"] = ElseKeyword;
 
   string id;
   while (iter < src.size() && isalpha(src[iter])) {

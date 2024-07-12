@@ -1,6 +1,7 @@
 // Copyright (c) 2024 Nick Marino (github.com/nwmarino)
 
 #include "ast.h"
+#include "codegen.h"
 #include "logger.h"
 
 #include "llvm/ADT/APFloat.h"
@@ -121,4 +122,16 @@ Function *FunctionAST::codegen()
 
   TheFunction->eraseFromParent();
   return nullptr;
+}
+
+void initializeModule()
+{
+  TheContext = std::make_unique<LLVMContext>();
+  TheModule = std::make_unique<Module>("jit", *TheContext);
+  Builder = std::make_unique<IRBuilder<>>(*TheContext);
+}
+
+void modulePrint()
+{
+  TheModule->print(llvm::errs(), nullptr);
 }

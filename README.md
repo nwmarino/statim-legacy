@@ -102,3 +102,24 @@ let z: int = x ** y;
 
 assert(z == 16);
 ```
+
+## Examples
+
+```c
+fn add_two (int x, int y) -> int
+{
+  return x + y;
+}
+
+fn main () -> int
+{
+  // A comment!
+  let num1: int = 45;
+  let num2: int = 55;
+  let num3: int = add_two(num1, num2);
+
+  fix forty: auto = 40;
+  assert(forty == 40);
+  return 0;
+}
+```

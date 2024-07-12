@@ -34,6 +34,8 @@ enum {
   FixKeyword,
   FunctionKeyword,
   ReturnKeyword,
+  IfKeyword,
+  ElseKeyword,
   
   Boolean,
   Integer,

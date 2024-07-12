@@ -10,6 +10,20 @@
 #include "logger.h"
 #include "tstream.h"
 
+std::unique_ptr<Expr> parsePrimary(std::shared_ptr<tstream> cc) {
+  switch (cc->curr.type) {
+    case Identifier:
+      return parseIdentifier(cc);
+    case Integer:
+    case Float:
+      return parseNum(cc);
+    case SetParen:
+      return parseParentheses(cc);
+    default:
+      logError("unable to resolve token of type" + std::to_string(cc->curr.type));
+  }
+}
+
 std::unique_ptr<Expr> parseExpr(std::shared_ptr<tstream> cc) {
   auto leftSide = parsePrimary(cc);
 
@@ -74,46 +88,22 @@ std::unique_ptr<Expr> parseParentheses(std::shared_ptr<tstream> cc) {
 std::unique_ptr<Expr> parseIdentifier(std::shared_ptr<tstream> cc) {
   std::string id = cc->curr.value;
   cc->next();
-  if (cc->curr.type != SetParen) {
+  if (cc->curr.type != SetParen)
     return std::make_unique<VariableExpr>(id);
-  }
 
   cc->next();
   std::vector<std::unique_ptr<Expr>> args;
-  if (cc->curr.type != EndParen) {
-    while (true) {
-      if (auto arg = parseExpr(cc)) {
-        args.push_back(std::move(arg));
-      }
+  while (cc->curr.type != EndParen) {
+    if (auto arg = parseExpr(cc))
+      args.push_back(std::move(arg));
 
-      if (cc->curr.type == EndParen) {
-        break;
-      }
+    if (cc->curr.type != Comma)
+      return logError("expected argument separator");
 
-      if (cc->curr.type != Comma) {
-        logError("expected separator ','");
-      }
-
-      cc->next();
-    }
+    cc->next();int main(int argc, char *argv[]);
   }
-
   cc->next();
   return std::make_unique<FunctionCallExpr>(id, std::move(args));
-}
-
-std::unique_ptr<Expr> parsePrimary(std::shared_ptr<tstream> cc) {
-  switch (cc->curr.type) {
-    case Identifier:
-      return parseIdentifier(cc);
-    case Integer:
-    case Float:
-      return parseNum(cc);
-    case SetParen:
-      return parseParentheses(cc);
-    default:
-      logError("unable to resolve token of type" + std::to_string(cc->curr.type));
-  }
 }
 
 std::unique_ptr<PrototypeAST> parsePrototype(std::shared_ptr<tstream> cc) {
@@ -138,9 +128,20 @@ std::unique_ptr<PrototypeAST> parsePrototype(std::shared_ptr<tstream> cc) {
 
   cc->next(); // eat parentheses
   cc->next(); // eat arrow
-  cc->next(); // eat ret type
 
-  return std::make_unique<PrototypeAST>(name, std::move(argNames));
+  RetType retType;
+  switch (cc->curr.type) {
+    case IntKeyword: retType = RT_INT; break;
+    case FloatKeyword: retType = RT_FLOAT; break;
+    case BoolKeyword: retType = RT_BOOL; break;
+    case CharKeyword: retType = RT_CHAR; break;
+    case StringKeyword: retType = RT_STRING; break;
+    default:
+      return logErrorPr("Unresolved return type");
+  }
+
+  cc->next(); // eat ret type
+  return std::make_unique<PrototypeAST>(name, std::move(argNames), retType);
 }
 
 std::unique_ptr<FunctionAST> parseDefinition(std::shared_ptr<tstream> cc) {
@@ -161,4 +162,48 @@ std::unique_ptr<FunctionAST> parseTopLevelDef(std::shared_ptr<tstream> cc) {
     return std::make_unique<FunctionAST>(std::move(head), std::move(exp));
   }
   return nullptr;
+}
+
+void HandleDefinition(std::shared_ptr<tstream> cc) {
+  if (auto FnAST = parseDefinition(cc)) {
+    if (auto *FnIR = FnAST->codegen()) {
+      fprintf(stderr, "Read function definition:");
+      FnIR->print(llvm::errs());
+      fprintf(stderr, "\n");
+    }
+  } else {
+    cc->next();
+  }
+}
+
+void HandleTopLevelExpression(std::shared_ptr<tstream> cc) {
+  if (auto FnAST = parseTopLevelDef(cc)) {
+    if (auto *FnIR = FnAST->codegen()) {
+      fprintf(stderr, "Read top-level expression:");
+      FnIR->print(llvm::errs());
+      fprintf(stderr, "\n");
+      FnIR->eraseFromParent();
+    }
+  } else {
+    cc->next();
+  }
+}
+
+void parse(std::shared_ptr<tstream> cc) {
+  while (true) {
+    fprintf(stderr, "ready> ");
+    switch (cc->curr.type) {
+    case Terminate:
+      return;
+    case ';':
+      cc->next();
+      break;
+    case FunctionKeyword:
+      HandleDefinition(cc);
+      break;
+    default:
+      HandleTopLevelExpression(cc);
+      break;
+    }
+  }
 }

@@ -21,6 +21,16 @@
 #include <memory>
 #include <utility>
 
+typedef
+enum {
+  RT_VOID,
+  RT_INT,
+  RT_FLOAT,
+  RT_BOOL,
+  RT_CHAR,
+  RT_STRING
+} RetType;
+
 class AST {
   public:
     virtual ~AST() = default;
@@ -73,11 +83,13 @@ class FunctionCallExpr : public Expr {
 class PrototypeAST : public AST {
   std::string name;
   std::vector<std::string> args;
+  RetType retType;
 
   public:
-    PrototypeAST(const std::string &name, std::vector<std::string> args)
-      : name(name), args(std::move(args)) {}
+    PrototypeAST(const std::string &name, std::vector<std::string> args, RetType retType)
+      : name(name), args(std::move(args)), retType(retType) {}
     std::string getName() { return name; }
+    RetType getRetType() { return retType; }
     llvm::Function *codegen() override;
 };
 

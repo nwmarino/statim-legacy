@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.17)
 project(statimc)
 
-
 find_package(LLVM REQUIRED CONFIG)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
