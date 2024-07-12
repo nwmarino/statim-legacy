@@ -1,6 +1,5 @@
 // Copyright (c) 2024 Nick Marino (github.com/nwmarino)
 
-#include "codegen.h"
 #include "ast.h"
 #include "logger.h"
 
@@ -18,27 +17,31 @@
 #include "llvm/IR/Value.h"
 
 #include <memory>
+#include <vector>
 #include <map>
 
 using namespace llvm;
 
 static std::unique_ptr<LLVMContext> TheContext;
-static std::unique_ptr<IRBuilder<>> Builder(TheContext);
+static std::unique_ptr<IRBuilder<>> Builder;
 static std::unique_ptr<Module> TheModule;
 static std::map<std::string, Value*> NamedValues;
 
-Value *NumericalExpr::codegen() {
+Value *NumericalExpr::codegen()
+{
   return ConstantFP::get(*TheContext, APFloat(value));
 }
 
-Value *VariableExpr::codegen() {
+Value *VariableExpr::codegen()
+{
   Value *val = NamedValues[name];
   if (!val)
     logErrorV("Unresolved variable name.");
   return val;
 }
 
-Value *BinaryExpr::codegen() {
+Value *BinaryExpr::codegen()
+{
   Value *L = leftSide->codegen();
   Value *R = rightSide->codegen();
 
@@ -57,7 +60,8 @@ Value *BinaryExpr::codegen() {
   }
 }
 
-Value *FunctionCallExpr::codegen() {
+Value *FunctionCallExpr::codegen()
+{
   Function *calleeF = TheModule->getFunction(callee);
 
   if (!calleeF)
@@ -74,4 +78,47 @@ Value *FunctionCallExpr::codegen() {
   }
 
   return Builder->CreateCall(calleeF, argsV, "calltmp");
+}
+
+Function *PrototypeAST::codegen()
+{
+  std::vector<Type *> Doubles(args.size(), Type::getDoubleTy(*TheContext));
+  FunctionType *FT = FunctionType::get(Type::getDoubleTy(*TheContext), Doubles, false);
+  Function *F = Function::Create(FT, Function::ExternalLinkage, name, TheModule.get()); 
+
+  unsigned idx = 0;
+  for (auto &arg : F->args())
+    arg.setName(args[idx++]);
+
+  return F;
+}
+
+Function *FunctionAST::codegen()
+{
+  Function *TheFunction = TheModule->getFunction(head->getName());
+
+  if (!TheFunction)
+    TheFunction = head->codegen();
+
+  if (!TheFunction)
+    return nullptr;
+
+  if (!TheFunction->empty())
+    return (Function *)logErrorV("Function cannot be redefined.");
+
+  BasicBlock *BB = BasicBlock::Create(*TheContext, "entry", TheFunction);
+  Builder->SetInsertPoint(BB);
+
+  NamedValues.clear();
+  for (auto &arg : TheFunction->args())
+    NamedValues[std::string(arg.getName())] = &arg;
+
+  if (Value *retVal = body->codegen()) {
+    Builder->CreateRet(retVal);
+    verifyFunction(*TheFunction);
+    return TheFunction;
+  }
+
+  TheFunction->eraseFromParent();
+  return nullptr;
 }

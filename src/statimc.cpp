@@ -8,6 +8,8 @@
 #include "lexer.h"
 #include "tstream.h"
 
+#include "ast.h"
+
 int main() {
   std::string path("../test/function/main.statim");
   Lexer lex(path);

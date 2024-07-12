@@ -8,12 +8,14 @@
 #include "ast.h"
 #include "llvm/IR/Value.h"
 
-std::unique_ptr<Expr> logError(std::string m) {
+std::unique_ptr<Expr> logError(std::string m)
+{
   std::cout << "Error: " << m << '\n';
   return nullptr;
 }
 
-std::unique_ptr<FunctionPrototype> logErrorPr(std::string m) {
+std::unique_ptr<PrototypeAST> logErrorPr(std::string m)
+{
   logError(m);
   return nullptr;
 }

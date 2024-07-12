@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.17)
 project(statimc)
 
-set(LLVM_DIR "M:\\Packages\\llvm-project\\llvm\\cmake\\modules")
 
 find_package(LLVM REQUIRED CONFIG)
 

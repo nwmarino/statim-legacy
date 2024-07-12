@@ -24,6 +24,7 @@
 class AST {
   public:
     virtual ~AST() = default;
+    virtual llvm::Value *codegen() = 0;
 };
 
 class Expr : public AST {
@@ -76,6 +77,8 @@ class PrototypeAST : public AST {
   public:
     PrototypeAST(const std::string &name, std::vector<std::string> args)
       : name(name), args(std::move(args)) {}
+    std::string getName() { return name; }
+    llvm::Function *codegen() override;
 };
 
 class FunctionAST : public AST {
@@ -85,6 +88,7 @@ class FunctionAST : public AST {
   public:
     FunctionAST(std::unique_ptr<PrototypeAST> head, std::unique_ptr<Expr> body)
       : head(std::move(head)), body(std::move(body)) {}
+    llvm::Function *codegen() override;
 };
 
 #endif  // AST_H
