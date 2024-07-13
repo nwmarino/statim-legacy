@@ -9,10 +9,5 @@
 #include <memory>
 
 void parse(std::shared_ptr<tstream> cc);
-void MainLoop(std::shared_ptr<tstream> cc);
-std::unique_ptr<Expr> parseBinOp(std::shared_ptr<tstream> cc, int expectedPrecedence,
-                                 std::unique_ptr<Expr> leftSide);
-std::unique_ptr<Expr> parsePrimary(std::shared_ptr<tstream> cc);
-int getPrecedence(std::shared_ptr<tstream> cc);
 
 #endif  // PARSER_H

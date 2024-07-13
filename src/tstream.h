@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Nick Marino (github.com/nwmarino)
+// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #ifndef TSTREAM_H
 #define TSTREAM_H
@@ -7,6 +7,9 @@
 
 #include "token.h"
 
+/**
+ * An iterative stream consisting of Tokens.
+ */
 class tstream {
   std::vector<Token> __tokens;
   std::size_t __currit;

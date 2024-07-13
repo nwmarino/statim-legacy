@@ -20,6 +20,12 @@ std::unique_ptr<PrototypeAST> logErrorPr(std::string m)
   return nullptr;
 }
 
+std::unique_ptr<Statement> logErrorS(std::string m)
+{
+  logError(m);
+  return nullptr;
+}
+
 llvm::Value *logErrorV(std::string m)
 {
   logError(m);

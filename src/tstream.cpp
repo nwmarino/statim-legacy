@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Nick Marino (github.com/nwmarino)
+// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #include <iostream>
 #include <vector>
@@ -6,6 +6,11 @@
 #include "token.h"
 #include "tstream.h"
 
+/**
+ * Construct a new token stream instance.
+ * 
+ * @param __tokens Container of raw tokens.
+ */
 tstream::tstream(std::vector<Token> __tokens)
 {
   Token terminate;
@@ -17,6 +22,11 @@ tstream::tstream(std::vector<Token> __tokens)
   this->curr = __tokens[__currit];
 }
 
+/**
+ * Eat the current token, and move ahead.
+ * 
+ * This method does not destroy any tokens, and is iterative.
+ */
 void tstream::next()
 {
   if (curr.type == Terminate)
@@ -26,6 +36,11 @@ void tstream::next()
   this->curr = __tokens[__currit];
 }
 
+/**
+ * View the next token in the stream.
+ * 
+ * @return The next token in the stream.
+ */
 Token tstream::peek()
 {
   if (curr.type == Terminate)
@@ -33,11 +48,19 @@ Token tstream::peek()
   return __tokens[__currit + 1];
 }
 
+/**
+ * Gets the size of this token stream.
+ * 
+ * @return Size of this stream.
+ */
 std::size_t tstream::size()
 {
   return __tokens.size();
 }
 
+/**
+ * Prints the contents of this token stream by type.
+ */
 void tstream::print()
 {
   std::string result;

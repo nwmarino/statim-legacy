@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Nick Marino (github.com/nwmarino)
+// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #ifndef AST_H
 #define AST_H
@@ -16,6 +16,7 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/Value.h"
 
+
 #include <string>
 #include <vector>
 #include <memory>
@@ -31,18 +32,40 @@ enum {
   RT_STRING
 } RetType;
 
+
+/**
+ * Base class to all other abstract syntax nodes.
+ */
 class AST {
   public:
     virtual ~AST() = default;
     virtual llvm::Value *codegen() = 0;
 };
 
+
+/**
+ * Base class to expression nodes.
+ */
 class Expr : public AST {
   public:
     virtual ~Expr() = default;
     virtual llvm::Value *codegen() = 0;
 };
 
+
+/**
+ * Base class to statement nodes.
+ */
+class Statement : public AST {
+  public:
+    virtual ~Statement() = default;
+    virtual llvm::Value *codegen() = 0;
+};
+
+
+/**
+ * Expression class for numeric literals.
+ */
 class NumericalExpr : public Expr {
   double value;
 
@@ -51,6 +74,10 @@ class NumericalExpr : public Expr {
     llvm::Value *codegen() override;
 };
 
+
+/**
+ * Expression class for variables.
+ */
 class VariableExpr : public Expr {
   std::string name;
 
@@ -59,6 +86,10 @@ class VariableExpr : public Expr {
     llvm::Value *codegen() override;
 };
 
+
+/**
+ * Expression class for binary operations.
+ */
 class BinaryExpr : public Expr {
   char op;
   std::unique_ptr<Expr> leftSide, rightSide;
@@ -70,6 +101,10 @@ class BinaryExpr : public Expr {
     llvm::Value *codegen() override;
 };
 
+
+/**
+ * Expression class for function calls.
+ */
 class FunctionCallExpr : public Expr {
   std::string callee;
   std::vector<std::unique_ptr<Expr>> args;
@@ -80,6 +115,10 @@ class FunctionCallExpr : public Expr {
     llvm::Value *codegen() override;
 };
 
+
+/**
+ * Node class for function prototypes.
+ */
 class PrototypeAST : public AST {
   std::string name;
   std::vector<std::string> args;
@@ -93,14 +132,31 @@ class PrototypeAST : public AST {
     llvm::Function *codegen() override;
 };
 
+
+/**
+ * Node class for function definitions.
+ */
 class FunctionAST : public AST {
   std::unique_ptr<PrototypeAST> head;
-  std::unique_ptr<Expr> body;
+  std::unique_ptr<Statement> body;
 
   public:
-    FunctionAST(std::unique_ptr<PrototypeAST> head, std::unique_ptr<Expr> body)
+    FunctionAST(std::unique_ptr<PrototypeAST> head, std::unique_ptr<Statement> body)
       : head(std::move(head)), body(std::move(body)) {}
     llvm::Function *codegen() override;
 };
+
+
+/**
+ * Statement class for return statements.
+ */
+class ReturnStatement : public Statement {
+  std::unique_ptr<Expr> expr;
+
+  public:
+    ReturnStatement(std::unique_ptr<Expr> expr) : expr(std::move(expr)) {}
+    llvm::Value *codegen() override;
+};
+
 
 #endif  // AST_H

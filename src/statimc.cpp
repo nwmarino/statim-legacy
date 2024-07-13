@@ -1,4 +1,10 @@
-// Copyright (c) 2024 Nick Marino (github.com/nwmarino)
+// Copyright 2024 Nick Marino (github.com/nwmarino)
+
+/*
+ * The main driver script to the statim compiler, hosted in C++.
+ *
+ * This source code is distributed as is, without any warranty.
+ */
 
 #include <string>
 #include <iostream>
@@ -20,8 +26,6 @@ int main(int argc, char *argv[]) {
 
   initializeModule();
   parse(cc);
-
-  delete &cc;
 
   modulePrint();
 

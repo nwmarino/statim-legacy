@@ -115,7 +115,6 @@ Function *FunctionAST::codegen()
     NamedValues[std::string(arg.getName())] = &arg;
 
   if (Value *retVal = body->codegen()) {
-    Builder->CreateRet(retVal);
     verifyFunction(*TheFunction);
     return TheFunction;
   }
@@ -124,14 +123,21 @@ Function *FunctionAST::codegen()
   return nullptr;
 }
 
+Value *ReturnStatement::codegen()
+{
+  if (Value *retVal = expr->codegen())
+    return Builder->CreateRet(retVal);
+  return nullptr;
+}
+
 void initializeModule()
 {
   TheContext = std::make_unique<LLVMContext>();
-  TheModule = std::make_unique<Module>("jit", *TheContext);
+  TheModule = std::make_unique<Module>("STATIM_COMPILER", *TheContext);
   Builder = std::make_unique<IRBuilder<>>(*TheContext);
 }
 
 void modulePrint()
 {
-  TheModule->print(llvm::errs(), nullptr);
+  TheModule->print(errs(), nullptr);
 }
