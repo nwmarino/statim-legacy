@@ -23,10 +23,10 @@
 
 using namespace llvm;
 
-static std::unique_ptr<LLVMContext> TheContext;
-static std::unique_ptr<IRBuilder<>> Builder;
-static std::unique_ptr<Module> TheModule;
-static std::map<std::string, Value*> NamedValues;
+std::unique_ptr<LLVMContext> TheContext;
+std::unique_ptr<IRBuilder<>> Builder;
+std::unique_ptr<Module> TheModule;
+std::map<std::string, Value*> NamedValues;
 
 Value *NumericalExpr::codegen()
 {
@@ -114,7 +114,7 @@ Function *FunctionAST::codegen()
   for (auto &arg : TheFunction->args())
     NamedValues[std::string(arg.getName())] = &arg;
 
-  if (Value *retVal = body->codegen()) {
+  if (Value *V = body->codegen()) {
     verifyFunction(*TheFunction);
     return TheFunction;
   }
