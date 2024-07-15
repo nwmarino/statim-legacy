@@ -310,12 +310,7 @@ std::unique_ptr<Statement> parseCompoundStatement(std::shared_ptr<tstream> cc)
 
 void HandleDefinition(std::shared_ptr<tstream> cc) {
   if (auto FnAST = parseDefinition(cc)) {
-    if (auto *FnIR = FnAST->codegen()) {
-      fprintf(stderr, "Parsed function definition:\n");
-      FnIR->print(errs());
-      fprintf(stderr, "\n");
-      FnIR->eraseFromParent();
-    }
+    FnAST->codegen();
   } else {
     cc->next();
   }
@@ -323,12 +318,7 @@ void HandleDefinition(std::shared_ptr<tstream> cc) {
 
 void HandleTopLevelExpression(std::shared_ptr<tstream> cc) {
   if (auto FnAST = parseTopLevelDefinition(cc)) {
-    if (auto *FnIR = FnAST->codegen()) {
-      fprintf(stderr, "Parsed top-level expression:\n");
-      FnIR->print(errs());
-      fprintf(stderr, "\n");
-      FnIR->eraseFromParent();
-    }
+    FnAST->codegen();
   } else {
     cc->next();
   }

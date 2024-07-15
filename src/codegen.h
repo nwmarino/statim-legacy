@@ -3,7 +3,9 @@
 #ifndef CODEGEN_H
 #define CODEGEN_H
 
-void initializeModule();
+#include "container.h"
+
+void initializeModule(std::shared_ptr<LLContainer> container);
 void modulePrint();
 
 #endif  // CODEGEN_H

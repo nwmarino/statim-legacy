@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.17)
 project(statimc)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -CMAKE_BUILD_TYPE=Debug")
 
 find_package(LLVM REQUIRED CONFIG)
 
@@ -24,5 +23,5 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(statimc ${SOURCE_FILES})
 
-llvm_map_components_to_libnames(LLVM_LIBS support core irreader)
+llvm_map_components_to_libnames(LLVM_LIBS ${LLVM_TARGETS_TO_BUILD})
 target_link_libraries(statimc ${LLVM_LIBS})

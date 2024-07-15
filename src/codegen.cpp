@@ -1,8 +1,9 @@
-// Copyright (c) 2024 Nick Marino (github.com/nwmarino)
+// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #include "ast.h"
 #include "codegen.h"
 #include "logger.h"
+#include "container.h"
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/STLExtras.h"
@@ -23,10 +24,10 @@
 
 using namespace llvm;
 
-std::unique_ptr<LLVMContext> TheContext;
-std::unique_ptr<IRBuilder<>> Builder;
-std::unique_ptr<Module> TheModule;
-std::map<std::string, Value*> NamedValues;
+static std::shared_ptr<LLVMContext> TheContext;
+static std::shared_ptr<IRBuilder<>> Builder;
+static std::shared_ptr<Module> TheModule;
+static std::map<std::string, Value*> NamedValues;
 
 Value *NumericalExpr::codegen()
 {
@@ -37,7 +38,7 @@ Value *VariableExpr::codegen()
 {
   Value *val = NamedValues[name];
   if (!val)
-    logErrorV("Unresolved variable name.");
+    return logErrorV("Unresolved variable name.");
   return val;
 }
 
@@ -118,7 +119,7 @@ Function *FunctionAST::codegen()
     verifyFunction(*TheFunction);
     return TheFunction;
   }
-
+  
   TheFunction->eraseFromParent();
   return nullptr;
 }
@@ -130,11 +131,11 @@ Value *ReturnStatement::codegen()
   return nullptr;
 }
 
-void initializeModule()
+void initializeModule(std::shared_ptr<LLContainer> container)
 {
-  TheContext = std::make_unique<LLVMContext>();
-  TheModule = std::make_unique<Module>("STATIM_COMPILER", *TheContext);
-  Builder = std::make_unique<IRBuilder<>>(*TheContext);
+  TheContext = container->getContext();
+  TheModule = container->getModule();
+  Builder = container->getBuilder();
 }
 
 void modulePrint()
