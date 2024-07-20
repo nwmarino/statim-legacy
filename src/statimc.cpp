@@ -11,45 +11,33 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include <llvm/IR/Verifier.h>
 #include <llvm/IR/DataLayout.h>
-
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Target/TargetMachine.h"
-
 #include "llvm/TargetParser/Host.h"
-
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
-
 #include "llvm/MC/TargetRegistry.h"
-
-#include "llvm/ADT/STLExtras.h"
-
 #include <llvm/Transforms/Scalar.h>
 #include <llvm/Transforms/Utils/Cloning.h>
-
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/PassPlugin.h>
-
 #include <llvm/Bitcode/BitcodeWriter.h>
 
 #include <string>
-#include <iostream>
 #include <memory>
-#include <utility>
 
 #include "lexer.h"
 #include "tstream.h"
 #include "codegen.h"
 #include "parser.h"
-#include "ast.h"
 #include "container.h"
 
 using namespace llvm;
 using namespace llvm::sys;
 
 int main(int argc, char *argv[]) {
-  std::string path = "./samples/ret_1.statim";
+  std::string path = "./samples/ret_0.statim";
   Lexer lex(path);
 
   std::shared_ptr<tstream> cc = lex.tokenize();
@@ -60,10 +48,8 @@ int main(int argc, char *argv[]) {
   std::shared_ptr<Module> LLModule = container->getModule();
   parse(cc);
 
-  
-
   LLModule->print(errs(), nullptr);
-
+  
   InitializeAllTargetInfos();
   InitializeAllTargets();
   InitializeAllTargetMCs();
@@ -111,5 +97,9 @@ int main(int argc, char *argv[]) {
   pass.run(*LLModule);
   dest.flush();
 
+  system("clang++ output.o -o a");
+
+  //remove(Filename);
+  
   return 0;
 }

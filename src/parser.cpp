@@ -1,29 +1,14 @@
 // Copyright 2024 Nick Marino (github.com/nwmarino)
 
-#include "llvm/ADT/APFloat.h"
-#include "llvm/ADT/STLExtras.h"
-#include "llvm/IR/BasicBlock.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Type.h"
-#include "llvm/IR/Verifier.h"
-#include "llvm/Support/raw_ostream.h"
-
 #include <string>
 #include <memory>
 #include <utility>
 
 #include "parser.h"
-#include "codegen.h"
 #include "ast.h"
 #include "token.h"
 #include "logger.h"
 #include "tstream.h"
-#include <iostream>
 
 using namespace llvm;
 
@@ -41,9 +26,6 @@ std::unique_ptr<FunctionAST> parseTopLevelDefinition(std::shared_ptr<tstream> cc
 std::unique_ptr<Statement> parseReturnStatement(std::shared_ptr<tstream> cc);
 std::unique_ptr<Statement> parseCompoundStatement(std::shared_ptr<tstream> cc);
 std::unique_ptr<Statement> parseCompoundStatement(std::shared_ptr<tstream> cc);
-
-
-
 
 std::unique_ptr<Expr> parsePrimary(std::shared_ptr<tstream> cc) {
   switch (cc->curr.type) {

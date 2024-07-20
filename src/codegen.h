@@ -3,6 +3,8 @@
 #ifndef CODEGEN_H
 #define CODEGEN_H
 
+#include <memory>
+
 #include "container.h"
 
 void initializeModule(std::shared_ptr<LLContainer> container);

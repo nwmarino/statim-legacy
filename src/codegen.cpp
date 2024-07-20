@@ -6,7 +6,6 @@
 #include "container.h"
 
 #include "llvm/ADT/APFloat.h"
-#include "llvm/ADT/STLExtras.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -24,28 +23,28 @@
 
 using namespace llvm;
 
-static std::shared_ptr<LLVMContext> TheContext;
+static std::shared_ptr<llvm::LLVMContext> TheContext;
 static std::shared_ptr<IRBuilder<>> Builder;
 static std::shared_ptr<Module> TheModule;
-static std::map<std::string, Value*> NamedValues;
+static std::map<std::string, llvm::Value*> NamedValues;
 
-Value *NumericalExpr::codegen()
+llvm::Value *NumericalExpr::codegen()
 {
   return ConstantFP::get(*TheContext, APFloat(value));
 }
 
-Value *VariableExpr::codegen()
+llvm::Value *VariableExpr::codegen()
 {
-  Value *val = NamedValues[name];
+  llvm::Value *val = NamedValues[name];
   if (!val)
     return logErrorV("Unresolved variable name.");
   return val;
 }
 
-Value *BinaryExpr::codegen()
+llvm::Value *BinaryExpr::codegen()
 {
-  Value *L = leftSide->codegen();
-  Value *R = rightSide->codegen();
+  llvm::Value *L = leftSide->codegen();
+  llvm::Value *R = rightSide->codegen();
 
   if (!L || !R)
     return nullptr;
@@ -62,9 +61,9 @@ Value *BinaryExpr::codegen()
   }
 }
 
-Value *FunctionCallExpr::codegen()
+llvm::Value *FunctionCallExpr::codegen()
 {
-  Function *calleeF = TheModule->getFunction(callee);
+  llvm::Function *calleeF = TheModule->getFunction(callee);
 
   if (!calleeF)
     return logErrorV("Unresolved function reference.");
@@ -82,11 +81,11 @@ Value *FunctionCallExpr::codegen()
   return Builder->CreateCall(calleeF, argsV, "calltmp");
 }
 
-Function *PrototypeAST::codegen()
+llvm::Function *PrototypeAST::codegen()
 {
-  std::vector<Type *> Doubles(args.size(), Type::getDoubleTy(*TheContext));
-  FunctionType *FT = FunctionType::get(Type::getDoubleTy(*TheContext), Doubles, false);
-  Function *F = Function::Create(FT, Function::ExternalLinkage, name, TheModule.get()); 
+  std::vector<llvm::Type *> Doubles(args.size(), Type::getDoubleTy(*TheContext));
+  llvm::FunctionType *FT = FunctionType::get(Type::getDoubleTy(*TheContext), Doubles, false);
+  llvm::Function *F = Function::Create(FT, Function::ExternalLinkage, name, TheModule.get()); 
 
   unsigned idx = 0;
   for (auto &arg : F->args())
@@ -95,9 +94,9 @@ Function *PrototypeAST::codegen()
   return F;
 }
 
-Function *FunctionAST::codegen()
+llvm::Function *FunctionAST::codegen()
 {
-  Function *TheFunction = TheModule->getFunction(head->getName());
+  llvm::Function *TheFunction = TheModule->getFunction(head->getName());
 
   if (!TheFunction)
     TheFunction = head->codegen();
@@ -106,16 +105,16 @@ Function *FunctionAST::codegen()
     return nullptr;
 
   if (!TheFunction->empty())
-    return (Function *)logErrorV("Function cannot be redefined.");
+    return (llvm::Function *)logErrorV("Function cannot be redefined.");
 
-  BasicBlock *BB = BasicBlock::Create(*TheContext, "entry", TheFunction);
+  llvm::BasicBlock *BB = llvm::BasicBlock::Create(*TheContext, "entry", TheFunction);
   Builder->SetInsertPoint(BB);
 
   NamedValues.clear();
   for (auto &arg : TheFunction->args())
     NamedValues[std::string(arg.getName())] = &arg;
 
-  if (Value *V = body->codegen()) {
+  if (llvm::Value *V = body->codegen()) {
     verifyFunction(*TheFunction);
     return TheFunction;
   }
@@ -124,9 +123,9 @@ Function *FunctionAST::codegen()
   return nullptr;
 }
 
-Value *ReturnStatement::codegen()
+llvm::Value *ReturnStatement::codegen()
 {
-  if (Value *retVal = expr->codegen())
+  if (llvm::Value *retVal = expr->codegen())
     return Builder->CreateRet(retVal);
   return nullptr;
 }

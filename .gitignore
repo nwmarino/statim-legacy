@@ -31,5 +31,8 @@
 *.out
 *.app
 
-/build/
 *.pdb
+/build/
+/.cache/
+/.vscode/
+statimc

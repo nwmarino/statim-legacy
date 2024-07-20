@@ -12,13 +12,13 @@
 using namespace llvm;
 
 class LLContainer {
-  std::shared_ptr<LLVMContext> LLContext;
+  std::shared_ptr<llvm::LLVMContext> LLContext;
   std::shared_ptr<Module> LLModule;
   std::shared_ptr<IRBuilder<>> Builder;
 
   public:
     LLContainer();
-    std::shared_ptr<LLVMContext> getContext();
+    std::shared_ptr<llvm::LLVMContext> getContext();
     std::shared_ptr<Module> getModule();
     std::shared_ptr<IRBuilder<>> getBuilder();
 };

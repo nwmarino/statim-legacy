@@ -1,7 +1,6 @@
-// Copyright (c) 2024 Nick Marino (github.com/nwmarino)
+// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #include <fstream>
-#include <iostream>
 #include <string>
 #include <stdexcept>
 #include <exception>
@@ -102,7 +101,7 @@ std::shared_ptr<tstream> Lexer::tokenize() {
           tokens.push_back(tokenize_numerical());
           continue;
         } else {
-          std::throw_with_nested(std::invalid_argument("Unresolved character " + src[iter]));
+          std::throw_with_nested(std::invalid_argument(&"Unresolved character " [ src[iter]]));
         }
         break;
     }
