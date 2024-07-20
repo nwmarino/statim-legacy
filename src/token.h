@@ -15,6 +15,7 @@ enum {
   EndParen,
   Separator,
   Semicolon,
+  Comma,
   Arrow,
 
   AssignOperator,
@@ -33,6 +34,8 @@ enum {
   FixKeyword,
   FunctionKeyword,
   ReturnKeyword,
+  IfKeyword,
+  ElseKeyword,
   
   Boolean,
   Integer,

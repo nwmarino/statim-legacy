@@ -4,24 +4,22 @@
 #define LEXER_H
 
 #include <string>
+#include <memory>
 
 #include "token.h"
 #include "tstream.h"
 
-using std::string;
-
 class Lexer {
+  std::string src;
+  int iter;
+  Token tokenize_id();
+  Token tokenize_numerical();
+  Token tokenize_string();
+  Token tokenize_char();
+
   public:
     Lexer(string __srcpath);
-    tstream tokenize();
-    Token tokenize_id();
-    Token tokenize_numerical();
-    Token tokenize_string();
-    Token tokenize_char();
-
-  private:
-    string src;
-    int iter;
+    std::shared_ptr<tstream> tokenize();
 };
 
 #endif  // LEXER_H

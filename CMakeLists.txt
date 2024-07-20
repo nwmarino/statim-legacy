@@ -19,9 +19,11 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 file(GLOB_RECURSE SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 
 # Testing file reference purposes
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(statimc ${SOURCE_FILES})
 
-llvm_map_components_to_libnames(LLVM_LIBS support core irreader)
-target_link_libraries(statimc ${LLVM_LIBS})
+llvm_config(statimc USE_SHARED core irreader support clang)
+
+#llvm_map_components_to_libnames(LLVM_LIBS irreader core support)
+#target_link_libraries(statimc ${LLVM_LIBS})

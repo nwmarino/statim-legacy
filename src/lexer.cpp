@@ -1,40 +1,33 @@
-// Copyright (c) 2024 Nick Marino (github.com/nwmarino)
+// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #include <fstream>
-#include <iostream>
 #include <string>
 #include <stdexcept>
 #include <exception>
 #include <vector>
 #include <map>
+#include <memory>
 
 #include "lexer.h"
 #include "token.h"
 #include "tstream.h"
 
-using std::ifstream;
-using std::string;
-using std::throw_with_nested;
-using std::runtime_error;
-using std::invalid_argument;
-using std::map;
-
-Lexer::Lexer(string __srcpath) {
-  ifstream file(__srcpath);
+Lexer::Lexer(std::string __srcpath) {
+  std::ifstream file(__srcpath);
 
   if (!file.is_open()) {
-    throw_with_nested(runtime_error("Unable to open file " + __srcpath));
+    std::throw_with_nested(std::invalid_argument("Unable to open file " + __srcpath));
   }
 
-  string line;
+  std::string line;
   while (getline(file, line)) {
     src.append(line);
   }
   this->iter = 0;
 }
 
-tstream Lexer::tokenize() {
-  vector<Token> tokens;
+std::shared_ptr<tstream> Lexer::tokenize() {
+  std::vector<Token> tokens;
 
   while (iter < src.size()) {
     Token token;
@@ -57,6 +50,9 @@ tstream Lexer::tokenize() {
         break;
       case ';':
         token.type = Semicolon;
+        break;
+      case ',':
+        token.type = Comma;
         break;
       case ':':
         token.type = Separator;
@@ -105,7 +101,7 @@ tstream Lexer::tokenize() {
           tokens.push_back(tokenize_numerical());
           continue;
         } else {
-          throw_with_nested(invalid_argument("Unresolved character " + src[iter]));
+          std::throw_with_nested(std::invalid_argument(&"Unresolved character " [ src[iter]]));
         }
         break;
     }
@@ -113,12 +109,12 @@ tstream Lexer::tokenize() {
     iter++;
   }
 
-  return tstream(tokens);
+  return std::make_shared<tstream>(tokens);
 }
 
 Token Lexer::tokenize_id() {
   Token token;
-  map<string, TokenType> keywords;
+  std::map<string, TokenType> keywords;
   keywords["fn"] = FunctionKeyword;
   keywords["return"] = ReturnKeyword;
   keywords["bool"] = BoolKeyword;
@@ -128,6 +124,8 @@ Token Lexer::tokenize_id() {
   keywords["char"] = CharKeyword;
   keywords["let"] = LetKeyword;
   keywords["fix"] = FixKeyword;
+  keywords["if"] = IfKeyword;
+  keywords["else"] = ElseKeyword;
 
   string id;
   while (iter < src.size() && isalpha(src[iter])) {
@@ -152,10 +150,10 @@ Token Lexer::tokenize_numerical() {
   Token token;
   token.type = Integer;
 
-  string numerical;
+  std::string numerical;
   while (iter < src.size() && src[iter] != ' ' && src[iter] != ';') {
     if (!isdigit(src[iter]) && src[iter] != '.') {
-      throw_with_nested(invalid_argument("Unresolved numerical " + numerical));
+      std::throw_with_nested(std::invalid_argument("Unresolved numerical " + numerical));
     }
 
     numerical.push_back(src[iter]);
@@ -174,7 +172,7 @@ Token Lexer::tokenize_numerical() {
 Token Lexer::tokenize_string() {
   Token token;
   token.type = String;
-  string contents;
+  std::string contents;
   iter++;  // skip first delimiter
   while (iter < src.size() && src[iter] != '"') {
     contents.push_back(src[iter]);
@@ -182,7 +180,7 @@ Token Lexer::tokenize_string() {
   }
 
   if (src[iter] != '"') {
-    throw_with_nested(invalid_argument("Unresolved string " + contents));
+    std::throw_with_nested(std::invalid_argument("Unresolved string " + contents));
   }
 
   token.value = contents;
@@ -198,7 +196,7 @@ Token Lexer::tokenize_char() {
   token.value = src[iter];
 
   if (src[iter + 1] != '\'') {
-    throw_with_nested(invalid_argument("Unresolved char " + token.value));
+    std::throw_with_nested(std::invalid_argument("Unresolved char " + token.value));
   }
 
   iter += 2;
