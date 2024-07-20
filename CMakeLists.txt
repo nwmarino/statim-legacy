@@ -25,5 +25,5 @@ add_executable(statimc ${SOURCE_FILES})
 
 llvm_config(statimc USE_SHARED core irreader support clang)
 
-#llvm_map_components_to_libnames(LLVM_LIBS core irreader support)
+#llvm_map_components_to_libnames(LLVM_LIBS irreader core support)
 #target_link_libraries(statimc ${LLVM_LIBS})
