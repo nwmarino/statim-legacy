@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
   std::shared_ptr<Module> LLModule = container->getModule();
   parse(cc);
 
-  LLModule->print(errs(), nullptr);
+  //LLModule->print(errs(), nullptr);
   
   InitializeAllTargetInfos();
   InitializeAllTargets();
@@ -94,6 +94,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  LLModule->print(errs(), nullptr);
   pass.run(*LLModule);
   dest.flush();
 

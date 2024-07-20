@@ -5,6 +5,7 @@
 #include "logger.h"
 #include "container.h"
 
+#include "llvm/ADT/APInt.h"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constants.h"
@@ -30,7 +31,7 @@ static std::map<std::string, llvm::Value*> NamedValues;
 
 llvm::Value *NumericalExpr::codegen()
 {
-  return ConstantFP::get(*TheContext, APFloat(value));
+  return ConstantInt::get(Type::getInt32Ty(*TheContext), value);
 }
 
 llvm::Value *VariableExpr::codegen()
@@ -84,7 +85,7 @@ llvm::Value *FunctionCallExpr::codegen()
 llvm::Function *PrototypeAST::codegen()
 {
   std::vector<llvm::Type *> Doubles(args.size(), Type::getDoubleTy(*TheContext));
-  llvm::FunctionType *FT = FunctionType::get(Type::getDoubleTy(*TheContext), Doubles, false);
+  llvm::FunctionType *FT = FunctionType::get(Type::getInt32Ty(*TheContext), Doubles, false);
   llvm::Function *F = Function::Create(FT, Function::ExternalLinkage, name, TheModule.get()); 
 
   unsigned idx = 0;

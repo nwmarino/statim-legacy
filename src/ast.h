@@ -57,13 +57,13 @@ class Statement : public AST {
 
 
 /**
- * Expression class for numeric literals.
+ * Expression class for numeric integer literals.
  */
 class NumericalExpr : public Expr {
-  double value;
+  long value;
 
   public:
-    NumericalExpr(double value) : value(value) {}
+    NumericalExpr(long value) : value(value) {}
     llvm::Value *codegen() override;
 };
 
