@@ -114,9 +114,16 @@ int getPrecedence(std::shared_ptr<tstream> cc)
  */
 std::unique_ptr<Expr> parseNumerical(std::shared_ptr<tstream> cc)
 {
-  auto node = std::make_unique<NumericalExpr>(stod(cc->curr.value));
+  TokenType numerType = cc->curr.type;
+  std::string value = cc->curr.value;
   cc->next(); // eat literal
-  return node;
+
+  if (numerType == Integer)
+    return std::make_unique<IntegerExpr>(stoll(value));
+  else if (numerType == Float)
+    return std::make_unique<FloatingPointExpr>(stod(value));
+  else
+    return nullptr;
 }
 
 
@@ -307,11 +314,12 @@ std::unique_ptr<Statement> parseCompoundStatement(std::shared_ptr<tstream> cc)
 /**
  * Handle a generic definition.
  * 
- * @param cc Token stream.
+ * @param container LLVM dependency container.
+ * @param cc        Token stream.
  */
-void HandleDefinition(std::shared_ptr<tstream> cc) {
+void HandleDefinition(std::shared_ptr<LLContainer> container, std::shared_ptr<tstream> cc) {
   if (std::unique_ptr<FunctionAST> FnAST = parseDefinition(cc)) {
-    FnAST->codegen();
+    FnAST->codegen(container);
   } else {
     cc->next();
   }
@@ -321,11 +329,12 @@ void HandleDefinition(std::shared_ptr<tstream> cc) {
 /**
  * Handle a top-level expression.
  * 
- * @param cc Token stream.
+ * @param container LLVM dependency container.
+ * @param cc        Token stream.
  */
-void HandleTopLevelExpression(std::shared_ptr<tstream> cc) {
+void HandleTopLevelExpression(std::shared_ptr<LLContainer> container, std::shared_ptr<tstream> cc) {
   if (std::unique_ptr<FunctionAST> FnAST = parseTopLevelDefinition(cc)) {
-    FnAST->codegen();
+    FnAST->codegen(container);
   } else {
     cc->next();
   }
@@ -335,9 +344,10 @@ void HandleTopLevelExpression(std::shared_ptr<tstream> cc) {
 /**
  * Parse an abstract syntax tree from a token stream.
  * 
- * @param cc The token stream to parse through.
+ * @param container LLVM dependency container.
+ * @param cc        The token stream to parse through.
  */
-void parse(std::shared_ptr<tstream> cc) {
+void parse(std::shared_ptr<LLContainer> container, std::shared_ptr<tstream> cc) {
   while (true) {
     switch (cc->curr.type) {
     case Terminate:
@@ -346,10 +356,10 @@ void parse(std::shared_ptr<tstream> cc) {
       cc->next();
       break;
     case FunctionKeyword:
-      HandleDefinition(cc);
+      HandleDefinition(container, cc);
       break;
     default:
-      HandleTopLevelExpression(cc);
+      HandleTopLevelExpression(container, cc);
       break;
     }
   }

@@ -15,6 +15,8 @@
 #include <memory>
 #include <utility>
 
+#include "container.h"
+
 /// An enumeration of all possible function return types.
 typedef
 enum {
@@ -42,7 +44,7 @@ class AST {
 class Expr : public AST {
   public:
     virtual ~Expr() = default;
-    virtual llvm::Value *codegen() = 0;
+    virtual llvm::Value *codegen(std::shared_ptr<LLContainer> container) = 0;
 };
 
 
@@ -52,7 +54,7 @@ class Expr : public AST {
 class Statement : public AST {
   public:
     virtual ~Statement() = default;
-    virtual llvm::Value *codegen() = 0;
+    virtual llvm::Value *codegen(std::shared_ptr<LLContainer> container) = 0;
 };
 
 
@@ -64,7 +66,7 @@ class IntegerExpr : public Expr {
 
   public:
     IntegerExpr(long long value) : value(value) {}
-    llvm::Value *codegen() override;
+    llvm::Value *codegen(std::shared_ptr<LLContainer> container) override;
 };
 
 
@@ -76,7 +78,7 @@ class FloatingPointExpr : public Expr {
 
   public:
     FloatingPointExpr(double value) : value(value) {}
-    llvm::Value *codegen() override;
+    llvm::Value *codegen(std::shared_ptr<LLContainer> container) override;
 };
 
 
@@ -88,7 +90,7 @@ class VariableExpr : public Expr {
 
   public:
     VariableExpr(const std::string &name) : name(name) {}
-    llvm::Value *codegen() override;
+    llvm::Value *codegen(std::shared_ptr<LLContainer> container) override;
 };
 
 
@@ -102,7 +104,7 @@ class BinaryExpr : public Expr {
   public:
     BinaryExpr(char op, std::unique_ptr<Expr> leftSide, std::unique_ptr<Expr> rightSide)
       : op(op), leftSide(std::move(leftSide)), rightSide(std::move(rightSide)) {}
-    llvm::Value *codegen() override;
+    llvm::Value *codegen(std::shared_ptr<LLContainer> container) override;
 };
 
 
@@ -116,7 +118,7 @@ class FunctionCallExpr : public Expr {
   public:
     FunctionCallExpr(const std::string &callee, std::vector<std::unique_ptr<Expr>> args)
       : callee(callee), args(std::move(args)) {}
-    llvm::Value *codegen() override;
+    llvm::Value *codegen(std::shared_ptr<LLContainer> container) override;
 };
 
 
@@ -133,7 +135,7 @@ class PrototypeAST : public AST {
       : name(name), args(std::move(args)), retType(retType) {}
     std::string getName() { return name; }
     RetType getRetType() { return retType; }
-    llvm::Function *codegen();
+    llvm::Function *codegen(std::shared_ptr<LLContainer> container);
 };
 
 
@@ -147,7 +149,7 @@ class FunctionAST : public AST {
   public:
     FunctionAST(std::unique_ptr<PrototypeAST> head, std::unique_ptr<Statement> body)
       : head(std::move(head)), body(std::move(body)) {}
-    llvm::Function *codegen();
+    llvm::Function *codegen(std::shared_ptr<LLContainer> container);
 };
 
 
@@ -159,7 +161,7 @@ class ReturnStatement : public Statement {
 
   public:
     ReturnStatement(std::unique_ptr<Expr> expr) : expr(std::move(expr)) {}
-    llvm::Value *codegen() override;
+    llvm::Value *codegen(std::shared_ptr<LLContainer> container) override;
 };
 
 

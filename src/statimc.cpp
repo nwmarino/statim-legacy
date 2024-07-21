@@ -9,7 +9,6 @@
 #include <memory>
 #include <string>
 
-#include "include/codegen.h"
 #include "include/container.h"
 #include "include/lexer.h"
 #include "include/parser.h"
@@ -23,8 +22,7 @@ int main(int argc, char *argv[]) {
   std::shared_ptr<tstream> cc = lex.tokenize();
 
   std::shared_ptr<LLContainer> container = std::make_shared<LLContainer>();
-  initializeModule(container);
-  parse(cc);
+  parse(container, cc);
   
   std::string filename = write_object_file(container->getModule());
   system("clang++ output.o -o a");
