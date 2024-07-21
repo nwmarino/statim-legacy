@@ -1,14 +1,14 @@
-// Copyright 2024 Nick Marino (github.com/nwmarino)
+/// Copyright 2024 Nick Marino (github.com/nwmarino)
 
-#include <string>
 #include <memory>
+#include <string>
 #include <utility>
 
-#include "parser.h"
-#include "ast.h"
-#include "token.h"
-#include "logger.h"
-#include "tstream.h"
+#include "../include/ast.h"
+#include "../include/logger.h"
+#include "../include/parser.h"
+#include "../include/token.h"
+#include "../include/tstream.h"
 
 using namespace llvm;
 
@@ -27,6 +27,13 @@ std::unique_ptr<Statement> parseReturnStatement(std::shared_ptr<tstream> cc);
 std::unique_ptr<Statement> parseCompoundStatement(std::shared_ptr<tstream> cc);
 std::unique_ptr<Statement> parseCompoundStatement(std::shared_ptr<tstream> cc);
 
+
+/**
+ * Parse a primary expression.
+ * 
+ * @param cc Token stream.
+ * @return   Pointer to an expression node.
+ */
 std::unique_ptr<Expr> parsePrimary(std::shared_ptr<tstream> cc) {
   switch (cc->curr.type) {
     case Identifier:
@@ -42,9 +49,14 @@ std::unique_ptr<Expr> parsePrimary(std::shared_ptr<tstream> cc) {
 }
 
 
+/**
+ * Parse a binary operation.
+ * 
+ * @param cc             Token stream.
+ * @param basePrecedence Precedence of the current operation.
+ */
 std::unique_ptr<Expr>
-parseBinOp(std::shared_ptr<tstream> cc, int basePrecedence, std::unique_ptr<Expr> leftSide)
-{
+parseBinOp(std::shared_ptr<tstream> cc, int basePrecedence, std::unique_ptr<Expr> leftSide) {
   while (true) {
     int tokenPrecedence = getPrecedence(cc);
 
@@ -53,7 +65,7 @@ parseBinOp(std::shared_ptr<tstream> cc, int basePrecedence, std::unique_ptr<Expr
 
     int op = cc->curr.type;
     cc->next();
-    auto rightSide = parsePrimary(cc);
+    std::unique_ptr<Expr> rightSide = parsePrimary(cc);
     if (!rightSide)
       return nullptr;
 
@@ -75,9 +87,8 @@ parseBinOp(std::shared_ptr<tstream> cc, int basePrecedence, std::unique_ptr<Expr
  * @param cc Token stream.
  * @return   Pointer to an expression node.
  */
-std::unique_ptr<Expr> parseExpr(std::shared_ptr<tstream> cc)
-{
-  if (auto base = parsePrimary(cc))
+std::unique_ptr<Expr> parseExpr(std::shared_ptr<tstream> cc) {
+  if (std::unique_ptr<Expr> base = parsePrimary(cc))
     return parseBinOp(cc, 0, std::move(base));
   return nullptr;
 }
@@ -119,7 +130,7 @@ std::unique_ptr<Expr> parseParentheses(std::shared_ptr<tstream> cc)
 {
   cc->next(); // eat open parentheses
 
-  auto exp = parseExpr(cc);
+  std::unique_ptr<Expr> exp = parseExpr(cc);
   if (!exp)
     return nullptr;
 
@@ -149,7 +160,7 @@ std::unique_ptr<Expr> parseIdentifier(std::shared_ptr<tstream> cc)
   cc->next(); // eat open parentheses
   std::vector<std::unique_ptr<Expr>> args;
   while (cc->curr.type != EndParen) {
-    if (auto arg = parseExpr(cc))
+    if (std::unique_ptr<Expr> arg = parseExpr(cc))
       args.push_back(std::move(arg));
 
     if (cc->curr.type != Comma)
@@ -219,13 +230,15 @@ std::unique_ptr<FunctionAST> parseDefinition(std::shared_ptr<tstream> cc)
 {
   cc->next(); // eat function keyword
 
-  auto head = parsePrototype(cc);
+  std::unique_ptr<PrototypeAST> head = parsePrototype(cc);
   cc->next(); // eat opening block
+
   if (!head)
     return nullptr;
 
-  if (auto body = parseCompoundStatement(cc))
+  if (std::unique_ptr<Statement> body = parseCompoundStatement(cc))
     return std::make_unique<FunctionAST>(std::move(head), std::move(body));
+
   return nullptr;
 }
 
@@ -238,7 +251,7 @@ std::unique_ptr<FunctionAST> parseDefinition(std::shared_ptr<tstream> cc)
  */
 std::unique_ptr<FunctionAST> parseTopLevelDefinition(std::shared_ptr<tstream> cc)
 {
-  if (auto body = parseCompoundStatement(cc)) {
+  if (std::unique_ptr<Statement> body = parseCompoundStatement(cc)) {
     auto head = std::make_unique<PrototypeAST>("", std::vector<std::string>(), RT_VOID);
     return std::make_unique<FunctionAST>(std::move(head), std::move(body));
   }
@@ -258,9 +271,10 @@ std::unique_ptr<Statement> parseReturnStatement(std::shared_ptr<tstream> cc)
 {
   cc->next(); // eat return keyword
 
-  if (auto exp = parseExpr(cc)) {
+  if (std::unique_ptr<Expr> exp = parseExpr(cc)) {
     if (cc->curr.type != Semicolon)
       return logErrorS("Expected semicolon.");
+
     cc->next(); // eat semicolon
     return std::make_unique<ReturnStatement>(std::move(exp));
   }
@@ -290,22 +304,39 @@ std::unique_ptr<Statement> parseCompoundStatement(std::shared_ptr<tstream> cc)
 }
 
 
+/**
+ * Handle a generic definition.
+ * 
+ * @param cc Token stream.
+ */
 void HandleDefinition(std::shared_ptr<tstream> cc) {
-  if (auto FnAST = parseDefinition(cc)) {
+  if (std::unique_ptr<FunctionAST> FnAST = parseDefinition(cc)) {
     FnAST->codegen();
   } else {
     cc->next();
   }
 }
 
+
+/**
+ * Handle a top-level expression.
+ * 
+ * @param cc Token stream.
+ */
 void HandleTopLevelExpression(std::shared_ptr<tstream> cc) {
-  if (auto FnAST = parseTopLevelDefinition(cc)) {
+  if (std::unique_ptr<FunctionAST> FnAST = parseTopLevelDefinition(cc)) {
     FnAST->codegen();
   } else {
     cc->next();
   }
 }
 
+
+/**
+ * Parse an abstract syntax tree from a token stream.
+ * 
+ * @param cc The token stream to parse through.
+ */
 void parse(std::shared_ptr<tstream> cc) {
   while (true) {
     switch (cc->curr.type) {

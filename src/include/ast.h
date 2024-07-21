@@ -1,7 +1,7 @@
-// Copyright 2024 Nick Marino (github.com/nwmarino)
+/// Copyright 2024 Nick Marino (github.com/nwmarino)
 
-#ifndef AST_H
-#define AST_H
+#ifndef STATIMC_AST_H
+#define STATIMC_AST_H
 
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -15,6 +15,7 @@
 #include <memory>
 #include <utility>
 
+/// An enumeration of all possible function return types.
 typedef
 enum {
   RT_VOID,
@@ -32,7 +33,6 @@ enum {
 class AST {
   public:
     virtual ~AST() = default;
-    virtual llvm::Value *codegen() = 0;
 };
 
 
@@ -57,7 +57,7 @@ class Statement : public AST {
 
 
 /**
- * Expression class for numeric integer literals.
+ * Expression class for integer literals.
  */
 class NumericalExpr : public Expr {
   long value;
@@ -88,8 +88,7 @@ class BinaryExpr : public Expr {
   std::unique_ptr<Expr> leftSide, rightSide;
 
   public:
-    BinaryExpr(char op, std::unique_ptr<Expr> leftSide,
-      std::unique_ptr<Expr> rightSide)
+    BinaryExpr(char op, std::unique_ptr<Expr> leftSide, std::unique_ptr<Expr> rightSide)
       : op(op), leftSide(std::move(leftSide)), rightSide(std::move(rightSide)) {}
     llvm::Value *codegen() override;
 };
@@ -122,7 +121,7 @@ class PrototypeAST : public AST {
       : name(name), args(std::move(args)), retType(retType) {}
     std::string getName() { return name; }
     RetType getRetType() { return retType; }
-    llvm::Function *codegen() override;
+    llvm::Function *codegen();
 };
 
 
@@ -136,7 +135,7 @@ class FunctionAST : public AST {
   public:
     FunctionAST(std::unique_ptr<PrototypeAST> head, std::unique_ptr<Statement> body)
       : head(std::move(head)), body(std::move(body)) {}
-    llvm::Function *codegen() override;
+    llvm::Function *codegen();
 };
 
 
@@ -152,4 +151,4 @@ class ReturnStatement : public Statement {
 };
 
 
-#endif  // AST_H
+#endif  // STATIMC_AST_H

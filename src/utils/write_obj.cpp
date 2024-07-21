@@ -17,8 +17,14 @@
 
 #include <string>
 
-#include "write_obj.h"
+#include "../include/write_obj.h"
 
+/**
+ * Write an object file from an LLVM module.
+ * 
+ * @param LLModule The LLVM module.
+ * @return         The path to the object file.
+ */
 std::string write_object_file(std::shared_ptr<llvm::Module> LLModule)
 {
   llvm::InitializeAllTargetInfos();

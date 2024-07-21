@@ -1,12 +1,11 @@
-// Copyright (c) 2024 Nick Marino (github.com/nwmarino)
+/// Copyright 2024 Nick Marino (github.com/nwmarino)
 
-#ifndef TOKEN_H
-#define TOKEN_H
+#ifndef STATIMC_TOKEN_H
+#define STATIMC_TOKEN_H
 
 #include <string>
 
-using std::string;
-
+/// An enumeration of all possible token types.
 typedef
 enum {
   SetBrace,
@@ -48,10 +47,11 @@ enum {
   Terminate
 } TokenType;
 
+/// A token representing a single lexeme.
 typedef
 struct {
-  string value;
+  std::string value;
   TokenType type;
 } Token;
 
-#endif  // TOKEN_H
+#endif  // STATIMC_TOKEN_H

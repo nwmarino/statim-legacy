@@ -1,15 +1,15 @@
-// Copyright 2024 Nick Marino (github.com/nwmarino)
+/// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #include <iostream>
 #include <vector>
 
-#include "token.h"
-#include "tstream.h"
+#include "../include/token.h"
+#include "../include/tstream.h"
 
 /**
- * Construct a new token stream instance.
+ * Construct a new token stream.
  * 
- * @param __tokens Container of raw tokens.
+ * @param __tokens A token vector to copy.
  */
 tstream::tstream(std::vector<Token> __tokens)
 {
@@ -22,10 +22,9 @@ tstream::tstream(std::vector<Token> __tokens)
   this->curr = __tokens[__currit];
 }
 
+
 /**
- * Eat the current token, and move ahead.
- * 
- * This method does not destroy any tokens, and is iterative.
+ * Iterate to the next token in this buffer.
  */
 void tstream::next()
 {
@@ -36,10 +35,11 @@ void tstream::next()
   this->curr = __tokens[__currit];
 }
 
+
 /**
- * View the next token in the stream.
+ * Peek at the next token in this buffer.
  * 
- * @return The next token in the stream.
+ * @return The next token in this buffer.
  */
 Token tstream::peek()
 {
@@ -48,21 +48,21 @@ Token tstream::peek()
   return __tokens[__currit + 1];
 }
 
+
 /**
- * Gets the size of this token stream.
+ * Fetch the size of this stream.
  * 
- * @return Size of this stream.
+ * @return The size of this stream.
  */
-std::size_t tstream::size()
-{
+std::size_t tstream::size() {
   return __tokens.size();
 }
 
+
 /**
- * Prints the contents of this token stream by type.
+ * Print the contents of this stream by type.
  */
-void tstream::print()
-{
+void tstream::print() {
   std::string result;
   for (int i = 0; i < this->__tokens.size(); i++) {
     switch (this->__tokens[i].type) {
@@ -96,6 +96,10 @@ void tstream::print()
       case Float: std::cout << "FLOAT " << this->__tokens[i].value << '\n';  break;
       case String: std::cout << "STRING " << this->__tokens[i].value << '\n';  break;
       case Char: std::cout << "CHAR " << this->__tokens[i].value << '\n';  break;
+      case IfKeyword: std::cout << "IF\n"; break;
+      case ElseKeyword: std::cout << "ELSE\n"; break;
+      case Terminate:
+        break;
     }
   }
 }

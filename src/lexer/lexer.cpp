@@ -1,17 +1,22 @@
-// Copyright 2024 Nick Marino (github.com/nwmarino)
+/// Copyright 2024 Nick Marino (github.com/nwmarino)
 
-#include <fstream>
-#include <string>
-#include <stdexcept>
 #include <exception>
-#include <vector>
+#include <fstream>
 #include <map>
 #include <memory>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
-#include "lexer.h"
-#include "token.h"
-#include "tstream.h"
+#include "../include/lexer.h"
+#include "../include/token.h"
+#include "../include/tstream.h"
 
+/**
+ * Construct a statim Lexer object.
+ * 
+ * @param __srcpath The path to the source file.
+ */
 Lexer::Lexer(std::string __srcpath) {
   std::ifstream file(__srcpath);
 
@@ -26,6 +31,12 @@ Lexer::Lexer(std::string __srcpath) {
   this->iter = 0;
 }
 
+
+/**
+ * Tokenize the source file.
+ * 
+ * @return A shared pointer to a tstream object.
+ */
 std::shared_ptr<tstream> Lexer::tokenize() {
   std::vector<Token> tokens;
 
@@ -101,7 +112,7 @@ std::shared_ptr<tstream> Lexer::tokenize() {
           tokens.push_back(tokenize_numerical());
           continue;
         } else {
-          std::throw_with_nested(std::invalid_argument(&"Unresolved character " [ src[iter]]));
+          std::throw_with_nested(std::invalid_argument(&"Unresolved character " [src[iter]]));
         }
         break;
     }
@@ -112,9 +123,15 @@ std::shared_ptr<tstream> Lexer::tokenize() {
   return std::make_shared<tstream>(tokens);
 }
 
+
+/**
+ * Tokenize an identifier.
+ * 
+ * @return The tokenized identifier.
+ */
 Token Lexer::tokenize_id() {
   Token token;
-  std::map<string, TokenType> keywords;
+  std::map<std::string, TokenType> keywords;
   keywords["fn"] = FunctionKeyword;
   keywords["return"] = ReturnKeyword;
   keywords["bool"] = BoolKeyword;
@@ -127,7 +144,7 @@ Token Lexer::tokenize_id() {
   keywords["if"] = IfKeyword;
   keywords["else"] = ElseKeyword;
 
-  string id;
+  std::string id;
   while (iter < src.size() && isalpha(src[iter])) {
     id.push_back(src[iter]);
     iter++;
@@ -146,6 +163,12 @@ Token Lexer::tokenize_id() {
   return token;
 }
 
+
+/**
+ * Tokenize a numerical value.
+ * 
+ * @return The tokenized numerical value.
+ */
 Token Lexer::tokenize_numerical() {
   Token token;
   token.type = Integer;
@@ -169,6 +192,12 @@ Token Lexer::tokenize_numerical() {
   return token;
 }
 
+
+/**
+ * Tokenize a string.
+ * 
+ * @return The tokenized string.
+ */
 Token Lexer::tokenize_string() {
   Token token;
   token.type = String;
@@ -188,6 +217,12 @@ Token Lexer::tokenize_string() {
   return token;
 }
 
+
+/**
+ * Tokenize a char.
+ * 
+ * @return The tokenized char.
+ */
 Token Lexer::tokenize_char() {
   Token token;
   token.type = Char;

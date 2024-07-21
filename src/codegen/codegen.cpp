@@ -1,9 +1,4 @@
-// Copyright 2024 Nick Marino (github.com/nwmarino)
-
-#include "ast.h"
-#include "codegen.h"
-#include "logger.h"
-#include "container.h"
+/// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #include "llvm/ADT/APInt.h"
 #include "llvm/ADT/APFloat.h"
@@ -18,32 +13,36 @@
 #include "llvm/IR/Verifier.h"
 #include "llvm/IR/Value.h"
 
-#include <memory>
-#include <vector>
 #include <map>
+#include <memory>
+#include <string>
+#include <vector>
 
-using namespace llvm;
+#include "../include/ast.h"
+#include "../include/codegen.h"
+#include "../include/container.h"
+#include "../include/logger.h"
 
-static std::shared_ptr<llvm::LLVMContext> TheContext;
-static std::shared_ptr<IRBuilder<>> Builder;
-static std::shared_ptr<Module> TheModule;
+std::shared_ptr<llvm::LLVMContext> TheContext;
+static std::shared_ptr<llvm::IRBuilder<>> Builder;
+static std::shared_ptr<llvm::Module> TheModule;
 static std::map<std::string, llvm::Value*> NamedValues;
 
-llvm::Value *NumericalExpr::codegen()
-{
-  return ConstantInt::get(Type::getInt32Ty(*TheContext), value);
+
+llvm::Value *NumericalExpr::codegen() {
+  return llvm::ConstantInt::get(llvm::Type::getInt32Ty(*TheContext), value);
 }
 
-llvm::Value *VariableExpr::codegen()
-{
+
+llvm::Value *VariableExpr::codegen() {
   llvm::Value *val = NamedValues[name];
   if (!val)
     return logErrorV("Unresolved variable name.");
   return val;
 }
 
-llvm::Value *BinaryExpr::codegen()
-{
+
+llvm::Value *BinaryExpr::codegen() {
   llvm::Value *L = leftSide->codegen();
   llvm::Value *R = rightSide->codegen();
 
@@ -62,8 +61,8 @@ llvm::Value *BinaryExpr::codegen()
   }
 }
 
-llvm::Value *FunctionCallExpr::codegen()
-{
+
+llvm::Value *FunctionCallExpr::codegen() {
   llvm::Function *calleeF = TheModule->getFunction(callee);
 
   if (!calleeF)
@@ -72,7 +71,7 @@ llvm::Value *FunctionCallExpr::codegen()
   if (calleeF->arg_size() != args.size())
     return logErrorV("Bad argument count");
 
-  std::vector<Value *> argsV;
+  std::vector<llvm::Value *> argsV;
   for (unsigned i = 0, e = args.size(); i != e; ++i) {
     argsV.push_back(args[i]->codegen());
     if (!argsV.back())
@@ -82,11 +81,11 @@ llvm::Value *FunctionCallExpr::codegen()
   return Builder->CreateCall(calleeF, argsV, "calltmp");
 }
 
-llvm::Function *PrototypeAST::codegen()
-{
-  std::vector<llvm::Type *> Doubles(args.size(), Type::getDoubleTy(*TheContext));
-  llvm::FunctionType *FT = FunctionType::get(Type::getInt32Ty(*TheContext), Doubles, false);
-  llvm::Function *F = Function::Create(FT, Function::ExternalLinkage, name, TheModule.get()); 
+
+llvm::Function *PrototypeAST::codegen() {
+  std::vector<llvm::Type *> Doubles(args.size(), llvm::Type::getDoubleTy(*TheContext));
+  llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getInt32Ty(*TheContext), Doubles, false);
+  llvm::Function *F = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, TheModule.get()); 
 
   unsigned idx = 0;
   for (auto &arg : F->args())
@@ -95,8 +94,8 @@ llvm::Function *PrototypeAST::codegen()
   return F;
 }
 
-llvm::Function *FunctionAST::codegen()
-{
+
+llvm::Function *FunctionAST::codegen() {
   llvm::Function *TheFunction = TheModule->getFunction(head->getName());
 
   if (!TheFunction)
@@ -124,21 +123,21 @@ llvm::Function *FunctionAST::codegen()
   return nullptr;
 }
 
-llvm::Value *ReturnStatement::codegen()
-{
+
+llvm::Value *ReturnStatement::codegen() {
   if (llvm::Value *retVal = expr->codegen())
     return Builder->CreateRet(retVal);
   return nullptr;
 }
 
-void initializeModule(std::shared_ptr<LLContainer> container)
-{
+
+/**
+ * Initialize the code generation parameters.
+ * 
+ * @param container The container to unpack.
+ */
+void initializeModule(std::shared_ptr<LLContainer> container) {
   TheContext = container->getContext();
   TheModule = container->getModule();
   Builder = container->getBuilder();
-}
-
-void modulePrint()
-{
-  TheModule->print(errs(), nullptr);
 }
