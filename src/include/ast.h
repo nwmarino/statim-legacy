@@ -59,11 +59,23 @@ class Statement : public AST {
 /**
  * Expression class for integer literals.
  */
-class NumericalExpr : public Expr {
-  long value;
+class IntegerExpr : public Expr {
+  long long value;
 
   public:
-    NumericalExpr(long value) : value(value) {}
+    IntegerExpr(long long value) : value(value) {}
+    llvm::Value *codegen() override;
+};
+
+
+/**
+ * Expression class for floating point literals.
+ */
+class FloatingPointExpr : public Expr {
+  double value;
+
+  public:
+    FloatingPointExpr(double value) : value(value) {}
     llvm::Value *codegen() override;
 };
 

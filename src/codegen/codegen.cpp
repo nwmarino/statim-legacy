@@ -29,8 +29,13 @@ static std::shared_ptr<llvm::Module> TheModule;
 static std::map<std::string, llvm::Value*> NamedValues;
 
 
-llvm::Value *NumericalExpr::codegen() {
+llvm::Value *IntegerExpr::codegen() {
   return llvm::ConstantInt::get(llvm::Type::getInt32Ty(*TheContext), value);
+}
+
+
+llvm::Value *FloatingPointExpr::codegen() {
+  return llvm::ConstantFP::get(*TheContext, llvm::APFloat(value));
 }
 
 
