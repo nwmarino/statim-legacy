@@ -24,8 +24,7 @@ std::unique_ptr<PrototypeAST> parsePrototype(std::shared_ptr<tstream> cc);
 std::unique_ptr<FunctionAST> parseDefinition(std::shared_ptr<tstream> cc);
 std::unique_ptr<FunctionAST> parseTopLevelDefinition(std::shared_ptr<tstream> cc);
 std::unique_ptr<Statement> parseReturnStatement(std::shared_ptr<tstream> cc);
-std::unique_ptr<Statement> parseCompoundStatement(std::shared_ptr<tstream> cc);
-std::unique_ptr<Statement> parseCompoundStatement(std::shared_ptr<tstream> cc);
+std::unique_ptr<Statement> parse_compound_statement(std::shared_ptr<tstream> cc);
 
 
 /**
@@ -238,12 +237,12 @@ std::unique_ptr<FunctionAST> parseDefinition(std::shared_ptr<tstream> cc)
   cc->next(); // eat function keyword
 
   std::unique_ptr<PrototypeAST> head = parsePrototype(cc);
-  cc->next(); // eat opening block
 
   if (!head)
     return nullptr;
 
-  if (std::unique_ptr<Statement> body = parseCompoundStatement(cc))
+  cc->next(); // eat opening block
+  if (std::unique_ptr<Statement> body = parse_compound_statement(cc))
     return std::make_unique<FunctionAST>(std::move(head), std::move(body));
 
   return nullptr;
@@ -258,7 +257,7 @@ std::unique_ptr<FunctionAST> parseDefinition(std::shared_ptr<tstream> cc)
  */
 std::unique_ptr<FunctionAST> parseTopLevelDefinition(std::shared_ptr<tstream> cc)
 {
-  if (std::unique_ptr<Statement> body = parseCompoundStatement(cc)) {
+  if (std::unique_ptr<Statement> body = parse_compound_statement(cc)) {
     auto head = std::make_unique<PrototypeAST>("", std::vector<std::string>(), RT_VOID);
     return std::make_unique<FunctionAST>(std::move(head), std::move(body));
   }
@@ -298,16 +297,25 @@ std::unique_ptr<Statement> parseReturnStatement(std::shared_ptr<tstream> cc)
  * @param cc Token stream.
  * @return   Pointer to compound statement node.
  */
-std::unique_ptr<Statement> parseCompoundStatement(std::shared_ptr<tstream> cc)
+std::unique_ptr<Statement> parse_compound_statement(std::shared_ptr<tstream> cc)
 {
-  // support actual function bodies later
-  std::unique_ptr<Statement> stmt = parseReturnStatement(cc);
+  std::vector<std::unique_ptr<Statement>> stmts;
 
-  if (cc->curr.type != EndBrace)
-    return logErrorS("Expected block end.");
+  while (true) {
+    printf("Current token: %d\n", cc->curr.type);
+    if (cc->curr.type == ReturnKeyword) {
+      std::unique_ptr<Statement> stmt = parseReturnStatement(cc);
+      stmts.push_back(std::move(stmt));
+      continue;
+    }
+    
+    if (cc->curr.type == EndBrace)
+      break;
+    return logErrorS("Expected end block.");
+  }
   
   cc->next(); // eat end block
-  return stmt;
+  return std::make_unique<CompoundStatement>(std::move(stmts));
 }
 
 

@@ -24,6 +24,12 @@ enum {
   DivOperator,
   PowerOperator,
 
+  Boolean,
+  Integer,
+  Float,
+  String,
+  Char,
+
   BoolKeyword,
   IntKeyword,
   StringKeyword,
@@ -35,12 +41,6 @@ enum {
   ReturnKeyword,
   IfKeyword,
   ElseKeyword,
-  
-  Boolean,
-  Integer,
-  Float,
-  String,
-  Char,
 
   Comment,
   Identifier,
@@ -53,5 +53,21 @@ struct {
   std::string value;
   TokenType type;
 } Token;
+
+
+/**
+ * Check if a token is a keyword.
+ * 
+ * @param tok Token to check.
+ * @return    True if the token is a keyword, false otherwise.
+ */
+inline bool isKeyword(Token tok) {
+  return tok.type == BoolKeyword || tok.type == IntKeyword
+      || tok.type == StringKeyword || tok.type == FloatKeyword
+      || tok.type == CharKeyword || tok.type == LetKeyword
+      || tok.type == FixKeyword || tok.type == FunctionKeyword
+      || tok.type == ReturnKeyword || tok.type == IfKeyword
+      || tok.type == ElseKeyword;
+}
 
 #endif  // STATIMC_TOKEN_H

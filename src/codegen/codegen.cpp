@@ -128,3 +128,12 @@ llvm::Value *ReturnStatement::codegen(std::shared_ptr<LLContainer> container) {
     return container->getBuilder()->CreateRet(retVal);
   return nullptr;
 }
+
+
+llvm::Value *CompoundStatement::codegen(std::shared_ptr<LLContainer> container) {
+  for (std::unique_ptr<Statement> &stmt : stmts) {
+    if (llvm::Value *V = stmt->codegen(container))
+      return V;
+  }
+  return nullptr;
+}

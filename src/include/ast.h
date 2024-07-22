@@ -59,6 +59,19 @@ class Statement : public AST {
 
 
 /**
+ * Class for compound statements.
+ */
+class CompoundStatement : public Statement {
+  std::vector<std::unique_ptr<Statement>> stmts;
+
+  public:
+    CompoundStatement(std::vector<std::unique_ptr<Statement>> stmts)
+      : stmts(std::move(stmts)) {}
+    llvm::Value *codegen(std::shared_ptr<LLContainer> container) override;
+};
+
+
+/**
  * Expression class for integer literals.
  */
 class IntegerExpr : public Expr {
@@ -90,6 +103,20 @@ class VariableExpr : public Expr {
 
   public:
     VariableExpr(const std::string &name) : name(name) {}
+    llvm::Value *codegen(std::shared_ptr<LLContainer> container) override;
+};
+
+
+/**
+ * Expression class for assignments.
+ */
+class AssignExpr : public Expr {
+  std::string name;
+  std::unique_ptr<Expr> value;
+
+  public:
+    AssignExpr(const std::string &name, std::unique_ptr<Expr> value)
+      : name(name), value(std::move(value)) {}
     llvm::Value *codegen(std::shared_ptr<LLContainer> container) override;
 };
 

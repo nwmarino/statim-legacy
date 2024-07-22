@@ -20,6 +20,7 @@ int main(int argc, char *argv[]) {
   Lexer lex(path);
 
   std::shared_ptr<tstream> cc = lex.tokenize();
+  cc->print();
 
   std::shared_ptr<LLContainer> container = std::make_shared<LLContainer>();
   parse(container, cc);
