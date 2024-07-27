@@ -33,12 +33,12 @@ std::unique_ptr<Statement> parse_compound_statement(std::shared_ptr<tstream> cc)
  */
 std::unique_ptr<Expr> parsePrimary(std::shared_ptr<tstream> cc) {
   switch (cc->curr.type) {
-    case Identifier:
+    case IDENTIFIER:
       return parseIdentifier(cc);
-    case Integer:
-    case Float:
+    case C_INT:
+    case C_FP:
       return parseNumerical(cc);
-    case SetParen:
+    case SET_PAREN:
       return parseParentheses(cc);
     default:
       return logError("Unable to resolve token of type " + std::to_string(cc->curr.type));
@@ -115,9 +115,9 @@ std::unique_ptr<Expr> parseNumerical(std::shared_ptr<tstream> cc)
   std::string value = cc->curr.value;
   cc->next(); // eat literal
 
-  if (numerType == Integer)
+  if (numerType == C_INT)
     return std::make_unique<IntegerExpr>(stoll(value));
-  else if (numerType == Float)
+  else if (numerType == C_FP)
     return std::make_unique<FloatingPointExpr>(stod(value));
   else
     return nullptr;
@@ -138,7 +138,7 @@ std::unique_ptr<Expr> parseParentheses(std::shared_ptr<tstream> cc)
   if (!exp)
     return nullptr;
 
-  if (cc->curr.type != EndParen)
+  if (cc->curr.type != END_PAREN)
     return logError("Unmatched opening parentheses.");
 
   cc->next(); // eat close parentheses
@@ -158,16 +158,16 @@ std::unique_ptr<Expr> parseIdentifier(std::shared_ptr<tstream> cc)
 
   cc->next(); // eat identifier
   
-  if (cc->curr.type != SetParen)
+  if (cc->curr.type != SET_PAREN)
     return std::make_unique<VariableExpr>(id);
 
   cc->next(); // eat open parentheses
   std::vector<std::unique_ptr<Expr>> args;
-  while (cc->curr.type != EndParen) {
+  while (cc->curr.type != END_PAREN) {
     if (std::unique_ptr<Expr> arg = parseExpr(cc))
       args.push_back(std::move(arg));
 
-    if (cc->curr.type != Comma)
+    if (cc->curr.type != COMMA)
       return logError("Expected separator between function call arguments.");
 
     cc->next(); // eat comma separator
@@ -185,24 +185,24 @@ std::unique_ptr<Expr> parseIdentifier(std::shared_ptr<tstream> cc)
  */
 std::unique_ptr<PrototypeAST> parsePrototype(std::shared_ptr<tstream> cc)
 {
-  if (cc->curr.type != Identifier) 
+  if (cc->curr.type != IDENTIFIER)
     return logErrorPr("Function name must proceed definition.");
 
   std::string name = cc->curr.value;
   cc->next(); // eat identifier
 
-  if (cc->curr.type != SetParen)
+  if (cc->curr.type != SET_PAREN)
     return logErrorPr("Expected opening parentheses proceeding function identifier.");
 
   cc->next(); // eat open parentheses
 
   std::vector<std::string> argNames;
-  while (cc->curr.type == Identifier) {
+  while (cc->curr.type == IDENTIFIER) {
     argNames.push_back(cc->curr.value);
     cc->next(); // eat current identifier
   }
 
-  if (cc->curr.type != EndParen)
+  if (cc->curr.type != END_PAREN)
     return logErrorPr("Expected closing parentheses proceeding function arguments.");
 
   cc->next(); // eat close parentheses
@@ -210,13 +210,13 @@ std::unique_ptr<PrototypeAST> parsePrototype(std::shared_ptr<tstream> cc)
 
   RetType retType;
   switch (cc->curr.type) {
-    case IntKeyword: retType = RT_INT; break;
-    case FloatKeyword: retType = RT_FLOAT; break;
-    case BoolKeyword: retType = RT_BOOL; break;
-    case CharKeyword: retType = RT_CHAR; break;
-    case StringKeyword: retType = RT_STRING; break;
+    case INT_KEYWORD: retType = RT_INT; break;
+    case FLOAT_KEYWORD: retType = RT_FLOAT; break;
+    case BOOL_KEYWORD: retType = RT_BOOL; break;
+    case CHAR_KEYWORD: retType = RT_CHAR; break;
+    case STRING_KEYWORD: retType = RT_STRING; break;
     default:
-      return logErrorPr("Unresolved return type");
+      return logErrorPr("Expected return type");
   }
 
   cc->next(); // eat return type keyword
@@ -276,7 +276,7 @@ std::unique_ptr<Statement> parseReturnStatement(std::shared_ptr<tstream> cc)
   cc->next(); // eat return keyword
 
   if (std::unique_ptr<Expr> exp = parseExpr(cc)) {
-    if (cc->curr.type != Semicolon)
+    if (cc->curr.type != SEMICOLON)
       return logErrorS("Expected semicolon.");
 
     cc->next(); // eat semicolon
@@ -297,26 +297,26 @@ std::unique_ptr<Statement> parse_declaration(std::shared_ptr<tstream> cc)
 {
   cc->next(); // eat fix keyword
 
-  if (cc->curr.type != Identifier)
+  if (cc->curr.type != IDENTIFIER)
     return logErrorS("Expected identifier.");
 
   std::string id = cc->curr.value;
   cc->next(); // eat identifier
 
-  if (cc->curr.type != Separator)
+  if (cc->curr.type != SEPARATOR)
     return logErrorS("Expected type.");
 
   cc->next(); // eat separator
 
   switch (cc->curr.type) {
-    case IntKeyword:
+    case INT_KEYWORD:
       cc->next(); // eat type identifier
       break;
     default:
       return logErrorS("Expected type identifier.");
   }
 
-  if (cc->curr.type != AssignOperator)
+  if (cc->curr.type != OP_ASSIGN)
     return logErrorS("Expected assignment operator.");
 
   cc->next(); // eat assignment operator
@@ -342,20 +342,20 @@ std::unique_ptr<Statement> parse_compound_statement(std::shared_ptr<tstream> cc)
   std::vector<std::unique_ptr<Statement>> stmts;
 
   while (true) {
-    if (cc->curr.type == ReturnKeyword) {
+    if (cc->curr.type == RETURN_KEYWORD) {
       std::unique_ptr<Statement> stmt = parseReturnStatement(cc);
       stmts.push_back(std::move(stmt));
       continue;
     }
 
-    if (cc->curr.type == FixKeyword) {
+    if (cc->curr.type == FIX_KEYWORD) {
       std::unique_ptr<Statement> stmt = parse_declaration(cc);
       stmts.push_back(std::move(stmt));
       cc->next();
       continue;
     }
     
-    if (cc->curr.type == EndBrace)
+    if (cc->curr.type == END_BLOCK)
       break;
     return logErrorS("Expected end block.");
   }
@@ -368,7 +368,6 @@ std::unique_ptr<Statement> parse_compound_statement(std::shared_ptr<tstream> cc)
 /**
  * Handle a generic definition.
  * 
- * @param container LLVM dependency container.
  * @param cc        Token stream.
  */
 void HandleDefinition(std::shared_ptr<tstream> cc) {
@@ -382,7 +381,6 @@ void HandleDefinition(std::shared_ptr<tstream> cc) {
 /**
  * Handle a top-level expression.
  * 
- * @param container LLVM dependency container.
  * @param cc        Token stream.
  */
 void HandleTopLevelExpression(std::shared_ptr<tstream> cc) {
@@ -396,18 +394,17 @@ void HandleTopLevelExpression(std::shared_ptr<tstream> cc) {
 /**
  * Parse an abstract syntax tree from a token stream.
  * 
- * @param container LLVM dependency container.
  * @param cc        The token stream to parse through.
  */
 void parse(std::shared_ptr<tstream> cc) {
   while (true) {
     switch (cc->curr.type) {
-    case Terminate:
+    case TERMINATE_STREAM:
       return;
-    case Semicolon:
+    case SEMICOLON:
       cc->next();
       break;
-    case FunctionKeyword:
+    case FUNCTION_KEYWORD:
       HandleDefinition(cc);
       break;
     default:

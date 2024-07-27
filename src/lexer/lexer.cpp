@@ -48,25 +48,25 @@ std::shared_ptr<tstream> Lexer::tokenize() {
         iter++;
         continue;
       case '{':
-        token.type = SetBrace;
+        token.type = SET_BLOCK;
         break;
       case '}':
-        token.type = EndBrace;
+        token.type = END_BLOCK;
         break;
       case '(':
-        token.type = SetParen;
+        token.type = SET_PAREN;
         break;
       case ')':
-        token.type = EndParen;
+        token.type = END_PAREN;
         break;
       case ';':
-        token.type = Semicolon;
+        token.type = SEMICOLON;
         break;
       case ',':
-        token.type = Comma;
+        token.type = COMMA;
         break;
       case ':':
-        token.type = Separator;
+        token.type = SEPARATOR;
         break;
       case '\'':
         tokens.push_back(tokenize_char());
@@ -75,33 +75,33 @@ std::shared_ptr<tstream> Lexer::tokenize() {
         tokens.push_back(tokenize_string());
         continue;
       case '=':
-        token.type = AssignOperator;
+        token.type = OP_ASSIGN;
         break;
       case '+':
-        token.type = AddOperator;
+        token.type = OP_ADD;
         break;
       case '-':
         if ((iter + 1) < src.size() && src[iter + 1] == '>') {
-          token.type = Arrow;
+          token.type = ARROW;
           iter++;
         } else {
-          token.type = SubOperator;
+          token.type = OP_SUB;
         }
         break;
       case '*':
         if ((iter + 1) < src.size() && src[iter + 1] == '*') {
-          token.type = PowerOperator;
+          token.type = OP_POW;
           iter++;
         } else {
-          token.type = MultOperator;
+          token.type = OP_MULT;
         }
         break;
       case '/':
         if ((iter + 1) < src.size() && src[iter + 1] == '/') {
-          token.type = Comment;
+          token.type = COMMENT;
           iter++;
         } else {
-          token.type = DivOperator;
+          token.type = OP_DIV;
         }
         break;
       default:
@@ -132,18 +132,18 @@ std::shared_ptr<tstream> Lexer::tokenize() {
 Token Lexer::tokenize_id() {
   Token token;
   std::map<std::string, TokenType> keywords;
-  keywords["fn"] = FunctionKeyword;
-  keywords["return"] = ReturnKeyword;
-  keywords["bool"] = BoolKeyword;
-  keywords["int"] = IntKeyword;
-  keywords["float"] = FloatKeyword;
-  keywords["string"] = StringKeyword;
-  keywords["char"] = CharKeyword;
-  keywords["let"] = LetKeyword;
-  keywords["fix"] = FixKeyword;
-  keywords["if"] = IfKeyword;
-  keywords["else"] = ElseKeyword;
-
+  keywords["bool"] = BOOL_KEYWORD;
+  keywords["char"] = CHAR_KEYWORD;
+  keywords["else"] = ELSE_KEYWORD;
+  keywords["fix"] = FIX_KEYWORD;
+  keywords["float"] = FLOAT_KEYWORD;
+  keywords["fn"] = FUNCTION_KEYWORD;
+  keywords["if"] = IF_KEYWORD;
+  keywords["int"] = INT_KEYWORD;
+  keywords["let"] = LET_KEYWORD;
+  keywords["string"] = STRING_KEYWORD;
+  keywords["return"] = RETURN_KEYWORD;
+  
   std::string id;
   while (iter < src.size() && isalpha(src[iter])) {
     id.push_back(src[iter]);
@@ -155,9 +155,9 @@ Token Lexer::tokenize_id() {
   } else {
     token.value = id;
     if (id == "true" || id == "false")
-      token.type = Boolean;
+      token.type = C_BOOL;
     else
-      token.type = Identifier;
+      token.type = IDENTIFIER;
   }
 
   return token;
@@ -171,7 +171,7 @@ Token Lexer::tokenize_id() {
  */
 Token Lexer::tokenize_numerical() {
   Token token;
-  token.type = Integer;
+  token.type = C_INT;
 
   std::string numerical;
   while (iter < src.size() && src[iter] != ' ' && src[iter] != ';') {
@@ -182,7 +182,7 @@ Token Lexer::tokenize_numerical() {
     numerical.push_back(src[iter]);
     
     if (src[iter] == '.') {
-      token.type = Float;
+      token.type = C_FP;
     }
 
     iter++;
@@ -200,7 +200,7 @@ Token Lexer::tokenize_numerical() {
  */
 Token Lexer::tokenize_string() {
   Token token;
-  token.type = String;
+  token.type = C_STR;
   std::string contents;
   iter++;  // skip first delimiter
   while (iter < src.size() && src[iter] != '"') {
@@ -225,7 +225,7 @@ Token Lexer::tokenize_string() {
  */
 Token Lexer::tokenize_char() {
   Token token;
-  token.type = Char;
+  token.type = C_CHAR;
 
   iter++;
   token.value = src[iter];
