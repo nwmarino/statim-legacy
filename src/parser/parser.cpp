@@ -24,8 +24,7 @@ std::unique_ptr<PrototypeAST> parsePrototype(std::shared_ptr<tstream> cc);
 std::unique_ptr<FunctionAST> parseDefinition(std::shared_ptr<tstream> cc);
 std::unique_ptr<FunctionAST> parseTopLevelDefinition(std::shared_ptr<tstream> cc);
 std::unique_ptr<Statement> parseReturnStatement(std::shared_ptr<tstream> cc);
-std::unique_ptr<Statement> parseCompoundStatement(std::shared_ptr<tstream> cc);
-std::unique_ptr<Statement> parseCompoundStatement(std::shared_ptr<tstream> cc);
+std::unique_ptr<Statement> parse_compound_statement(std::shared_ptr<tstream> cc);
 
 
 /**
@@ -82,7 +81,7 @@ parseBinOp(std::shared_ptr<tstream> cc, int basePrecedence, std::unique_ptr<Expr
 
 
 /**
- * Parse an arbitrary, possibly compound expression.
+ * Parse an arbitrary expression.
  * 
  * @param cc Token stream.
  * @return   Pointer to an expression node.
@@ -114,9 +113,16 @@ int getPrecedence(std::shared_ptr<tstream> cc)
  */
 std::unique_ptr<Expr> parseNumerical(std::shared_ptr<tstream> cc)
 {
-  auto node = std::make_unique<NumericalExpr>(stod(cc->curr.value));
+  TokenType numerType = cc->curr.type;
+  std::string value = cc->curr.value;
   cc->next(); // eat literal
-  return node;
+
+  if (numerType == Integer)
+    return std::make_unique<IntegerExpr>(stoll(value));
+  else if (numerType == Float)
+    return std::make_unique<FloatingPointExpr>(stod(value));
+  else
+    return nullptr;
 }
 
 
@@ -231,12 +237,12 @@ std::unique_ptr<FunctionAST> parseDefinition(std::shared_ptr<tstream> cc)
   cc->next(); // eat function keyword
 
   std::unique_ptr<PrototypeAST> head = parsePrototype(cc);
-  cc->next(); // eat opening block
 
   if (!head)
     return nullptr;
 
-  if (std::unique_ptr<Statement> body = parseCompoundStatement(cc))
+  cc->next(); // eat opening block
+  if (std::unique_ptr<Statement> body = parse_compound_statement(cc))
     return std::make_unique<FunctionAST>(std::move(head), std::move(body));
 
   return nullptr;
@@ -251,7 +257,7 @@ std::unique_ptr<FunctionAST> parseDefinition(std::shared_ptr<tstream> cc)
  */
 std::unique_ptr<FunctionAST> parseTopLevelDefinition(std::shared_ptr<tstream> cc)
 {
-  if (std::unique_ptr<Statement> body = parseCompoundStatement(cc)) {
+  if (std::unique_ptr<Statement> body = parse_compound_statement(cc)) {
     auto head = std::make_unique<PrototypeAST>("", std::vector<std::string>(), RT_VOID);
     return std::make_unique<FunctionAST>(std::move(head), std::move(body));
   }
@@ -284,6 +290,48 @@ std::unique_ptr<Statement> parseReturnStatement(std::shared_ptr<tstream> cc)
 
 
 /**
+ * Parse a variable assignment.
+ * 
+ * @param cc Token stream.
+ * @return   Pointer to an assignment node.
+ */
+std::unique_ptr<Statement> parse_declaration(std::shared_ptr<tstream> cc)
+{
+  cc->next(); // eat fix keyword
+
+  if (cc->curr.type != Identifier)
+    return logErrorS("Expected identifier.");
+
+  std::string id = cc->curr.value;
+  cc->next(); // eat identifier
+
+  if (cc->curr.type != Separator)
+    return logErrorS("Expected type.");
+
+  cc->next(); // eat separator
+
+  switch (cc->curr.type) {
+    case IntKeyword:
+      cc->next(); // eat type identifier
+      break;
+    default:
+      return logErrorS("Expected type identifier.");
+  }
+
+  if (cc->curr.type != AssignOperator)
+    return logErrorS("Expected assignment operator.");
+
+  cc->next(); // eat assignment operator
+
+  std::unique_ptr<Expr> exp = parseExpr(cc);
+  if (!exp)
+    return nullptr;
+
+  return std::make_unique<AssignStatement>(id, std::move(exp));
+}
+
+
+/**
  * Parse a compound statement.
  * 
  * Creates a special statement node which often represents a function body.
@@ -291,27 +339,43 @@ std::unique_ptr<Statement> parseReturnStatement(std::shared_ptr<tstream> cc)
  * @param cc Token stream.
  * @return   Pointer to compound statement node.
  */
-std::unique_ptr<Statement> parseCompoundStatement(std::shared_ptr<tstream> cc)
+std::unique_ptr<Statement> parse_compound_statement(std::shared_ptr<tstream> cc)
 {
-  // support actual function bodies later
-  std::unique_ptr<Statement> stmt = parseReturnStatement(cc);
+  std::vector<std::unique_ptr<Statement>> stmts;
 
-  if (cc->curr.type != EndBrace)
-    return logErrorS("Expected block end.");
+  while (true) {
+    if (cc->curr.type == ReturnKeyword) {
+      std::unique_ptr<Statement> stmt = parseReturnStatement(cc);
+      stmts.push_back(std::move(stmt));
+      continue;
+    }
+
+    if (cc->curr.type == FixKeyword) {
+      std::unique_ptr<Statement> stmt = parse_declaration(cc);
+      stmts.push_back(std::move(stmt));
+      cc->next();
+      continue;
+    }
+    
+    if (cc->curr.type == EndBrace)
+      break;
+    return logErrorS("Expected end block.");
+  }
   
   cc->next(); // eat end block
-  return stmt;
+  return std::make_unique<CompoundStatement>(std::move(stmts));
 }
 
 
 /**
  * Handle a generic definition.
  * 
- * @param cc Token stream.
+ * @param container LLVM dependency container.
+ * @param cc        Token stream.
  */
-void HandleDefinition(std::shared_ptr<tstream> cc) {
+void HandleDefinition(std::shared_ptr<LLContainer> container, std::shared_ptr<tstream> cc) {
   if (std::unique_ptr<FunctionAST> FnAST = parseDefinition(cc)) {
-    FnAST->codegen();
+    FnAST->codegen(container);
   } else {
     cc->next();
   }
@@ -321,11 +385,12 @@ void HandleDefinition(std::shared_ptr<tstream> cc) {
 /**
  * Handle a top-level expression.
  * 
- * @param cc Token stream.
+ * @param container LLVM dependency container.
+ * @param cc        Token stream.
  */
-void HandleTopLevelExpression(std::shared_ptr<tstream> cc) {
+void HandleTopLevelExpression(std::shared_ptr<LLContainer> container, std::shared_ptr<tstream> cc) {
   if (std::unique_ptr<FunctionAST> FnAST = parseTopLevelDefinition(cc)) {
-    FnAST->codegen();
+    FnAST->codegen(container);
   } else {
     cc->next();
   }
@@ -335,9 +400,10 @@ void HandleTopLevelExpression(std::shared_ptr<tstream> cc) {
 /**
  * Parse an abstract syntax tree from a token stream.
  * 
- * @param cc The token stream to parse through.
+ * @param container LLVM dependency container.
+ * @param cc        The token stream to parse through.
  */
-void parse(std::shared_ptr<tstream> cc) {
+void parse(std::shared_ptr<LLContainer> container, std::shared_ptr<tstream> cc) {
   while (true) {
     switch (cc->curr.type) {
     case Terminate:
@@ -346,10 +412,10 @@ void parse(std::shared_ptr<tstream> cc) {
       cc->next();
       break;
     case FunctionKeyword:
-      HandleDefinition(cc);
+      HandleDefinition(container, cc);
       break;
     default:
-      HandleTopLevelExpression(cc);
+      HandleTopLevelExpression(container, cc);
       break;
     }
   }
