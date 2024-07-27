@@ -10,8 +10,6 @@
 #include "../include/token.h"
 #include "../include/tstream.h"
 
-using namespace llvm;
-
 std::unique_ptr<Expr> parsePrimary(std::shared_ptr<tstream> cc);
 std::unique_ptr<Expr>
 parseBinOp(std::shared_ptr<tstream> cc, int basePrecedence, std::unique_ptr<Expr> leftSide);
@@ -373,9 +371,8 @@ std::unique_ptr<Statement> parse_compound_statement(std::shared_ptr<tstream> cc)
  * @param container LLVM dependency container.
  * @param cc        Token stream.
  */
-void HandleDefinition(std::shared_ptr<LLContainer> container, std::shared_ptr<tstream> cc) {
+void HandleDefinition(std::shared_ptr<tstream> cc) {
   if (std::unique_ptr<FunctionAST> FnAST = parseDefinition(cc)) {
-    FnAST->codegen(container);
   } else {
     cc->next();
   }
@@ -388,9 +385,8 @@ void HandleDefinition(std::shared_ptr<LLContainer> container, std::shared_ptr<ts
  * @param container LLVM dependency container.
  * @param cc        Token stream.
  */
-void HandleTopLevelExpression(std::shared_ptr<LLContainer> container, std::shared_ptr<tstream> cc) {
+void HandleTopLevelExpression(std::shared_ptr<tstream> cc) {
   if (std::unique_ptr<FunctionAST> FnAST = parseTopLevelDefinition(cc)) {
-    FnAST->codegen(container);
   } else {
     cc->next();
   }
@@ -403,7 +399,7 @@ void HandleTopLevelExpression(std::shared_ptr<LLContainer> container, std::share
  * @param container LLVM dependency container.
  * @param cc        The token stream to parse through.
  */
-void parse(std::shared_ptr<LLContainer> container, std::shared_ptr<tstream> cc) {
+void parse(std::shared_ptr<tstream> cc) {
   while (true) {
     switch (cc->curr.type) {
     case Terminate:
@@ -412,10 +408,10 @@ void parse(std::shared_ptr<LLContainer> container, std::shared_ptr<tstream> cc) 
       cc->next();
       break;
     case FunctionKeyword:
-      HandleDefinition(container, cc);
+      HandleDefinition(cc);
       break;
     default:
-      HandleTopLevelExpression(container, cc);
+      HandleTopLevelExpression(cc);
       break;
     }
   }

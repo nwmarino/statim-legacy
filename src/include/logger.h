@@ -3,8 +3,6 @@
 #ifndef STATIMC_LOGGER_H
 #define STATIMC_LOGGER_H
 
-#include "llvm/IR/Value.h"
-
 #include <memory>
 #include <string>
 
@@ -33,13 +31,5 @@ std::unique_ptr<PrototypeAST> logErrorPr(std::string m);
  * @return  nullptr
  */
 std::unique_ptr<Statement> logErrorS(std::string m);
-
-/**
- * Log an error message for a value.
- * 
- * @param m The error message.
- * @return  nullptr
- */
-llvm::Value *logErrorV(std::string m);
 
 #endif  // STATIMC_LOGGER_H

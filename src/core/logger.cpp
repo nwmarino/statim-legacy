@@ -1,7 +1,5 @@
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
-#include "llvm/IR/Value.h"
-
 #include <iostream>
 #include <memory>
 #include <string>
@@ -40,18 +38,6 @@ std::unique_ptr<PrototypeAST> logErrorPr(std::string m) {
  * @return  nullptr
  */
 std::unique_ptr<Statement> logErrorS(std::string m) {
-  logError(m);
-  return nullptr;
-}
-
-
-/**
- * Log an error message for a value.
- * 
- * @param m The error message.
- * @return  nullptr
- */
-llvm::Value *logErrorV(std::string m) {
   logError(m);
   return nullptr;
 }
