@@ -16,7 +16,7 @@
 #include "include/write_obj.h"
 
 int main(int argc, char *argv[]) {
-  std::string path = "./samples/integer/ret/ret_0.statim";
+  std::string path = "./samples/integer/ret/ret_var_0.statim";
   Lexer lex(path);
 
   std::shared_ptr<tstream> cc = lex.tokenize();
@@ -24,6 +24,8 @@ int main(int argc, char *argv[]) {
 
   std::shared_ptr<LLContainer> container = std::make_shared<LLContainer>();
   parse(container, cc);
+
+  container->getModule()->print(llvm::errs(), nullptr);
   
   std::string filename = write_object_file(container->getModule());
   system("clang++ output.o -o a");

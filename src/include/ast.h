@@ -110,12 +110,12 @@ class VariableExpr : public Expr {
 /**
  * Expression class for assignments.
  */
-class AssignExpr : public Expr {
+class AssignStatement : public Statement {
   std::string name;
   std::unique_ptr<Expr> value;
 
   public:
-    AssignExpr(const std::string &name, std::unique_ptr<Expr> value)
+    AssignStatement(const std::string &name, std::unique_ptr<Expr> value)
       : name(name), value(std::move(value)) {}
     llvm::Value *codegen(std::shared_ptr<LLContainer> container) override;
 };

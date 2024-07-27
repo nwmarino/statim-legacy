@@ -6,6 +6,7 @@
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
+#include "llvm/IR/Instruction.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
@@ -21,7 +22,18 @@
 #include "../include/container.h"
 #include "../include/logger.h"
 
-static std::map<std::string, llvm::Value*> NamedValues;
+static std::map<std::string, llvm::AllocaInst*> NamedValues;
+
+
+llvm::AllocaInst
+*CreateEntryBlockAlloca(std::shared_ptr<LLContainer> container, llvm::Function *TheFunction, const std::string &varName)
+{
+  // will need type definitions
+  llvm::IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
+                 TheFunction->getEntryBlock().begin());
+  return TmpB.CreateAlloca(llvm::Type::getInt32Ty(*container->getContext()), nullptr, varName);
+}
+
 
 llvm::Value *IntegerExpr::codegen(std::shared_ptr<LLContainer> container) {
   return llvm::ConstantInt::get(llvm::Type::getInt32Ty(*container->getContext()), value);
@@ -110,8 +122,15 @@ llvm::Function *FunctionAST::codegen(std::shared_ptr<LLContainer> container) {
   container->getBuilder()->SetInsertPoint(BB);
 
   NamedValues.clear();
-  for (auto &arg : TheFunction->args())
-    NamedValues[std::string(arg.getName())] = &arg;
+  for (llvm::Argument &arg : TheFunction->args()) {
+    llvm::AllocaInst *Alloca = CreateEntryBlockAlloca(container, TheFunction, arg.getName());
+
+    // Store the initial value into the alloca.
+    container->getBuilder()->CreateStore(&arg, Alloca);
+
+    // Add arguments to variable symbol table.
+    NamedValues[std::string(arg.getName())] = Alloca;
+  }
 
   if (llvm::Value *V = body->codegen(container)) {
     verifyFunction(*TheFunction);
@@ -127,6 +146,15 @@ llvm::Value *ReturnStatement::codegen(std::shared_ptr<LLContainer> container) {
   if (llvm::Value *retVal = expr->codegen(container))
     return container->getBuilder()->CreateRet(retVal);
   return nullptr;
+}
+
+
+llvm::Value *AssignStatement::codegen(std::shared_ptr<LLContainer> container) {
+  llvm::AllocaInst *A = NamedValues[name];
+  if (!A)
+    return logErrorV("Unknown variable name");
+
+  return container->getBuilder()->CreateLoad(A->getAllocatedType(), A, name.c_str());
 }
 
 

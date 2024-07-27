@@ -81,7 +81,7 @@ parseBinOp(std::shared_ptr<tstream> cc, int basePrecedence, std::unique_ptr<Expr
 
 
 /**
- * Parse an arbitrary, possibly compound expression.
+ * Parse an arbitrary expression.
  * 
  * @param cc Token stream.
  * @return   Pointer to an expression node.
@@ -290,6 +290,48 @@ std::unique_ptr<Statement> parseReturnStatement(std::shared_ptr<tstream> cc)
 
 
 /**
+ * Parse a variable assignment.
+ * 
+ * @param cc Token stream.
+ * @return   Pointer to an assignment node.
+ */
+std::unique_ptr<Statement> parse_declaration(std::shared_ptr<tstream> cc)
+{
+  cc->next(); // eat fix keyword
+
+  if (cc->curr.type != Identifier)
+    return logErrorS("Expected identifier.");
+
+  std::string id = cc->curr.value;
+  cc->next(); // eat identifier
+
+  if (cc->curr.type != Separator)
+    return logErrorS("Expected type.");
+
+  cc->next(); // eat separator
+
+  switch (cc->curr.type) {
+    case IntKeyword:
+      cc->next(); // eat type identifier
+      break;
+    default:
+      return logErrorS("Expected type identifier.");
+  }
+
+  if (cc->curr.type != AssignOperator)
+    return logErrorS("Expected assignment operator.");
+
+  cc->next(); // eat assignment operator
+
+  std::unique_ptr<Expr> exp = parseExpr(cc);
+  if (!exp)
+    return nullptr;
+
+  return std::make_unique<AssignStatement>(id, std::move(exp));
+}
+
+
+/**
  * Parse a compound statement.
  * 
  * Creates a special statement node which often represents a function body.
@@ -302,10 +344,16 @@ std::unique_ptr<Statement> parse_compound_statement(std::shared_ptr<tstream> cc)
   std::vector<std::unique_ptr<Statement>> stmts;
 
   while (true) {
-    printf("Current token: %d\n", cc->curr.type);
     if (cc->curr.type == ReturnKeyword) {
       std::unique_ptr<Statement> stmt = parseReturnStatement(cc);
       stmts.push_back(std::move(stmt));
+      continue;
+    }
+
+    if (cc->curr.type == FixKeyword) {
+      std::unique_ptr<Statement> stmt = parse_declaration(cc);
+      stmts.push_back(std::move(stmt));
+      cc->next();
       continue;
     }
     
