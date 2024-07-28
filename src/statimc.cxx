@@ -1,4 +1,4 @@
-// Copyright 2024 Nick Marino (github.com/nwmarino)
+/// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 /*
  * The main driver script to the statim compiler, hosted in C++.
@@ -10,17 +10,18 @@
 #include <string>
 
 #include "include/lexer.h"
-#include "include/parser.h"
+#include "include/parse.h"
 #include "include/tstream.h"
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   std::string path = "./samples/integer/ret/ret_0.statim";
   Lexer lex(path);
 
-  std::shared_ptr<tstream> cc = lex.tokenize();
-  cc->print();
+  std::shared_ptr<tstream> t_str = lex.tokenize();
+  t_str->print();
 
-  parse(cc);
+  parse(t_str);
   
   return EXIT_SUCCESS;
 }
