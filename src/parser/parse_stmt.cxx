@@ -87,6 +87,8 @@ std::unique_ptr<FunctionAST> parse_definition(std::shared_ptr<tstream> t_str)
   if (!head)
     return nullptr;
 
+  //printf("%d", t_str->curr.type);
+
   if (std::unique_ptr<Statement> body = parse_compound_statement(t_str))
     return std::make_unique<FunctionAST>(std::move(head), std::move(body));
 
@@ -106,8 +108,8 @@ std::unique_ptr<Statement> parse_compound_statement(std::shared_ptr<tstream> t_s
   if (t_str->curr.type != SET_BLOCK)
     return logErrorS("Expected '{' before function body.");
 
+  t_str->next(); // eat opening block
   std::vector<std::unique_ptr<Statement>> stmts;
-
   while (t_str->curr.type != END_BLOCK) {
     if (t_str->curr.type == RETURN_KEYWORD) {
       std::unique_ptr<Statement> stmt = parse_return_statement(t_str);
@@ -115,7 +117,7 @@ std::unique_ptr<Statement> parse_compound_statement(std::shared_ptr<tstream> t_s
       continue;
     }
 
-    return logErrorS("Expected end block.");
+    return logErrorS("Expected '}' after function body.");
   }
   
   t_str->next(); // eat end block
