@@ -26,6 +26,7 @@ enum {
 class AST {
   public:
     virtual ~AST() = default;
+    virtual void codegen() = 0;
 };
 
 
@@ -35,6 +36,7 @@ class AST {
 class Expr : public AST {
   public:
     virtual ~Expr() = default;
+    virtual void codegen() = 0;
 };
 
 
@@ -44,6 +46,7 @@ class Expr : public AST {
 class Statement : public AST {
   public:
     virtual ~Statement() = default;
+    virtual void codegen() = 0;
 };
 
 
@@ -56,6 +59,7 @@ class CompoundStatement : public Statement {
   public:
     CompoundStatement(std::vector<std::unique_ptr<Statement>> stmts)
       : stmts(std::move(stmts)) {}
+    void codegen() override;
 };
 
 
@@ -67,6 +71,7 @@ class IntegerExpr : public Expr {
 
   public:
     IntegerExpr(long long value) : value(value) {}
+    void codegen() override;
 };
 
 
@@ -78,6 +83,7 @@ class FloatingPointExpr : public Expr {
 
   public:
     FloatingPointExpr(double value) : value(value) {}
+    void codegen() override;
 };
 
 
@@ -89,6 +95,7 @@ class VariableExpr : public Expr {
 
   public:
     VariableExpr(const std::string &name) : name(name) {}
+    void codegen() override;
 };
 
 
@@ -102,6 +109,7 @@ class AssignStatement : public Statement {
   public:
     AssignStatement(const std::string &name, std::unique_ptr<Expr> value)
       : name(name), value(std::move(value)) {}
+    void codegen() override;
 };
 
 
@@ -115,6 +123,7 @@ class BinaryExpr : public Expr {
   public:
     BinaryExpr(char op, std::unique_ptr<Expr> leftSide, std::unique_ptr<Expr> rightSide)
       : op(op), leftSide(std::move(leftSide)), rightSide(std::move(rightSide)) {}
+    void codegen() override;
 };
 
 
@@ -128,6 +137,7 @@ class FunctionCallExpr : public Expr {
   public:
     FunctionCallExpr(const std::string &callee, std::vector<std::unique_ptr<Expr>> args)
       : callee(callee), args(std::move(args)) {}
+    void codegen() override;
 };
 
 
@@ -144,6 +154,7 @@ class PrototypeAST : public AST {
       : name(name), args(std::move(args)), retType(retType) {}
     std::string getName() { return name; }
     RetType getRetType() { return retType; }
+    void codegen() override;
 };
 
 
@@ -157,6 +168,7 @@ class FunctionAST : public AST {
   public:
     FunctionAST(std::unique_ptr<PrototypeAST> head, std::unique_ptr<Statement> body)
       : head(std::move(head)), body(std::move(body)) {}
+    void codegen() override;
 };
 
 
@@ -168,6 +180,7 @@ class ReturnStatement : public Statement {
 
   public:
     ReturnStatement(std::unique_ptr<Expr> expr) : expr(std::move(expr)) {}
+    void codegen() override;
 };
 
 

@@ -36,6 +36,7 @@ void parse(std::shared_ptr<tstream> t_str)
 void handle_definition(std::shared_ptr<tstream> t_str)
 {
   if (std::unique_ptr<FunctionAST> FnAST = parse_definition(t_str)) {
+	  FnAST->codegen();
   } else {
     t_str->next();
   }
@@ -49,7 +50,8 @@ void handle_definition(std::shared_ptr<tstream> t_str)
 void handle_toplevel_definition(std::shared_ptr<tstream> t_str)
 {
   if (std::unique_ptr<FunctionAST> FnAST = parse_toplevel_definition(t_str)) {
-	} else {
+	  FnAST->codegen();
+  } else {
     t_str->next();
   }
 }

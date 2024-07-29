@@ -4,9 +4,18 @@
 #define STATIMC_LOGGER_H
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "ast.h"
+
+/**
+ * Print an error message and exit the program.
+ * 
+ * @param m   The error message.
+ * @param arg An optional argument to the error message.
+ */
+void panic(const char *m, std::optional<const char *> arg);
 
 /**
  * Log an error message.

@@ -7,8 +7,10 @@
  */
 
 #include <memory>
+#include <cstdio>
 #include <string>
 
+#include "include/cgn.h"
 #include "include/lexer.h"
 #include "include/parse.h"
 #include "include/tstream.h"
@@ -21,7 +23,14 @@ int main(int argc, char *argv[])
   std::shared_ptr<tstream> t_str = lex.tokenize();
   t_str->print();
 
+  cgn_init("output.s");
+
   parse(t_str);
+
+  cgn_close();
+
+  system("clang++ output.s -o a");
+  //remove("output.s");
   
   return EXIT_SUCCESS;
 }
