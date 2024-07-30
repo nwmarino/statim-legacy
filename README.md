@@ -1,125 +1,217 @@
-# statim compiler
+# statimc: legacy
 ***
 
-# Types
+# Supported
 
-`int` Whole, numerical literals.
+### Types
 
-`float` Floating point value.
+`i32` 32-bit signed integer type.
 
-`bool` Boolean value.
+### Functions 
 
-`char` Singular UTF-8 value.
+`fn main() -> i32 {}` main entry point
 
-`str` Array of `char` objects.
+`fn 'identifier' ( args ) -> rt_type` function prototype
 
-# Basics
+# Future
 
-Function header.
+### Types
+
+`u32` 32-bit unsigned integer type.
+
+`char` single character type.
+
+`fp` floating point value type.
+
+`double` double value type.
+
+`bool` boolean value type.
+
+`str` string value type.
+
+`*Type` rune type.
+
+### Variables
+
+Assignments (mutable variables),
+```rs
+// initialization
+let x: i32;
+
+// declaration
+x = 5;
+
+// initialization and declaration
+let x: i32 = 5;
+```
+
+Assignments (immutable variables),
+> Must be declared the same line it is initialized.
+```rs
+fix y: i32 = 6;
+```
+
+Alias assignments using the `bind` keyword, 
+> The following example binds a variable `x` to the variable `y`.
+```rs
+let y: i32 = 5;
+bind x, y;
+```
+
+### Unary Operators
+
+Negation operator,
+```rs
+let x: bool = true;
+let not_x: bool = !x;
+```
+
+Increment operator,
+```rs
+let x: i32 = 0;
+x++;
+```
+
+Decrement operator,
+```rs
+let x: i32 = 0;
+x--;
+```
+
+Dereference (retrieve value),
+```rs
+let x: *i32 = 0;
+let y: i32 = *x;
+```
+
+Reference (retrieve address),
+```rs
+let x: *i32 = 0;
+let y = &x;
+``` 
+
+### Binary Operators
+
+Add operator,
+```rs
+let x: i32 = 1 + 5;
+```
+
+Subtraction operator,
+```rs
+let x: i32 = 1 - 5;
+```
+
+Multiplication operator,
+```rs
+let x: i32 = 1 * 5;
+```
+
+Division operator,
+```rs
+let x: i32 = 4 / 2;
+```
+
+Power operator,
+```rs
+let x: i32 = 1 ** 2;
+```
+
+AND operator,
+```rs
+let is_true: bool = true && true;
+let is_false: bool = true && false;
+```
+
+OR operator,
+```rs
+let is_true: bool = true || false;
+let is_false: bool = false || false;
+```
+
+XOR operator,
+```rs
+let is_true: bool = true ^ false;
+let is_false: bool = true ^ true;
+let is_false_two: bool = false ^ false;
+```
+
+Inequality operators,
+```rs
+let is_true: bool = 1 < 2;
+let is_false: bool = 1 > 2;
+
+let is_true_two: bool = 1 <= 2;
+let is_false_two: bool = 1 >= 2;
+```
+
+Value comparisons,
+```rs
+let x: i32 = 1;
+let y: i32 = 2;
+let z: i32 = 1;
+
+let is_true: bool = x == z;
+let is_false: bool = x == y;
+```
+
+### Control Flow
+
+If/else statements,
+
 ```c
-fn foo(arg1, arg2, ...) -> return_type {
+if expression {
+  ...
+}
+else if expression {
+  ...
+}
+else {
   ...
 }
 ```
 
-Return statement.
+Switch statements,
+
 ```c
-fn foo(arg1) -> return_type {
-  return arg1;
+switch expression {
+  case expression:
+    ...
+    break;
+  case expression:
+    ...
+    break;
+  default:
+    ...
+    break;
 }
 ```
 
-Assignments (mutable variables)
-```c
-> initialization
-let x: int;
+### Loops
 
-> declaration
-x = 5;
-
-> initialization and declaration
-let x: int = 5;
-```
-
-Assignments (immutable variables)
-> Must be declared the same line it is initialized.
-```c
-fix y: int = 6;
-```
-
-Alias assignments using the `bind` keyword. 
-> Must be declared the same line a bind is initialized.
-```C
-let x: int = 5;
-bind y: int = 5;
-```
-
-Conditional operators `if`, `else`, `else if`:
-```c
-if x { ... }
-
-else if y { ... }
-
-else z { ... }
-```
-
-# Operators
-
-Adding values.
-```c
-let x: int = 4;
-let y: int = 2;
-
-let z: int = x + y;
-
-assert(z == 6);
-```
-
-Subtracting values.
-```c
-let z: int = x - y;
-
-assert(z == 2);
-```
-
-Multiplying values.
-```c
-let z: int = x * y;
-
-assert(z == 8);
-```
-
-Dividing values.
-```c
-let z: int = x / y;
-
-assert(z == 2);
-```
-
-Values to a power.
-```c
-let z: int = x ** y;
-
-assert(z == 16);
-```
-
-## Examples
+While loops,
 
 ```c
-fn add_two (int x, int y) -> int
-{
-  return x + y;
+while (expression) {
+  ...
 }
+```
 
-fn main () -> int
-{
-  // A comment!
-  let num1: int = 45;
-  let num2: int = 55;
-  let num3: int = add_two(num1, num2);
+For loops,
 
-  fix forty: auto = 40;
-  assert(forty == 40);
-  return 0;
+```c
+for (start, stop, step) {
+  ...
+}
+```
+
+Special "until" loops,
+> Until loops stop all execution once the expression is met. The
+> loop body must possess some flow to statements which can meet
+> the condition.
+
+```c
+until (expression) {
+  ...
 }
 ```

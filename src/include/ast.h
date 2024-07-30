@@ -3,19 +3,10 @@
 #ifndef STATIMC_AST_H
 #define STATIMC_AST_H
 
-#include "llvm/IR/BasicBlock.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Verifier.h"
-#include "llvm/IR/Value.h"
-
 #include <string>
 #include <vector>
 #include <memory>
 #include <utility>
-
-#include "container.h"
 
 /// An enumeration of all possible function return types.
 typedef
@@ -35,6 +26,7 @@ enum {
 class AST {
   public:
     virtual ~AST() = default;
+    virtual void codegen() = 0;
 };
 
 
@@ -44,7 +36,7 @@ class AST {
 class Expr : public AST {
   public:
     virtual ~Expr() = default;
-    virtual llvm::Value *codegen(std::shared_ptr<LLContainer> container) = 0;
+    virtual void codegen() = 0;
 };
 
 
@@ -54,7 +46,7 @@ class Expr : public AST {
 class Statement : public AST {
   public:
     virtual ~Statement() = default;
-    virtual llvm::Value *codegen(std::shared_ptr<LLContainer> container) = 0;
+    virtual void codegen() = 0;
 };
 
 
@@ -67,7 +59,7 @@ class CompoundStatement : public Statement {
   public:
     CompoundStatement(std::vector<std::unique_ptr<Statement>> stmts)
       : stmts(std::move(stmts)) {}
-    llvm::Value *codegen(std::shared_ptr<LLContainer> container) override;
+    void codegen() override;
 };
 
 
@@ -79,7 +71,7 @@ class IntegerExpr : public Expr {
 
   public:
     IntegerExpr(long long value) : value(value) {}
-    llvm::Value *codegen(std::shared_ptr<LLContainer> container) override;
+    void codegen() override;
 };
 
 
@@ -91,7 +83,7 @@ class FloatingPointExpr : public Expr {
 
   public:
     FloatingPointExpr(double value) : value(value) {}
-    llvm::Value *codegen(std::shared_ptr<LLContainer> container) override;
+    void codegen() override;
 };
 
 
@@ -103,7 +95,7 @@ class VariableExpr : public Expr {
 
   public:
     VariableExpr(const std::string &name) : name(name) {}
-    llvm::Value *codegen(std::shared_ptr<LLContainer> container) override;
+    void codegen() override;
 };
 
 
@@ -117,7 +109,7 @@ class AssignStatement : public Statement {
   public:
     AssignStatement(const std::string &name, std::unique_ptr<Expr> value)
       : name(name), value(std::move(value)) {}
-    llvm::Value *codegen(std::shared_ptr<LLContainer> container) override;
+    void codegen() override;
 };
 
 
@@ -131,7 +123,7 @@ class BinaryExpr : public Expr {
   public:
     BinaryExpr(char op, std::unique_ptr<Expr> leftSide, std::unique_ptr<Expr> rightSide)
       : op(op), leftSide(std::move(leftSide)), rightSide(std::move(rightSide)) {}
-    llvm::Value *codegen(std::shared_ptr<LLContainer> container) override;
+    void codegen() override;
 };
 
 
@@ -145,7 +137,7 @@ class FunctionCallExpr : public Expr {
   public:
     FunctionCallExpr(const std::string &callee, std::vector<std::unique_ptr<Expr>> args)
       : callee(callee), args(std::move(args)) {}
-    llvm::Value *codegen(std::shared_ptr<LLContainer> container) override;
+    void codegen() override;
 };
 
 
@@ -162,7 +154,7 @@ class PrototypeAST : public AST {
       : name(name), args(std::move(args)), retType(retType) {}
     std::string getName() { return name; }
     RetType getRetType() { return retType; }
-    llvm::Function *codegen(std::shared_ptr<LLContainer> container);
+    void codegen() override;
 };
 
 
@@ -176,7 +168,7 @@ class FunctionAST : public AST {
   public:
     FunctionAST(std::unique_ptr<PrototypeAST> head, std::unique_ptr<Statement> body)
       : head(std::move(head)), body(std::move(body)) {}
-    llvm::Function *codegen(std::shared_ptr<LLContainer> container);
+    void codegen() override;
 };
 
 
@@ -188,7 +180,7 @@ class ReturnStatement : public Statement {
 
   public:
     ReturnStatement(std::unique_ptr<Expr> expr) : expr(std::move(expr)) {}
-    llvm::Value *codegen(std::shared_ptr<LLContainer> container) override;
+    void codegen() override;
 };
 
 
