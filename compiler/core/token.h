@@ -5,9 +5,28 @@
 
 #include <string>
 
+typedef enum {
+  A,
+  B
+} LiteralType;
+
 /// An enumeration of all possible token types.
-typedef
-enum {
+typedef enum {
+  /// Sequence of whitespace characters.
+  Whitespace,
+
+  /// Singular-line comments.
+  LineComment,
+
+  /// Multi-line comments.
+  BlockComment,
+
+  /// A recognizable identifier.
+  Identifier,
+
+  /// A constant literal.
+  Literal { LiteralType type },
+
   SET_BLOCK,
   SET_PAREN,
   END_BLOCK,
@@ -16,20 +35,8 @@ enum {
   SEMICOLON,
   COMMA,
   ARROW,
-
   OP_ASSIGN,
-  OP_ADD,
-  OP_SUB,
-  OP_MULT,
-  OP_DIV,
   OP_POW,
-
-  C_BOOL,
-  C_INT,
-  C_FP,
-  C_STR,
-  C_CHAR,
-
   BOOL_KEYWORD,
   CHAR_KEYWORD,
   ELSE_KEYWORD,
@@ -42,17 +49,75 @@ enum {
   STRING_KEYWORD,
   RETURN_KEYWORD,
 
-  COMMENT,
-  IDENTIFIER,
-  TERMINATE_STREAM
+  
+ 
+  /// One-character tokens:
+  ///
+  /// "{"
+  OpenBrace,
+  /// "}"
+  CloseBrace,
+  /// "("
+  OpenParen,
+  /// ")"
+  CloseParen,
+  /// "["
+  OpenBracket,
+  /// "]"
+  CloseBracket,
+  /// "."
+  Period,
+  /// ","
+  Comma,
+  /// ":",
+  Colon,
+  /// ";"
+  Semicolon,
+  /// "+"
+  Add,
+  /// "-"
+  Sub,
+  /// "*"
+  Star,
+  /// "/"
+  Slash,
+  /// "="
+  Assign,
+  /// "==",
+  Equals,
+  /// "!"
+  Bang,
+  /// "!="
+  BangEquals,
+  /// "<"
+  LessThan,
+  /// "<="
+  LessThanEquals,
+  /// ">"
+  GreaterThan,
+  /// ">="
+  GreaterThanEquals,
+  /// "&&"
+  And,
+  /// "||"
+  Or,
+  /// "++"
+  Increment,
+  /// "--"
+  Decrement,
+  /// "^"
+  Xor,
+
+  /// End of input.
+  Eof
 } TokenType;
 
 /// A token representing a single lexeme.
-typedef
-struct {
+typedef struct {
   std::string value;
   TokenType type;
 } Token;
+
 
 
 /**

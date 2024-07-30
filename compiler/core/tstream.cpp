@@ -3,8 +3,8 @@
 #include <iostream>
 #include <vector>
 
-#include "../include/token.h"
-#include "../include/tstream.h"
+#include "token.h"
+#include "tstream.h"
 
 /**
  * Construct a new token stream.
