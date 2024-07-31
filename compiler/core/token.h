@@ -5,17 +5,18 @@
 
 #include <memory>
 #include <optional>
+#include <string>
 #include <utility>
 
 /// An enum of common lexemmes.
 typedef enum {
-  /// Sequence of whitespace characters.
+  /// Finite sequence of whitespace characters.
   Whitespace,
 
-  /// Singular-line // comments.
+  /// // line comments.
   LineComment,
 
-  /// Multi-line /* comments */.
+  /// `/* block comments */`.
   BlockComment,
 
   /// A recognizable identifier.
@@ -41,15 +42,13 @@ typedef enum {
   /// "]"
   CloseBracket,
   /// "."
-  Period,
+  Dot,
   /// ","
   Comma,
   /// ":",
   Colon,
   /// ";"
-  Semicolon,
-  /// "->"
-  Arrow,
+  Semi,
   /// "+"
   Add,
   /// "-"
@@ -60,40 +59,57 @@ typedef enum {
   At,
   /// "#"
   Hash,
-  /// "**"
-  Power,
   /// "/"
   Slash,
   /// "="
   Eq,
-  /// "==",
-  EqEq,
   /// "!"
-  Bang,
-  /// "!="
-  BangEq,
+  Not,
   /// "<"
   LessThan,
-  /// "<="
-  LessThanEq,
   /// ">"
   GreaterThan,
+  /// "&"
+  And,
+  /// "|"
+  Or,
+  /// "^"
+  Xor,
+  
+  /// Compound tokens:
+  ///
+  /// "=="
+  EqEq,
+  /// "!="
+  NotEq,
+  /// "..."
+  Range,
+  /// "&&"
+  AndAnd,
+  /// "||"
+  OrOr,
+  /// "->"
+  Arrow,
+  /// "++"
+  Increment,
+  /// "--"
+  Decrement,
+  /// "+="
+  AddEq,
+  /// "-="
+  SubEq,
+  /// "*="
+  StarEq,
+  /// "/="
+  SlashEq,
+  /// "<="
+  LessThanEq,
   /// ">="
   GreaterThanEq,
   /// "<<"
   LeftShift,
   /// ">>"
   RightShift,
-  /// "&&"
-  And,
-  /// "||"
-  Or,
-  /// "^"
-  Xor,
-  /// "++"
-  Increment,
-  /// "--"
-  Decrement,
 
   /// End of file.
   Eof
@@ -120,7 +136,7 @@ typedef enum {
   String,
 
   /// b"hello", b"world"
-  ByteString,
+  ByteString
 } LiteralKind;
 
 /// Metadata about a token.
@@ -133,16 +149,22 @@ struct Metadata {
 struct Token {
   TokenKind kind;
   std::unique_ptr<Metadata> meta;
-  std::optional<const char *> value;
-  std::optional<LiteralKind> lit_kind;
+  const std::string value;
+  LiteralKind lit_kind;
 
-  Token(TokenKind kind) : kind(kind) {};
-  Token(
-    TokenKind kind,
-    std::unique_ptr<Metadata> meta,
-    std::optional<const char *> value,
-    std::optional<LiteralKind> lit_kind
-  ) : kind(kind), meta(std::move(meta)), value(value), lit_kind(lit_kind) {};
+  /// Constructor for basic tokens.
+  inline Token(TokenKind kind) : kind(kind) {};
+
+  /// Constructor for basic tokens with metadata.
+  inline Token(TokenKind kind, std::unique_ptr<Metadata> meta) : kind(kind), meta(std::move(meta)) {};
+
+  /// Constructor for tokens with necessary values.
+  inline Token(TokenKind kind, std::unique_ptr<Metadata> meta, const std::string value)
+    : kind(kind), meta(std::move(meta)), value(value) {};
+
+  /// Constructor for literals.
+  inline Token(TokenKind kind, std::unique_ptr<Metadata> meta, const std::string value, LiteralKind lit_kind)
+    : kind(kind), meta(std::move(meta)), value(value), lit_kind(lit_kind) {};
 };
 
 #endif  // STATIMC_TOKEN_H
