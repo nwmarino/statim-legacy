@@ -141,8 +141,11 @@ typedef enum {
 
 /// Metadata about a token.
 struct Metadata {
-  const char *filename;
+  const std::string filename;
   std::size_t line_n;
+
+  inline Metadata(const std::string &filename, std::size_t line_n)
+    : filename(filename), line_n(line_n) {};
 };
 
 /// A token representing a single lexeme.
@@ -165,6 +168,26 @@ struct Token {
   /// Constructor for literals.
   inline Token(TokenKind kind, std::unique_ptr<Metadata> meta, const std::string value, LiteralKind lit_kind)
     : kind(kind), meta(std::move(meta)), value(value), lit_kind(lit_kind) {};
+};
+
+inline bool is_ident(const Token &token) {
+  return token.kind == Identifier;
+};
+
+inline bool is_lit(const Token &token) {
+  return token.kind == Literal;
+};
+
+inline bool is_numer(const Token &token) {
+  return token.lit_kind && (token.lit_kind == Integer || token.lit_kind == Float);
+}
+
+inline bool is_eof(const Token &token) {
+  return token.kind == Eof;
+};
+
+inline bool is_whitespace(const Token &token) {
+  return token.kind == Whitespace;
 };
 
 #endif  // STATIMC_TOKEN_H
