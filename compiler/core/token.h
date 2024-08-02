@@ -4,15 +4,11 @@
 #define STATIMC_TOKEN_H
 
 #include <memory>
-#include <optional>
 #include <string>
 #include <utility>
 
 /// An enum of common lexemmes.
 typedef enum {
-  /// Finite sequence of whitespace characters.
-  Whitespace,
-
   /// // line comments.
   LineComment,
 
@@ -90,6 +86,8 @@ typedef enum {
   OrOr,
   /// "->"
   Arrow,
+  /// "=>"
+  FatArrow,
   /// "++"
   Increment,
   /// "--"
@@ -117,6 +115,8 @@ typedef enum {
 
 // An enum of recognized literal types.
 typedef enum {
+  /// Constant Literals:
+
   /// true, false
   Bool,
 
@@ -144,8 +144,12 @@ struct Metadata {
   const std::string filename;
   std::size_t line_n;
 
+  /// Constructor for basic token metadata.
   inline Metadata(const std::string &filename, std::size_t line_n)
     : filename(filename), line_n(line_n) {};
+
+  /// Copy constructor.
+  inline Metadata(const Metadata &obj) : filename(obj.filename), line_n(obj.line_n) {};
 };
 
 /// A token representing a single lexeme.
@@ -154,7 +158,7 @@ struct Token {
   std::unique_ptr<Metadata> meta;
   const std::string value;
   LiteralKind lit_kind;
-
+  
   /// Constructor for basic tokens.
   inline Token(TokenKind kind) : kind(kind) {};
 
@@ -168,26 +172,25 @@ struct Token {
   /// Constructor for literals.
   inline Token(TokenKind kind, std::unique_ptr<Metadata> meta, const std::string value, LiteralKind lit_kind)
     : kind(kind), meta(std::move(meta)), value(value), lit_kind(lit_kind) {};
-};
+  
+  /// Copy constructor.
+  inline Token(const Token &obj)
+    : kind(obj.kind), meta(std::make_unique<Metadata>(*obj.meta)), value(obj.value), lit_kind(obj.lit_kind) {};
 
-inline bool is_ident(const Token &token) {
-  return token.kind == Identifier;
-};
+  [[nodiscard]]
+  inline const bool is_ident() { return kind == Identifier; };
 
-inline bool is_lit(const Token &token) {
-  return token.kind == Literal;
-};
+  [[nodiscard]]
+  inline const bool is_lit() { return kind == Literal; };
 
-inline bool is_numer(const Token &token) {
-  return token.lit_kind && (token.lit_kind == Integer || token.lit_kind == Float);
-}
+  [[nodiscard]]
+  inline const bool is_numer() { return lit_kind && (lit_kind == Integer || lit_kind == Float); }
 
-inline bool is_eof(const Token &token) {
-  return token.kind == Eof;
-};
+  [[nodiscard]]
+  inline const bool is_eof() { return kind == Eof; };
 
-inline bool is_whitespace(const Token &token) {
-  return token.kind == Whitespace;
+  [[nodiscard]]
+  std::string to_str() const;
 };
 
 #endif  // STATIMC_TOKEN_H

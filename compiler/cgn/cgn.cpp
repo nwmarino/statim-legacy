@@ -6,9 +6,9 @@
 #include <memory>
 #include <utility>
 
-#include "../include/cgn.h"
-#include "../include/logger.h"
-#include "../include/register.h"
+#include "cgn.h"
+#include "../core/logger.h"
+#include "register.h"
 
 static std::map<const char *, std::unique_ptr<Register>> reg_table;
 static std::ofstream out_file;

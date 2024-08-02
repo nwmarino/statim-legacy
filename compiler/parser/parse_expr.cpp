@@ -3,10 +3,9 @@
 #include <memory>
 #include <utility>
 
-#include "../include/logger.h"
-#include "../include/token.h"
-#include "../include/tstream.h"
-#include "../include/parse_expr.h"
+#include "../core/logger.h"
+#include "../core/token.h"
+#include "parse_expr.h"
 
 /**
  * Parse a primary expression.

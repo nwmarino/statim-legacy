@@ -8,6 +8,13 @@
 #include <string>
 
 #include "ast.h"
+#include "token.h"
+
+/// Stop the compiler and print an error message with optional diagnostics.
+/// @param m    The error message.
+/// @param data Metadata about the bad input.
+[[noreturn]]
+void sc_panic(const char *m, std::optional<Metadata> data);
 
 /**
  * Print an error message and exit the program.
@@ -15,6 +22,7 @@
  * @param m   The error message.
  * @param arg An optional argument to the error message.
  */
+[[noreturn]]
 void panic(const char *m, std::optional<const char *> arg);
 
 /**
