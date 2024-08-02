@@ -8,9 +8,11 @@
 #include "ast.h"
 #include "logger.h"
 
-void sc_panic(const char *m, std::optional<Metadata> data) {
-  fprintf(stderr, "%s", m);
-  fprintf(stderr, "See: %s:%zu", data->filename.c_str(), data->line_n);
+void sc_panic(const std::string m, std::optional<Metadata> data) {
+  fprintf(stderr, "%s\n", m.c_str());
+  if (data.has_value()) {
+    fprintf(stderr, "See: %s:%zu\n", data->filename.c_str(), data->line_n);
+  }
   exit(1);
 }
 

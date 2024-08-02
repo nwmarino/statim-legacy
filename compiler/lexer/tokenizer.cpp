@@ -10,8 +10,8 @@
 Tokenizer::Tokenizer(const std::string src, const std::string filename, std::size_t len)
   : src(src), filename(filename), len(len), prev('\0'), iter(0), line(1) {};
 
-const Token Tokenizer::advance_token() {
-  if (iter == len) {
+Token Tokenizer::advance_token() {
+  if (iter >= len) {
     return Token(TokenKind::Eof);
   }
 
@@ -87,7 +87,7 @@ const Token Tokenizer::advance_token() {
     case '.':
       if (peek() == '.') {
         if (peek_two() != '.') {
-          /// TODO: unresolved
+          sc_panic("Bad range syntax", std::make_optional<Metadata>(meta));
           break;
         }
         kind = Range;
@@ -185,7 +185,7 @@ const Token Tokenizer::advance_token() {
         }
         return Token(kind, std::make_unique<Metadata>(meta), value, lit_kind);
       }
-      sc_panic(&"Unresolved character " [ chr], std::make_optional<Metadata>(meta));
+      sc_panic("Unresolved sequence: " + std::string(1, chr), std::make_optional<Metadata>(meta));
       break;
   }
   iter++;

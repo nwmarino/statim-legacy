@@ -3,9 +3,7 @@
 #ifndef STATIMC_TOKENIZER_H
 #define STATIMC_TOKENIZER_H
 
-#include <fstream>
 #include <string>
-#include <cstring>
 
 #include "../core/token.h"
 
@@ -18,7 +16,6 @@ class Tokenizer {
   std::size_t iter;
   std::size_t line;
   
-
   /// Peek at the next character in the stream. Does not consume it.
   [[nodiscard]]
   const char peek() const;
@@ -42,7 +39,7 @@ class Tokenizer {
     Tokenizer(const std::string src, const std::string filename, const std::size_t len);
 
     /// Get the next token in the stream.
-    const Token advance_token();
+    Token advance_token();
 
     [[nodiscard]]
     inline const std::string to_str();

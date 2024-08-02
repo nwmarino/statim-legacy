@@ -14,7 +14,7 @@
 /// @param m    The error message.
 /// @param data Metadata about the bad input.
 [[noreturn]]
-void sc_panic(const char *m, std::optional<Metadata> data);
+void sc_panic(const std::string m, std::optional<Metadata> data);
 
 /**
  * Print an error message and exit the program.

@@ -4,6 +4,7 @@
 #define STATIMC_TOKEN_H
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -142,22 +143,19 @@ typedef enum {
 /// Metadata about a token.
 struct Metadata {
   const std::string filename;
-  std::size_t line_n;
+  const std::size_t line_n;
 
   /// Constructor for basic token metadata.
-  inline Metadata(const std::string &filename, std::size_t line_n)
+  inline Metadata(const std::string &filename, const std::size_t line_n)
     : filename(filename), line_n(line_n) {};
-
-  /// Copy constructor.
-  inline Metadata(const Metadata &obj) : filename(obj.filename), line_n(obj.line_n) {};
 };
 
 /// A token representing a single lexeme.
 struct Token {
   TokenKind kind;
   std::unique_ptr<Metadata> meta;
-  const std::string value;
-  LiteralKind lit_kind;
+  std::string value;
+  std::optional<LiteralKind> lit_kind;
   
   /// Constructor for basic tokens.
   inline Token(TokenKind kind) : kind(kind) {};
@@ -172,10 +170,6 @@ struct Token {
   /// Constructor for literals.
   inline Token(TokenKind kind, std::unique_ptr<Metadata> meta, const std::string value, LiteralKind lit_kind)
     : kind(kind), meta(std::move(meta)), value(value), lit_kind(lit_kind) {};
-  
-  /// Copy constructor.
-  inline Token(const Token &obj)
-    : kind(obj.kind), meta(std::make_unique<Metadata>(*obj.meta)), value(obj.value), lit_kind(obj.lit_kind) {};
 
   [[nodiscard]]
   inline const bool is_ident() { return kind == Identifier; };
