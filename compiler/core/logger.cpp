@@ -9,16 +9,18 @@
 #include "logger.h"
 
 void sc_panic(const std::string m, std::optional<Metadata> data) {
-  fprintf(stderr, "%s\n", m.c_str());
-  if (data.has_value()) {
+  fprintf(stderr, "statimc: %s\n", m.c_str());
+  if (data.has_value() && data.value().filename != "") {
     fprintf(stderr, "See: %s:%zu\n", data->filename.c_str(), data->line_n);
   }
   exit(1);
 }
 
 void panic(const char *m, std::optional<const char *> arg) {
-  fprintf(stderr, "%s", m);
-  fprintf(stderr, "See: %s", arg.value_or("unknown"));
+  fprintf(stderr, "statimc: %s\n", m);
+  if (arg.has_value() && arg.value() != nullptr) {
+    fprintf(stderr, "See: %s\n", arg.value_or("unknown"));
+  }
   exit(1);
 }
 

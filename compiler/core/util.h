@@ -8,13 +8,13 @@
 
 #include "logger.h"
 
-/// @brief  Read the contents of a file to a string.
+/// Read the contents of a file to a string.
 [[nodiscard]]
 inline std::string read_to_str(const std::string &path) {
   std::ifstream file(path);
 
   if (!file.is_open()) {
-    panic("could not open file.", path.c_str());
+    panic("could not open file: ", path.c_str());
   }
 
   std::string contents;
@@ -24,6 +24,13 @@ inline std::string read_to_str(const std::string &path) {
   }
 
   return contents;
+}
+
+/// Parse a file name from a path.
+[[nodiscard]]
+inline std::string parse_filename(const std::string &path) {
+  std::size_t pos = path.find_last_of("/\\");
+  return path.substr(pos + 1);
 }
 
 #endif  // STATIMC_UTIL_H

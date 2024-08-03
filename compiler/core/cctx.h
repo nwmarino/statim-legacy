@@ -45,6 +45,10 @@ class cctx {
     /// Get the last token in the stream.
     [[nodiscard]]
     inline std::unique_ptr<Token> tk_prev();
+
+    /// Begin lexing another input file.
+    /// @return If the input file could be found.
+    bool lex_file(const std::string filename);
 };
 
 #endif  // STATIMC_CCTX_H
