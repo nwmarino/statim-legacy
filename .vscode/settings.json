@@ -73,6 +73,7 @@
         "valarray": "cpp",
         "variant": "cpp",
         "coroutine": "cpp",
-        "*.inc": "cpp"
+        "*.inc": "cpp",
+        "typeindex": "cpp"
     }
 }

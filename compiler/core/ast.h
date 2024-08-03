@@ -20,168 +20,102 @@ enum {
 } RetType;
 
 
-/**
- * Base class to all other abstract syntax nodes.
- */
+/// An abstract syntax tree node.
 class AST {
   public:
     virtual ~AST() = default;
-    virtual void codegen() = 0;
 };
 
-
-/**
- * Base class to expression nodes.
- */
+/// An expression.
 class Expr : public AST {
   public:
     virtual ~Expr() = default;
-    virtual void codegen() = 0;
 };
 
-
-/**
- * Base class to statement nodes.
- */
+/// A statement.
 class Statement : public AST {
   public:
     virtual ~Statement() = default;
-    virtual void codegen() = 0;
 };
 
-
-/**
- * Class for compound statements.
- */
+/// Compound statements.
 class CompoundStatement : public Statement {
   std::vector<std::unique_ptr<Statement>> stmts;
 
   public:
-    CompoundStatement(std::vector<std::unique_ptr<Statement>> stmts)
-      : stmts(std::move(stmts)) {}
-    void codegen() override;
+    CompoundStatement(std::vector<std::unique_ptr<Statement>> stmts) : stmts(std::move(stmts)) {};
 };
 
-
-/**
- * Expression class for integer literals.
- */
+/// Integer literal expressions.
 class IntegerExpr : public Expr {
-  long long value;
+  int value;
 
   public:
-    IntegerExpr(long long value) : value(value) {}
-    void codegen() override;
+    IntegerExpr(int value) : value(value) {};
 };
 
-
-/**
- * Expression class for floating point literals.
- */
+/// Floating point literal expressions.
 class FloatingPointExpr : public Expr {
   double value;
 
   public:
-    FloatingPointExpr(double value) : value(value) {}
-    void codegen() override;
+    FloatingPointExpr(double value) : value(value) {};
 };
 
-
-/**
- * Expression class for variables.
- */
+/// Variable expressions.
 class VariableExpr : public Expr {
-  std::string name;
+  std::string ident;
 
   public:
-    VariableExpr(const std::string &name) : name(name) {}
-    void codegen() override;
+    VariableExpr(const std::string &ident) : ident(ident) {};
 };
 
-
-/**
- * Expression class for assignments.
- */
-class AssignStatement : public Statement {
-  std::string name;
-  std::unique_ptr<Expr> value;
-
-  public:
-    AssignStatement(const std::string &name, std::unique_ptr<Expr> value)
-      : name(name), value(std::move(value)) {}
-    void codegen() override;
-};
-
-
-/**
- * Expression class for binary operations.
- */
+/// Binary operation expressions.
 class BinaryExpr : public Expr {
   char op;
-  std::unique_ptr<Expr> leftSide, rightSide;
+  std::unique_ptr<Expr> left_child, right_child;
 
   public:
-    BinaryExpr(char op, std::unique_ptr<Expr> leftSide, std::unique_ptr<Expr> rightSide)
-      : op(op), leftSide(std::move(leftSide)), rightSide(std::move(rightSide)) {}
-    void codegen() override;
+    BinaryExpr(char op, std::unique_ptr<Expr> left_child, std::unique_ptr<Expr> right_child)
+      : op(op), left_child(std::move(left_child)), right_child(std::move(right_child)) {};
 };
 
-
-/**
- * Expression class for function calls.
- */
+/// Function call expressions;
 class FunctionCallExpr : public Expr {
   std::string callee;
   std::vector<std::unique_ptr<Expr>> args;
 
   public:
     FunctionCallExpr(const std::string &callee, std::vector<std::unique_ptr<Expr>> args)
-      : callee(callee), args(std::move(args)) {}
-    void codegen() override;
+      : callee(callee), args(std::move(args)) {};
 };
 
-
-/**
- * Node class for function prototypes.
- */
+/// Functions prototypes.
 class PrototypeAST : public AST {
   std::string name;
   std::vector<std::string> args;
-  RetType retType;
 
   public:
-    PrototypeAST(const std::string &name, std::vector<std::string> args, RetType retType)
-      : name(name), args(std::move(args)), retType(retType) {}
-    std::string getName() { return name; }
-    RetType getRetType() { return retType; }
-    void codegen() override;
+    PrototypeAST(const std::string &name, std::vector<std::string> args)
+      : name(name), args(std::move(args)) {};
 };
 
-
-/**
- * Node class for function definitions.
- */
+/// Function definitions.
 class FunctionAST : public AST {
   std::unique_ptr<PrototypeAST> head;
   std::unique_ptr<Statement> body;
 
   public:
     FunctionAST(std::unique_ptr<PrototypeAST> head, std::unique_ptr<Statement> body)
-      : head(std::move(head)), body(std::move(body)) {}
-    void codegen() override;
+      : head(std::move(head)), body(std::move(body)) {};
 };
 
-
-/**
- * Statement class for return statements.
- */
+/// Return statements.
 class ReturnStatement : public Statement {
   std::unique_ptr<Expr> expr;
 
   public:
-    ReturnStatement(std::unique_ptr<Expr> expr) : expr(std::move(expr)) {}
-    void codegen() override;
+    ReturnStatement(std::unique_ptr<Expr> expr) : expr(std::move(expr)) {};
 };
-
 
 #endif  // STATIMC_AST_H
