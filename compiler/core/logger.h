@@ -14,7 +14,7 @@
 /// @param m    The error message.
 /// @param data Metadata about the bad input.
 [[noreturn]]
-void sc_panic(const std::string m, std::optional<Metadata> data);
+void sc_panic(const std::string m, std::unique_ptr<Metadata> data);
 
 /**
  * Print an error message and exit the program.
@@ -26,12 +26,56 @@ void sc_panic(const std::string m, std::optional<Metadata> data);
 void panic(const char *m, std::optional<const char *> arg);
 
 /**
+ * Print an error message regarding an expected token.
+ * 
+ * @param expected The expected token kind.
+ * @param data     Metadata about the bad token.
+ */
+[[noreturn]]
+void tokexp_panic(TokenKind expected, std::unique_ptr<Metadata> data);
+
+/**
+ * Print an error message regarding an unresolved symbol.
+ * 
+ * @param m    The error message.
+ * @param data Metadata about the bad token.
+ */
+[[noreturn]]
+void symb_panic(std::string m, std::unique_ptr<Metadata> data);
+
+/**
+ * Panic about an unresolved function identifier.
+ * 
+ * @param ident The function identifier.
+ * @param data  Metadata about the bad token.
+ */
+[[noreturn]]
+void symb_func_panic(const std::string &ident, std::unique_ptr<Metadata> data);
+
+/**
+ * Panic about an unresolved variable identifier.
+ * 
+ * @param ident The variable identifier.
+ * @param data  Metadata about the bad token.
+ */
+[[noreturn]]
+void symb_var_panic(const std::string &ident, std::unique_ptr<Metadata> data);
+
+/**
  * Log an error message.
  * 
  * @param m The error message.
  * @return  nullptr
  */
-std::unique_ptr<Expr> logError(std::string m);
+std::unique_ptr<AST> warn(std::string m);
+
+/**
+ * Log an error message for an expression.
+ * 
+ * @param m The error message.
+ * @return  nullptr
+ */
+std::unique_ptr<Expr> warn_expr(std::string m);
 
 /**
  * Log an error message for a prototype.
@@ -39,7 +83,7 @@ std::unique_ptr<Expr> logError(std::string m);
  * @param m The error message.
  * @return  nullptr
  */
-std::unique_ptr<PrototypeAST> logErrorPr(std::string m);
+std::unique_ptr<PrototypeAST> warn_proto(std::string m);
 
 /**
  * Log an error message for a statement.
@@ -47,6 +91,6 @@ std::unique_ptr<PrototypeAST> logErrorPr(std::string m);
  * @param m The error message.
  * @return  nullptr
  */
-std::unique_ptr<Statement> logErrorS(std::string m);
+std::unique_ptr<Statement> warn_stmt(std::string m);
 
 #endif  // STATIMC_LOGGER_H

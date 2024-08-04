@@ -4,7 +4,6 @@
 #define STATIMC_TOKEN_H
 
 #include <memory>
-#include <optional>
 #include <string>
 #include <utility>
 
@@ -118,6 +117,9 @@ typedef enum {
 typedef enum {
   /// Constant Literals:
 
+  /// null
+  Null,
+
   /// true, false
   Bool,
 
@@ -155,7 +157,7 @@ struct Token {
   TokenKind kind;
   std::unique_ptr<Metadata> meta;
   std::string value;
-  std::optional<LiteralKind> lit_kind;
+  LiteralKind lit_kind;
   
   /// Constructor for basic tokens.
   inline Token(TokenKind kind) : kind(kind) {};

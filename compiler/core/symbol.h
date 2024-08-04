@@ -50,8 +50,13 @@ class SymTable {
 
     /// Get a symbol from the table.
     [[nodiscard]]
-    inline Symbol *get(const std::string key) {
-      return symbs.at(key).get();
+    inline std::unique_ptr<Symbol> get(const std::string key) {
+      return std::move(symbs.at(key));
+    }
+
+    /// Delete a symbol from the table.
+    inline bool del(const std::string key) {
+      return symbs.erase(key) == 1;
     }
 
     /// Check if a symbol exists in the table.

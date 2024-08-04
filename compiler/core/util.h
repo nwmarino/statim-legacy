@@ -6,6 +6,7 @@
 #include <fstream>
 #include <string>
 
+#include "cctx.h"
 #include "logger.h"
 
 /// Read the contents of a file to a string.
@@ -31,6 +32,23 @@ inline std::string read_to_str(const std::string &path) {
 inline std::string parse_filename(const std::string &path) {
   std::size_t pos = path.find_last_of("/\\");
   return path.substr(pos + 1);
+}
+
+/// Dump all tokens currently in a lexer stream to a file.
+inline void dump_tkstream(std::shared_ptr<cctx> ctx) {
+  std::ofstream file("tokens.txt");
+
+  file << ctx->filename() << "\n\n";
+
+  while (1) {
+    std::unique_ptr<Token> token = ctx->tk_next();
+    if (token->kind == TokenKind::Eof) {
+      break;
+    }
+    file << token->to_str() << '\n';
+  }
+
+  file.close();
 }
 
 #endif  // STATIMC_UTIL_H

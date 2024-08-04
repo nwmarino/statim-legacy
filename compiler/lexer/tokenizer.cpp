@@ -66,7 +66,7 @@ Token Tokenizer::advance_token() {
       value = src[iter];
 
       if (peek() != '\'') {
-        sc_panic("Bad char literal", std::make_optional<Metadata>(meta));
+        sc_panic("Bad char literal", std::make_unique<Metadata>(meta));
       }
 
       iter++;
@@ -87,7 +87,7 @@ Token Tokenizer::advance_token() {
     case '.':
       if (peek() == '.') {
         if (peek_two() != '.') {
-          sc_panic("Bad range syntax", std::make_optional<Metadata>(meta));
+          sc_panic("Bad range syntax", std::make_unique<Metadata>(meta));
           break;
         }
         kind = Range;
@@ -138,7 +138,7 @@ Token Tokenizer::advance_token() {
         value = src[iter];
 
         if (peek() != '\'') {
-          sc_panic("Bad byte char literal", std::make_optional<Metadata>(meta));
+          sc_panic("Bad byte char literal", std::make_unique<Metadata>(meta));
         }
 
         iter++;
@@ -165,6 +165,12 @@ Token Tokenizer::advance_token() {
           iter++;
         }
 
+        if (value == "null") {
+          kind = Literal;
+          lit_kind = Null;
+          return Token(kind, std::make_unique<Metadata>(meta), value, lit_kind);
+        }
+
         if (value == "true" || value == "false") {
           kind = Literal;
           lit_kind = Bool;
@@ -185,7 +191,7 @@ Token Tokenizer::advance_token() {
         }
         return Token(kind, std::make_unique<Metadata>(meta), value, lit_kind);
       }
-      sc_panic("Unresolved sequence: " + std::string(1, chr), std::make_optional<Metadata>(meta));
+      sc_panic("Unresolved sequence: " + std::string(1, chr), std::make_unique<Metadata>(meta));
       break;
   }
   iter++;

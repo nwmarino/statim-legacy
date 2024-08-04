@@ -18,16 +18,6 @@ static void print_tkstream(std::shared_ptr<cctx> ctx) {
   }
 }
 
-/// Dump out all tokens currently in a lexer stream.
-static void dump_tkstream(std::shared_ptr<cctx> ctx) {
-  while (1) {
-    std::unique_ptr<Token> token = ctx->tk_next();
-    if (token->kind == TokenKind::Eof) {
-      break;
-    }
-  }
-}
-
 /// Parse input files and options from the command line.
 static void parse_args(int argc, char *argv[], cflags &flags, std::vector<cfile> &input) {
   flags.emit_asm = false;
@@ -58,7 +48,7 @@ int main(int argc, char *argv[]) {
 
   std::shared_ptr<cctx> ctx = std::make_shared<cctx>(flags, input);
 
-  print_tkstream(ctx);
-  //dump_tkstream(ctx);
+  //print_tkstream(ctx);
+  dump_tkstream(ctx);
   return 0;
 }
