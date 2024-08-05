@@ -5,7 +5,6 @@
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #include <map>
-#include <memory>
 #include <string>
 #include <utility>
 
@@ -35,16 +34,16 @@ struct Symbol {
   SymbolType type;
 
   /// Associated metadata.
-  std::unique_ptr<Metadata> meta;
+  struct Metadata meta;
 
   /// Possible keyword type.
   KeywordType keyword;
 
   // Compiler-defined constructor.
-  inline Symbol(SymbolType type) : type(type), meta(nullptr) {};
+  inline Symbol(SymbolType type) : type(type) {};
 
   // Basic user-defined constructor.
-  inline Symbol(SymbolType type, std::unique_ptr<Metadata> meta) : type(type), meta(std::move(meta)) {};
+  inline Symbol(SymbolType type, const Metadata &meta) : type(type), meta(meta) {};
 
   // Keyword constructor.
   inline Symbol(KeywordType keyword) : type(SymbolType::Keyword), keyword(keyword) {};
@@ -52,38 +51,30 @@ struct Symbol {
 
 /// A table of symbols.
 class SymTable {
-  std::map<const std::string, std::unique_ptr<Symbol>> symbs = {};
+  std::map<const std::string, struct Symbol> symbs = {};
   std::size_t m_size;
 
   public:
     inline SymTable() : m_size(0) {};
 
     /// Put a symbol into the table.
-    inline void put(const std::string key, std::unique_ptr<Symbol> s) {
-      symbs.insert({key, std::move(s)});
+    inline void put(const std::string key, const struct Symbol &s) {
+      symbs.insert({key, s});
       m_size++;
     }
 
     /// Remove a symbol from the table.
-    inline std::unique_ptr<Symbol> remove(const std::string key) {
-      // check if the symbol exists
-      if (exists(key)) {
-        std::unique_ptr symb = std::move(symbs.at(key));
-        symbs.erase(key);
-        m_size--;
-        return std::move(symb);
-      }
-      return nullptr;
+    inline struct Symbol remove(const std::string key) {
+      struct Symbol symb = symbs.at(key);
+      symbs.erase(key);
+      m_size--;
+      return std::move(symb);
     }
 
     /// Get a symbol from the table.
     [[nodiscard]]
-    inline std::unique_ptr<Symbol> get(const std::string key) {
-      if (exists(key)) {
-        return std::move(symbs.at(key));
-      }
-      
-      return nullptr;
+    inline struct Symbol get(const std::string key) {
+      return symbs.at(key);
     }
 
     /// Delete a symbol from the table.

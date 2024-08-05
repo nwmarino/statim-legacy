@@ -1,25 +1,25 @@
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
+#include <memory>
+#include <utility>
+
 #include "parser.h"
 #include "../core/ast.h"
 #include "../core/cctx.h"
 #include "../core/logger.h"
 #include "../core/symbol.h"
 
-#include <memory>
-#include <utility>
-
 std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx) {
   const std::string name = ctx->prev().value;
-  if (ctx->symb_get(name)) {
-    symb_decl_panic(name, std::move(ctx->prev().meta));
+  if (ctx->symb_exists(name)) {
+    symb_decl_panic(name, ctx->prev().meta);
   }
 
   // eat function identifier
   ctx->tk_next();
 
   if (ctx->prev().kind != TokenKind::OpenParen) {
-    tokexp_panic(TokenKind::OpenParen, std::move(ctx->prev().meta));
+    tokexp_panic(TokenKind::OpenParen, ctx->prev().meta);
   }
 
   // eat open parentheses
@@ -34,26 +34,26 @@ std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx) {
   }
 
   if (ctx->prev().kind != TokenKind::CloseParen) {
-    tokexp_panic(TokenKind::CloseParen, std::move(ctx->prev().meta));
+    tokexp_panic(TokenKind::CloseParen, ctx->prev().meta);
   }
 
   // eat close parentheses
   ctx->tk_next();
 
   if (ctx->prev().kind != TokenKind::Arrow) {
-    tokexp_panic(TokenKind::Arrow, std::move(ctx->prev().meta));
+    tokexp_panic(TokenKind::Arrow, ctx->prev().meta);
   }
 
   // eat arrow
   ctx->tk_next();
 
   if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic(TokenKind::Identifier, std::move(ctx->prev().meta));
+    tokexp_panic(TokenKind::Identifier, ctx->prev().meta);
   }
 
   const std::string ret_ty = ctx->prev().value;
-  if (!ctx->symb_get(ret_ty)) {
-    symb_type_panic(ret_ty, std::move(ctx->prev().meta));
+  if (!ctx->symb_exists(ret_ty)) {
+    symb_type_panic(ret_ty, ctx->prev().meta);
   }
 
   // eat return type
@@ -77,7 +77,7 @@ std::unique_ptr<FunctionAST> parse_definition(std::shared_ptr<cctx> ctx) {
   ctx->tk_next();
 
   if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic(TokenKind::Identifier, std::move(ctx->prev().meta));
+    tokexp_panic(TokenKind::Identifier, ctx->prev().meta);
   }
 
   std::unique_ptr<PrototypeAST> head = parse_prototype(ctx);
@@ -94,7 +94,7 @@ std::unique_ptr<FunctionAST> parse_definition(std::shared_ptr<cctx> ctx) {
 
 
 std::unique_ptr<Statement> parse_var_decl(std::shared_ptr<cctx> ctx) {
-  switch (ctx->symb_get(ctx->prev().value)->keyword) {
+  switch (ctx->symb_get(ctx->prev().value).keyword) {
     case KeywordType::Fix:
       return parse_immut_decl(ctx);
 
@@ -114,24 +114,25 @@ std::unique_ptr<Statement> parse_immut_decl(std::shared_ptr<cctx> ctx) {
 
   // expect identifier to proceed fix keyword
   if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic(TokenKind::Identifier, std::move(ctx->prev().meta));
+    tokexp_panic(TokenKind::Identifier, ctx->prev().meta);
   }
 
   // check variable value does not yet exist
   const std::string name = ctx->prev().value;
-  if (ctx->symb_get(name)) {
-    symb_decl_panic(name, std::move(ctx->prev().meta));
+  if (ctx->symb_exists(name)) {
+    symb_decl_panic(name, ctx->prev().meta);
   }
-
+  
   // save metadata
-  std::unique_ptr<Metadata> meta = std::move(ctx->prev().meta);
+  struct Metadata meta = ctx->prev().meta;
+  ctx->symb_add(name, Symbol(SymbolType::Constant, ctx->prev().meta));
 
   // eat the identifier
   ctx->tk_next();
 
   // expect type separator
   if (ctx->prev().kind != TokenKind::Colon) {
-    tokexp_panic(TokenKind::Colon, std::move(ctx->prev().meta));
+    tokexp_panic(TokenKind::Colon, ctx->prev().meta);
   }
 
   // eat the colon
@@ -140,7 +141,7 @@ std::unique_ptr<Statement> parse_immut_decl(std::shared_ptr<cctx> ctx) {
   // parse the type
   const std::string ty = ctx->prev().value;
   if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic(TokenKind::Identifier, std::move(ctx->prev().meta));
+    tokexp_panic(TokenKind::Identifier, ctx->prev().meta);
   }
 
   /* no types as of yet
@@ -157,7 +158,7 @@ std::unique_ptr<Statement> parse_immut_decl(std::shared_ptr<cctx> ctx) {
 
   // expect assignment operator
   if (ctx->prev().kind != TokenKind::Eq) {
-    tokexp_panic(TokenKind::Eq, std::move(ctx->prev().meta));
+    tokexp_panic(TokenKind::Eq, ctx->prev().meta);
   }
 
   // eat the assignment operator
@@ -165,7 +166,7 @@ std::unique_ptr<Statement> parse_immut_decl(std::shared_ptr<cctx> ctx) {
 
   // parse the required expression
   if (std::unique_ptr<Expr> expr = parse_expr(ctx)) {
-    ctx->symb_add(name, std::make_unique<Symbol>(SymbolType::Constant, std::move(meta)));
+    ctx->symb_add(name, Symbol(SymbolType::Constant, meta));
     return std::make_unique<AssignmentStatement>(name, ty, std::move(expr));
   }
 
@@ -179,24 +180,24 @@ std::unique_ptr<Statement> parse_mut_decl(std::shared_ptr<cctx> ctx) {
 
   // expect identifier to proceed let keyword
   if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic(TokenKind::Identifier, std::move(ctx->prev().meta));
+    tokexp_panic(TokenKind::Identifier, ctx->prev().meta);
   }
 
   // check variable value does not yet exist
   const std::string name = ctx->prev().value;
-  if (ctx->symb_get(name)) {
-    symb_decl_panic(name, std::move(ctx->prev().meta));
+  if (ctx->symb_exists(name)) {
+    symb_decl_panic(name, ctx->prev().meta);
   }
 
   // save metadata
-  std::unique_ptr<Metadata> meta = std::move(ctx->prev().meta);
+  struct Metadata meta = ctx->prev().meta;
 
   // eat the identifier
   ctx->tk_next();
 
   // expect type separator
   if (ctx->prev().kind != TokenKind::Colon) {
-    tokexp_panic(TokenKind::Colon, std::move(ctx->prev().meta));
+    tokexp_panic(TokenKind::Colon, ctx->prev().meta);
   }
 
   // eat the colon
@@ -205,14 +206,14 @@ std::unique_ptr<Statement> parse_mut_decl(std::shared_ptr<cctx> ctx) {
   // parse the type
   const std::string ty = ctx->prev().value;
   if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic(TokenKind::Identifier, std::move(ctx->prev().meta));
+    tokexp_panic(TokenKind::Identifier, ctx->prev().meta);
   }
 
   /* no types as of yet
 
   // check type exists
   if (!ctx->symb_get(ty)) {
-      symb_type_panic(ty, std::move(ctx->prev()->meta));
+    symb_type_panic(ty, std::move(ctx->prev()->meta));
   }
   
   */
@@ -222,7 +223,7 @@ std::unique_ptr<Statement> parse_mut_decl(std::shared_ptr<cctx> ctx) {
 
   // expect assignment operator
   if (ctx->prev().kind != TokenKind::Eq) {
-    tokexp_panic(TokenKind::Eq, std::move(ctx->prev().meta));
+    tokexp_panic(TokenKind::Eq, ctx->prev().meta);
   }
 
   // eat the assignment operator

@@ -10,14 +10,14 @@
 Tokenizer::Tokenizer(const std::string src, const std::string filename, std::size_t len)
   : src(src), filename(filename), len(len), prev('\0'), iter(0), line(1) {};
 
-struct Token Tokenizer::advance_token() {
+const struct Token Tokenizer::advance_token() {
   TokenKind kind = Eof;
   Metadata meta(filename, line);
   std::string value;
   LiteralKind lit_kind;
 
   if (iter >= len) {
-    return Token(TokenKind::Eof, std::make_unique<Metadata>(meta));
+    return Token(TokenKind::Eof, meta);
   }
 
   const char chr = src[iter];
@@ -66,7 +66,7 @@ struct Token Tokenizer::advance_token() {
       value = src[iter];
 
       if (peek() != '\'') {
-        sc_panic("Bad char literal", std::make_unique<Metadata>(meta));
+        sc_panic("Bad char literal", meta);
       }
 
       iter++;
@@ -87,7 +87,7 @@ struct Token Tokenizer::advance_token() {
     case '.':
       if (peek() == '.') {
         if (peek_two() != '.') {
-          sc_panic("Bad range syntax", std::make_unique<Metadata>(meta));
+          sc_panic("Bad range syntax", meta);
           break;
         }
         kind = Range;
@@ -138,7 +138,7 @@ struct Token Tokenizer::advance_token() {
         value = src[iter];
 
         if (peek() != '\'') {
-          sc_panic("Bad byte char literal", std::make_unique<Metadata>(meta));
+          sc_panic("Bad byte char literal", meta);
         }
 
         iter++;
@@ -168,15 +168,15 @@ struct Token Tokenizer::advance_token() {
         if (value == "null") {
           kind = Literal;
           lit_kind = Null;
-          return Token(kind, std::make_unique<Metadata>(meta), value, lit_kind);
+          return Token(kind, meta, value, lit_kind);
         }
 
         if (value == "true" || value == "false") {
           kind = Literal;
           lit_kind = Bool;
-          return Token(kind, std::make_unique<Metadata>(meta), value, lit_kind);
+          return Token(kind, meta, value, lit_kind);
         }
-        return Token(kind, std::make_unique<Metadata>(meta), value);
+        return Token(kind, meta, value);
       }
       else if (isdigit(chr)) {
         kind = Literal;
@@ -189,22 +189,22 @@ struct Token Tokenizer::advance_token() {
           value.push_back(src[iter]);
           iter++;
         }
-        return Token(kind, std::make_unique<Metadata>(meta), value, lit_kind);
+        return Token(kind, meta, value, lit_kind);
       }
-      sc_panic("Unresolved sequence: " + std::string(1, chr), std::make_unique<Metadata>(meta));
+      sc_panic("Unresolved sequence: " + std::string(1, chr), meta);
       break;
   }
   iter++;
 
   if (!lit_kind && value.empty()) {
-    return Token(kind, std::make_unique<Metadata>(meta));
+    return Token(kind, meta);
   }
 
   if (!lit_kind) {
-    return Token(kind, std::make_unique<Metadata>(meta), value);
+    return Token(kind, meta, value);
   }
 
-  return Token(kind, std::make_unique<Metadata>(meta), value, lit_kind);
+  return Token(kind, meta, value, lit_kind);
 
 }
 

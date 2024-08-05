@@ -10,12 +10,6 @@
 #include "ast.h"
 #include "token.h"
 
-/// Stop the compiler and print an error message with optional diagnostics.
-/// @param m    The error message.
-/// @param data Metadata about the bad input.
-[[noreturn]]
-void sc_panic(const std::string m, std::unique_ptr<Metadata> data);
-
 /**
  * Print an error message and exit the program.
  * 
@@ -25,6 +19,12 @@ void sc_panic(const std::string m, std::unique_ptr<Metadata> data);
 [[noreturn]]
 void panic(const char *m, std::optional<const char *> arg);
 
+/// Stop the compiler and print an error message with optional diagnostics.
+/// @param m    The error message.
+/// @param data Metadata about the bad input.
+[[noreturn]]
+void sc_panic(const std::string m, const struct Metadata &data);
+
 /**
  * Print an error message regarding an expected token.
  * 
@@ -32,7 +32,7 @@ void panic(const char *m, std::optional<const char *> arg);
  * @param data     Metadata about the bad token.
  */
 [[noreturn]]
-void tokexp_panic(TokenKind expected, std::unique_ptr<Metadata> data);
+void tokexp_panic(TokenKind expected, const struct Metadata &data);
 
 /**
  * Print an error message regarding an unresolved symbol.
@@ -41,7 +41,7 @@ void tokexp_panic(TokenKind expected, std::unique_ptr<Metadata> data);
  * @param data Metadata about the bad token.
  */
 [[noreturn]]
-void symb_panic(std::string m, std::unique_ptr<Metadata> data);
+void symb_panic(std::string m, const struct Metadata &data);
 
 /**
  * Panic about an unresolved function identifier.
@@ -50,7 +50,7 @@ void symb_panic(std::string m, std::unique_ptr<Metadata> data);
  * @param data  Metadata about the bad token.
  */
 [[noreturn]]
-void symb_func_panic(const std::string &ident, std::unique_ptr<Metadata> data);
+void symb_func_panic(const std::string &ident, const struct Metadata &data);
 
 /**
  * Panic about an unresolved variable identifier.
@@ -59,7 +59,7 @@ void symb_func_panic(const std::string &ident, std::unique_ptr<Metadata> data);
  * @param data  Metadata about the bad token.
  */
 [[noreturn]]
-void symb_var_panic(const std::string &ident, std::unique_ptr<Metadata> data);
+void symb_var_panic(const std::string &ident, const struct Metadata &data);
 
 /**
  * Panic about a redefined symbol.
@@ -68,7 +68,7 @@ void symb_var_panic(const std::string &ident, std::unique_ptr<Metadata> data);
  * @param data  Metadata about the bad token.
  */
 [[noreturn]]
-void symb_decl_panic(const std::string &ident, std::unique_ptr<Metadata> data);
+void symb_decl_panic(const std::string &ident, const struct Metadata &data);
 
 
 /**
@@ -78,7 +78,7 @@ void symb_decl_panic(const std::string &ident, std::unique_ptr<Metadata> data);
  * @param data  Metadata about the bad token.
  */
 [[noreturn]]
-void symb_type_panic(const std::string &ident, std::unique_ptr<Metadata> data);
+void symb_type_panic(const std::string &ident, const struct Metadata &data);
 
 /**
  * Log an error message.

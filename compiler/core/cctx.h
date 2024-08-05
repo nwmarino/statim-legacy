@@ -50,16 +50,20 @@ class cctx {
     struct Token tk_next();
 
     /// Add a symbol to the symbol table.
-    void symb_add(const std::string &name, std::unique_ptr<Symbol> symbol);
+    void symb_add(const std::string &name, const struct Symbol &symbol);
 
     /// Get a symbol from the symbol table.
     [[nodiscard]]
-    std::unique_ptr<Symbol> symb_get(const std::string &name);
+    struct Symbol symb_get(const std::string &name);
+
+    /// Check if a symbol exists in the symbol table.
+    [[nodiscard]]
+    bool symb_exists(const std::string &name);
 
     /// Delete a symbol from the symbol table.
     bool symb_del(const std::string &name);
 
-    /// Check if a symbol is of a certain type.
+    /// Check if a symbol exists and is of a certain type.
     [[nodiscard]]
     bool symb_is(const std::string &name, SymbolType type);
 
