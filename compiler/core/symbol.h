@@ -4,7 +4,6 @@
 /// Symbols and the symbol table.
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
-#include <iostream>
 #include <map>
 #include <memory>
 #include <string>

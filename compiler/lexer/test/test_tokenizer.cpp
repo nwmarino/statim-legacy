@@ -1,15 +1,30 @@
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
+#include <iostream>
+#include <vector>
+
+#include "../../core/token.h"
 #include "../tokenizer.h"
 
-/// Test tokenizing a simple prototype.
 [[nodiscard]]
-bool test_prototype() {
-  std::string src = "fn main() -> int {}";
+bool test_return_zero() {
+  std::string src = "fn main() -> int { return 0; }";
   Tokenizer tokenizer(src, "main.statim", src.size());
 
-  const std::string expected = "2,2,6,7,32,2,4,5";
-  std::string actual;
+  std::vector<TokenKind> expected = {
+    Identifier,
+    Identifier,
+    OpenParen,
+    CloseParen,
+    Arrow,
+    Identifier,
+    OpenBrace,
+    Identifier,
+    Literal,
+    Semi,
+    CloseBrace
+  };
+  std::vector<TokenKind> actual;
 
   while (1) {
     Token token = tokenizer.advance_token();
@@ -17,7 +32,7 @@ bool test_prototype() {
       actual.resize(actual.size() - 1);
       break;
     }
-    actual += std::to_string(token.kind) + ",";
+    actual.push_back(token.kind);
   }
   return expected == actual;
 }
