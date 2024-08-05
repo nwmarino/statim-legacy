@@ -1,4 +1,6 @@
+/// Copyright 2024 Nick Marino (github.com/nwmarino)
 
+#include <iostream>
 #include <memory>
 #include <utility>
 
@@ -16,7 +18,17 @@ std::unique_ptr<Statement> parse_stmt(std::shared_ptr<cctx> ctx) {
 
   if (ctx->prev().kind == TokenKind::Identifier) {
     if (ctx->symb_is(ctx->prev().value, SymbolType::Keyword)) {
-      return parse_return_stmt(ctx);
+      KeywordType kw = ctx->symb_get(ctx->prev().value).keyword;
+      switch (kw) {
+        case KeywordType::Return:
+          return parse_return_stmt(ctx);
+        case KeywordType::Fix:
+          return parse_immut_decl(ctx);
+        case KeywordType::Let:
+          return parse_mut_decl(ctx);
+        default:
+          return warn_stmt("unknown keyword: " + ctx->prev().value);
+      }
     }
   }
 

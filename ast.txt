@@ -1,0 +1,13 @@
+main
+	args: 
+	ret: 'i32'
+
+assign
+	name: x
+	type: int
+	rval: 0 (int)
+
+return
+	var: x
+
+

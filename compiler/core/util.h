@@ -22,7 +22,7 @@ inline std::string read_to_str(const std::string &path) {
   std::string contents;
   std::string line;
   while (getline(file, line)) {
-    contents.append(line);
+    contents.append(line + '\n');
   }
 
   return contents;

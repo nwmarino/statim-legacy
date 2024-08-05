@@ -1,5 +1,6 @@
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
+#include <iostream>
 #include <memory>
 #include <utility>
 
@@ -78,7 +79,7 @@ std::unique_ptr<Expr> parse_identifier(std::shared_ptr<cctx> ctx) {
     return parse_function_call(ctx, ident);
   }
 
-  if (!ctx->symb_is(ident, SymbolType::Variable)) {
+  if (!ctx->symb_is(ident, SymbolType::Constant) && !ctx->symb_is(ident, SymbolType::Variable)) {
     symb_var_panic(ident, std::move(ctx->prev().meta));
   }
 
