@@ -74,6 +74,8 @@
         "variant": "cpp",
         "coroutine": "cpp",
         "*.inc": "cpp",
-        "typeindex": "cpp"
+        "typeindex": "cpp",
+        "bitset": "cpp",
+        "regex": "cpp"
     }
 }

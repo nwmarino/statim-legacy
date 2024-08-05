@@ -6,6 +6,7 @@
 #include <fstream>
 #include <string>
 
+#include "ast.h"
 #include "cctx.h"
 #include "logger.h"
 
@@ -41,12 +42,21 @@ inline void dump_tkstream(std::shared_ptr<cctx> ctx) {
   file << ctx->filename() << "\n\n";
 
   while (1) {
-    std::unique_ptr<Token> token = ctx->tk_next();
-    if (token->kind == TokenKind::Eof) {
+    struct Token token = ctx->tk_next();
+    if (token.kind == TokenKind::Eof) {
       break;
     }
-    file << token->to_str() << '\n';
+    file << token.to_str() << '\n';
   }
+
+  file.close();
+}
+
+/// Write an ast to a file.
+inline void write_ast(std::unique_ptr<ProgAST> ast) {
+  std::ofstream file("ast.txt");
+
+  file << ast->to_str();
 
   file.close();
 }

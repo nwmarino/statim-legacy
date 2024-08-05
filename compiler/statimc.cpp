@@ -6,15 +6,16 @@
 #include "core/cctx.h"
 #include "core/token.h"
 #include "core/util.h"
+#include "parser/parser.h"
 
 /// Consume and print out all tokens currently in a lexer stream.
 static void print_tkstream(std::shared_ptr<cctx> ctx) {
   while (1) {
-    std::unique_ptr<Token> token = ctx->tk_next();
-    if (token->kind == TokenKind::Eof) {
+    struct Token token = ctx->tk_next();
+    if (token.kind == TokenKind::Eof) {
       break;
     }
-    std::cout << token->to_str() << '\n';
+    std::cout << token.to_str() << '\n';
   }
 }
 
@@ -48,7 +49,9 @@ int main(int argc, char *argv[]) {
 
   std::shared_ptr<cctx> ctx = std::make_shared<cctx>(flags, input);
 
+  std::unique_ptr<ProgAST> prog = parse_prog(ctx);
+  write_ast(std::move(prog));
   //print_tkstream(ctx);
-  dump_tkstream(ctx);
+  //dump_tkstream(ctx);
   return 0;
 }

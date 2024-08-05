@@ -6,7 +6,6 @@
 
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "token.h"
@@ -42,13 +41,13 @@ class cctx {
   std::unique_ptr<SymTable> symb_table = std::make_unique<SymTable>();
 
   /// Previous token.
-  std::unique_ptr<Token> m_prev = std::make_unique<Token>(TokenKind::Eof);
+  struct Token m_prev;
 
   public:
     cctx(cflags flags, std::vector<cfile> input);
 
     /// Get the next token in the stream.
-    std::unique_ptr<Token> tk_next();
+    struct Token tk_next();
 
     /// Add a symbol to the symbol table.
     void symb_add(const std::string &name, std::unique_ptr<Symbol> symbol);
@@ -66,7 +65,7 @@ class cctx {
 
     /// Get the last token in the stream.
     [[nodiscard]]
-    inline std::unique_ptr<Token> prev() { return std::move(m_prev); }
+    inline struct Token prev() { return m_prev; }
   
     /// Get the current filename.
     [[nodiscard]]

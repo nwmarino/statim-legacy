@@ -12,13 +12,36 @@
 /// Main parser handling functions.
 /// For implementations, see compiler/parser/parser.cpp.
 
+[[nodiscard]]
+std::unique_ptr<ProgAST> parse_prog(std::shared_ptr<cctx> ctx);
+
 
 /// Declaration parsing functions.
 /// For implementations, see compiler/parser/decl.cpp.
 
-/// Parse a declaration.
+/// Parse a top level definition.
 [[nodiscard]]
-std::unique_ptr<FunctionAST> parse_decl(std::shared_ptr<cctx> ctx);
+std::unique_ptr<FunctionAST> parse_toplevel_definition(std::shared_ptr<cctx> ctx);
+
+/// Parse a function definition.
+[[nodiscard]]
+std::unique_ptr<FunctionAST> parse_definition(std::shared_ptr<cctx> ctx);
+
+/// Parse a function prototype.
+[[nodiscard]]
+std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx);
+
+/// Parse a variable declaration.
+[[nodiscard]]
+std::unique_ptr<Statement> parse_var_decl(std::shared_ptr<cctx> ctx);
+
+/// Parse a immutable variable declaration.
+[[nodiscard]]
+std::unique_ptr<Statement> parse_immut_decl(std::shared_ptr<cctx> ctx);
+
+/// Parse a mutable variable declaration.
+[[nodiscard]]
+std::unique_ptr<Statement> parse_mut_decl(std::shared_ptr<cctx> ctx);
 
 
 /// Expression parsing functions.

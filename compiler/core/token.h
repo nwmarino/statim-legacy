@@ -150,6 +150,10 @@ struct Metadata {
   /// Constructor for basic token metadata.
   inline Metadata(const std::string &filename, const std::size_t line_n)
     : filename(filename), line_n(line_n) {};
+
+  /// Copy constructor.
+  inline Metadata(const Metadata &meta)
+    : filename(meta.filename), line_n(meta.line_n) {};
 };
 
 /// A token representing a single lexeme.
@@ -173,6 +177,20 @@ struct Token {
   inline Token(TokenKind kind, std::unique_ptr<Metadata> meta, const std::string value, LiteralKind lit_kind)
     : kind(kind), meta(std::move(meta)), value(value), lit_kind(lit_kind) {};
 
+  /// Copy constructor.
+  inline Token(const Token &token)
+    : kind(token.kind), meta(std::make_unique<Metadata>(*token.meta)), value(token.value), lit_kind(token.lit_kind) {};
+
+  /// Assignment operator.
+  inline Token &operator=(const Token &token) {
+    kind = token.kind;
+    meta = std::make_unique<Metadata>(*token.meta);
+    value = token.value;
+    lit_kind = token.lit_kind;
+    return *this;
+  }
+
+
   [[nodiscard]]
   inline const bool is_ident() { return kind == Identifier; };
 
@@ -186,7 +204,43 @@ struct Token {
   inline const bool is_eof() { return kind == Eof; };
 
   [[nodiscard]]
-  std::string to_str() const;
+  std::string to_str();
 };
+
+// An enum of recognized keywords.
+typedef enum KeywordType {
+  /// fn
+  Fn,
+
+  /// let
+  Let,
+
+  /// fix
+  Fix,
+
+  /// if
+  If,
+
+  /// else
+  Else,
+
+  /// while
+  While,
+
+  /// for
+  For,
+
+  /// return
+  Return,
+
+  /// break
+  Break,
+
+  /// continue
+  Continue,
+
+  /// match
+  Match
+} KeywordType;
 
 #endif  // STATIMC_TOKEN_H

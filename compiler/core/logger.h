@@ -62,6 +62,25 @@ void symb_func_panic(const std::string &ident, std::unique_ptr<Metadata> data);
 void symb_var_panic(const std::string &ident, std::unique_ptr<Metadata> data);
 
 /**
+ * Panic about a redefined symbol.
+ * 
+ * @param ident The identifier.
+ * @param data  Metadata about the bad token.
+ */
+[[noreturn]]
+void symb_decl_panic(const std::string &ident, std::unique_ptr<Metadata> data);
+
+
+/**
+ * Panic about an undeclared type.
+ * 
+ * @param ident The type name.
+ * @param data  Metadata about the bad token.
+ */
+[[noreturn]]
+void symb_type_panic(const std::string &ident, std::unique_ptr<Metadata> data);
+
+/**
  * Log an error message.
  * 
  * @param m The error message.
@@ -92,5 +111,13 @@ std::unique_ptr<PrototypeAST> warn_proto(std::string m);
  * @return  nullptr
  */
 std::unique_ptr<Statement> warn_stmt(std::string m);
+
+/**
+ * Log an error message for an uninitialized constant.
+ * 
+ * @param m The error message.
+ * @return  nullptr
+ */
+std::unique_ptr<Statement> warn_const(std::string m);
 
 #endif  // STATIMC_LOGGER_H

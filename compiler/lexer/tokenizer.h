@@ -39,7 +39,7 @@ class Tokenizer {
     Tokenizer(const std::string src, const std::string filename, const std::size_t len);
 
     /// Get the next token in the stream.
-    Token advance_token();
+    struct Token advance_token();
 
     [[nodiscard]]
     inline const std::string to_str();

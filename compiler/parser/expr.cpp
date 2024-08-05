@@ -39,7 +39,7 @@ std::unique_ptr<Expr> parse_expr(std::shared_ptr<cctx> ctx) {
 }
 
 std::unique_ptr<Expr> parse_primary(std::shared_ptr<cctx> ctx) {
-  switch (ctx->prev()->lit_kind) {
+  switch (ctx->prev().lit_kind) {
     case LiteralKind::Integer:
     case LiteralKind::Float:
       return parse_numerical(ctx);
@@ -61,34 +61,33 @@ std::unique_ptr<Expr> parse_primary(std::shared_ptr<cctx> ctx) {
       return std::make_unique<NullExpr>();
   }
   
-  if (ctx->prev()->kind == TokenKind::Identifier) {
+  if (ctx->prev().kind == TokenKind::Identifier) {
     return parse_identifier(ctx);
   }
 
-  warn_expr("unknown primary expression kind: " + std::to_string(ctx->prev()->lit_kind));
-  return nullptr;
+  return warn_expr("unknown primary expression kind: " + std::to_string(ctx->prev().lit_kind));
 }
 
 std::unique_ptr<Expr> parse_identifier(std::shared_ptr<cctx> ctx) {
-  const std::string ident = ctx->prev()->value;
+  const std::string ident = ctx->prev().value;
 
   // eat the identifier token
   ctx->tk_next();
 
-  if (ctx->prev()->kind == TokenKind::OpenParen) {
+  if (ctx->prev().kind == TokenKind::OpenParen) {
     return parse_function_call(ctx, ident);
   }
 
   if (!ctx->symb_is(ident, SymbolType::Variable)) {
-    symb_var_panic(ident, std::move(ctx->prev()->meta));
+    symb_var_panic(ident, std::move(ctx->prev().meta));
   }
 
   return std::make_unique<VariableExpr>(ident);
 }
 
 std::unique_ptr<Expr> parse_numerical(std::shared_ptr<cctx> ctx) {
-  LiteralKind kind = ctx->prev()->lit_kind;
-  std::string value = ctx->prev()->value;
+  LiteralKind kind = ctx->prev().lit_kind;
+  std::string value = ctx->prev().value;
 
   // eat the literal token
   ctx->tk_next();
@@ -98,16 +97,15 @@ std::unique_ptr<Expr> parse_numerical(std::shared_ptr<cctx> ctx) {
   if (kind == LiteralKind::Float)
     return std::make_unique<FloatingPointExpr>(std::stod(value));
 
-  warn_expr("unknown literal kind: " + std::to_string(kind));
-  return nullptr;
+  return warn_expr("unknown literal kind: " + std::to_string(kind));
 }
 
 std::unique_ptr<Expr> parse_boolean(std::shared_ptr<cctx> ctx) {
-  std::string value = ctx->prev()->value;
+  std::string value = ctx->prev().value;
 
   // check bad token
   if (value != "true" && value != "false") {
-    sc_panic("invalid boolean token: " + value, std::move(ctx->prev()->meta));
+    sc_panic("invalid boolean token: " + value, std::move(ctx->prev().meta));
   }
 
   // eat the bool token
@@ -117,7 +115,7 @@ std::unique_ptr<Expr> parse_boolean(std::shared_ptr<cctx> ctx) {
 }
 
 std::unique_ptr<Expr> parse_character(std::shared_ptr<cctx> ctx) {
-  char value = ctx->prev()->value[0];
+  char value = ctx->prev().value[0];
 
   // eat the char token
   ctx->tk_next();
@@ -126,7 +124,7 @@ std::unique_ptr<Expr> parse_character(std::shared_ptr<cctx> ctx) {
 }
 
 std::unique_ptr<Expr> parse_byte(std::shared_ptr<cctx> ctx) {
-  char value = ctx->prev()->value[0];
+  char value = ctx->prev().value[0];
 
   // eat the byte token
   ctx->tk_next();
@@ -135,7 +133,7 @@ std::unique_ptr<Expr> parse_byte(std::shared_ptr<cctx> ctx) {
 }
 
 std::unique_ptr<Expr> parse_string(std::shared_ptr<cctx> ctx) {
-  std::string value = ctx->prev()->value;
+  std::string value = ctx->prev().value;
 
   // eat the string token
   ctx->tk_next();
@@ -144,7 +142,7 @@ std::unique_ptr<Expr> parse_string(std::shared_ptr<cctx> ctx) {
 }
 
 std::unique_ptr<Expr> parse_bytestring(std::shared_ptr<cctx> ctx) {
-  std::string value = ctx->prev()->value;
+  std::string value = ctx->prev().value;
 
   // eat the bytestring token
   ctx->tk_next();
@@ -154,12 +152,12 @@ std::unique_ptr<Expr> parse_bytestring(std::shared_ptr<cctx> ctx) {
 
 std::unique_ptr<Expr> parse_binop(std::shared_ptr<cctx> ctx, std::unique_ptr<Expr> lhs, int precedence) {
   while (true) {
-    int token_prec = get_precedence(ctx->prev()->kind);
+    int token_prec = get_precedence(ctx->prev().kind);
 
     if (token_prec < precedence)
       return lhs;
 
-    TokenKind op_kind = ctx->prev()->kind;
+    TokenKind op_kind = ctx->prev().kind;
 
     // eat operator
     ctx->tk_next();
@@ -168,7 +166,7 @@ std::unique_ptr<Expr> parse_binop(std::shared_ptr<cctx> ctx, std::unique_ptr<Exp
     if (!rhs)
       return nullptr;
 
-    int next_prec = get_precedence(ctx->prev()->kind);
+    int next_prec = get_precedence(ctx->prev().kind);
     if (token_prec < next_prec) {
       rhs = parse_binop(ctx, std::move(rhs), token_prec + 1);
       if (!rhs)
@@ -182,7 +180,7 @@ std::unique_ptr<Expr> parse_binop(std::shared_ptr<cctx> ctx, std::unique_ptr<Exp
 std::unique_ptr<Expr> parse_function_call(std::shared_ptr<cctx> ctx, const std::string ident) {
   // verify that ident is a parsed function
   if (ctx->symb_is(ident, SymbolType::Function)) {
-    symb_func_panic(ident, std::move(ctx->prev()->meta));
+    symb_func_panic(ident, std::move(ctx->prev().meta));
   }
 
   // eat the open paren token
@@ -190,12 +188,12 @@ std::unique_ptr<Expr> parse_function_call(std::shared_ptr<cctx> ctx, const std::
 
   // parse call arguments
   std::vector<std::unique_ptr<Expr>> args;
-  while (ctx->prev()->kind != TokenKind::CloseParen) {
+  while (ctx->prev().kind != TokenKind::CloseParen) {
     if (std::unique_ptr<Expr> arg = parse_expr(ctx))
       args.push_back(std::move(arg));
 
-    if (ctx->prev()->kind != TokenKind::Comma)
-      tokexp_panic(TokenKind::Comma, std::move(ctx->prev()->meta));
+    if (ctx->prev().kind != TokenKind::Comma)
+      tokexp_panic(TokenKind::Comma, std::move(ctx->prev().meta));
 
     // eat arg separator
     ctx->tk_next(); 

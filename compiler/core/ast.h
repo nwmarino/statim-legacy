@@ -8,34 +8,25 @@
 #include <memory>
 #include <utility>
 
-/// An enumeration of all possible function return types.
-typedef
-enum {
-  RT_VOID,
-  RT_INT,
-  RT_FLOAT,
-  RT_BOOL,
-  RT_CHAR,
-  RT_STRING
-} RetType;
-
-
 /// An abstract syntax tree node.
 class AST {
   public:
     virtual ~AST() = default;
-};
-
-/// An expression.
-class Expr : public AST {
-  public:
-    virtual ~Expr() = default;
+    const virtual std::string to_str() = 0;
 };
 
 /// A statement.
 class Statement : public AST {
   public:
     virtual ~Statement() = default;
+    const virtual std::string to_str() = 0;
+};
+
+/// An expression (or statement ending with semi).
+class Expr : public Statement {
+  public:
+    virtual ~Expr() = default;
+    const virtual std::string to_str() = 0;
 };
 
 /// Compound statements.
@@ -44,6 +35,7 @@ class CompoundStatement : public Statement {
 
   public:
     CompoundStatement(std::vector<std::unique_ptr<Statement>> stmts) : stmts(std::move(stmts)) {};
+    const std::string to_str();
 };
 
 /// Return statements.
@@ -52,42 +44,21 @@ class ReturnStatement : public Statement {
 
   public:
     ReturnStatement(std::unique_ptr<Expr> expr) : expr(std::move(expr)) {};
+    const std::string to_str();
 };
 
-/// If statements.
-class IfStatement : public Statement {
-  std::unique_ptr<Expr> cond;
-  std::unique_ptr<Statement> then_b, else_b;
-
-  public:
-    IfStatement(std::unique_ptr<Expr> cond, std::unique_ptr<Statement> then_b, std::unique_ptr<Statement> else_b)
-      : cond(std::move(cond)), then_b(std::move(then_b)), else_b(std::move(else_b)) {};
-};
-
-/// While statements.
-class WhileStatement : public Statement {
-  std::unique_ptr<Expr> cond;
-  std::unique_ptr<Statement> body;
-
-  public:
-    WhileStatement(std::unique_ptr<Expr> cond, std::unique_ptr<Statement> body)
-      : cond(std::move(cond)), body(std::move(body)) {};
-};
-
-/// Break statements.
-class BreakStatement : public Statement {
-  public:
-    BreakStatement() {};
-};
-
-/// Match statements.
-class MatchStatement : public Statement {
+/// Variable declaration.
+///
+/// `fix x: int = 0`, `let y: int = 1`
+class AssignmentStatement : public Statement {
+  const std::string ident;
+  const std::string ty;
   std::unique_ptr<Expr> expr;
-  std::vector<std::pair<std::unique_ptr<Expr>, std::unique_ptr<Statement>>> cases;
 
   public:
-    MatchStatement(std::unique_ptr<Expr> expr, std::vector<std::pair<std::unique_ptr<Expr>, std::unique_ptr<Statement>>> cases)
-      : expr(std::move(expr)), cases(std::move(cases)) {};
+    AssignmentStatement(const std::string &ident, const std::string &ty, std::unique_ptr<Expr> expr)
+      : ident(ident), ty(ty), expr(std::move(expr)) {};
+    const std::string to_str();
 };
 
 /// Variable expression.
@@ -98,6 +69,7 @@ class VariableExpr : public Expr {
 
   public:
     VariableExpr(const std::string &ident) : ident(ident) {};
+    const std::string to_str();
 };
 
 /// Null literal expressions.
@@ -106,6 +78,7 @@ class VariableExpr : public Expr {
 class NullExpr : public Expr {
   public:
     NullExpr() {};
+    const std::string to_str();
 };
 
 /// Boolean literal expressions.
@@ -116,6 +89,7 @@ class BoolExpr : public Expr {
 
   public:
     BoolExpr(bool value) : value(value) {};
+    const std::string to_str();
 };
 
 /// Integer literal expressions.
@@ -126,6 +100,7 @@ class IntegerExpr : public Expr {
 
   public:
     IntegerExpr(int value) : value(value) {};
+    const std::string to_str();
 };
 
 /// Floating point literal expressions.
@@ -136,6 +111,7 @@ class FloatingPointExpr : public Expr {
 
   public:
     FloatingPointExpr(double value) : value(value) {};
+    const std::string to_str();
 };
 
 /// Character literal expressions.
@@ -146,6 +122,7 @@ class CharExpr : public Expr {
 
   public:
     CharExpr(char value) : value(value) {};
+    const std::string to_str();
 };
 
 /// String literal expressions.
@@ -156,6 +133,7 @@ class StringExpr : public Expr {
 
   public:
     StringExpr(const std::string &value) : value(value) {};
+    const std::string to_str();
 };
 
 /// Byte literal expressions.
@@ -166,6 +144,7 @@ class ByteExpr : public Expr {
 
   public:
     ByteExpr(char value) : value(value) {};
+    const std::string to_str();
 };
 
 /// Byte string literal expressions.
@@ -176,6 +155,7 @@ class ByteStringExpr : public Expr {
 
   public:
     ByteStringExpr(const std::string &value) : value(value) {};
+    const std::string to_str();
 };
 
 /// Binary operation expressions.
@@ -188,6 +168,7 @@ class BinaryExpr : public Expr {
   public:
     BinaryExpr(char op, std::unique_ptr<Expr> left_child, std::unique_ptr<Expr> right_child)
       : op(op), left_child(std::move(left_child)), right_child(std::move(right_child)) {};
+    const std::string to_str();
 };
 
 /// Function call expressions;
@@ -200,6 +181,7 @@ class FunctionCallExpr : public Expr {
   public:
     FunctionCallExpr(const std::string &callee, std::vector<std::unique_ptr<Expr>> args)
       : callee(callee), args(std::move(args)) {};
+    const std::string to_str();
 };
 
 /// Functions prototypes.
@@ -210,6 +192,7 @@ class PrototypeAST : public AST {
   public:
     PrototypeAST(const std::string &name, std::vector<std::string> args)
       : name(name), args(std::move(args)) {};
+    const std::string to_str();
 };
 
 /// Function definitions.
@@ -220,6 +203,16 @@ class FunctionAST : public AST {
   public:
     FunctionAST(std::unique_ptr<PrototypeAST> head, std::unique_ptr<Statement> body)
       : head(std::move(head)), body(std::move(body)) {};
+    const std::string to_str();
+};
+
+/// A program (list of definitions).
+class ProgAST : public AST {
+  std::vector<std::unique_ptr<FunctionAST>> defs;
+
+  public:
+    ProgAST(std::vector<std::unique_ptr<FunctionAST>> defs) : defs(std::move(defs)) {};
+    const std::string to_str();
 };
 
 #endif  // STATIMC_AST_H

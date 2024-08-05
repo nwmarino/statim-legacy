@@ -10,15 +10,15 @@
 Tokenizer::Tokenizer(const std::string src, const std::string filename, std::size_t len)
   : src(src), filename(filename), len(len), prev('\0'), iter(0), line(1) {};
 
-Token Tokenizer::advance_token() {
-  if (iter >= len) {
-    return Token(TokenKind::Eof);
-  }
-
-  TokenKind kind;
+struct Token Tokenizer::advance_token() {
+  TokenKind kind = Eof;
   Metadata meta(filename, line);
   std::string value;
   LiteralKind lit_kind;
+
+  if (iter >= len) {
+    return Token(TokenKind::Eof, std::make_unique<Metadata>(meta));
+  }
 
   const char chr = src[iter];
   switch (chr)
@@ -232,7 +232,7 @@ inline const bool Tokenizer::is_eof() {
   return prev == '\0';
 }
 
-std::string Token::to_str() const {
+std::string Token::to_str() {
   switch (kind)
   {
     case LineComment: return "LineComment: " + value;
