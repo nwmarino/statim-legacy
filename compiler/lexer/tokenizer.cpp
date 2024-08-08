@@ -1,6 +1,7 @@
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #include <cstdio>
+#include <iostream>
 #include <string>
 
 #include "../core/logger.h"
@@ -8,11 +9,11 @@
 #include "tokenizer.h"
 
 Tokenizer::Tokenizer(const std::string src, const std::string filename, std::size_t len)
-  : src(src), filename(filename), len(len), prev('\0'), iter(0), line(1) {};
+  : src(src), filename(filename), len(len), prev('\0'), iter(0), line(1), col(1) {};
 
 const struct Token Tokenizer::advance_token() {
   TokenKind kind = Eof;
-  Metadata meta(filename, line);
+  Metadata meta(filename, line, col);
   std::string value;
   LiteralKind lit_kind;
 
@@ -28,8 +29,10 @@ const struct Token Tokenizer::advance_token() {
     case '\t':
     case '\n':
       iter++;
+      col++;
       if (chr == '\n') {
         line++;
+        col = 1;
       }
       return advance_token();
 
@@ -38,11 +41,13 @@ const struct Token Tokenizer::advance_token() {
       if (peek() == '/') {
         while (src[iter] != '\n') {
           iter++;
+          col++;
         }
         return advance_token();
       } else if (peek() == '*') {
         while (iter < len && src[iter] != '*' && peek() != '/') {
           iter++;
+          col++;
         }
         return advance_token();
       }
@@ -54,6 +59,7 @@ const struct Token Tokenizer::advance_token() {
       if (peek() == '>') {
         kind = Arrow;
         iter++;
+        col++;
       }
       break;
     
@@ -62,6 +68,7 @@ const struct Token Tokenizer::advance_token() {
       kind = Literal;
       lit_kind = Char;
       iter++;
+      col++;
 
       value = src[iter];
 
@@ -70,6 +77,7 @@ const struct Token Tokenizer::advance_token() {
       }
 
       iter++;
+      col++;
       break;
 
     /// String literals.
@@ -80,6 +88,7 @@ const struct Token Tokenizer::advance_token() {
       while (peek() != '"') {
         value.push_back(src[iter]);
         iter++;
+        col++;
       }
       break;
 
@@ -92,6 +101,7 @@ const struct Token Tokenizer::advance_token() {
         }
         kind = Range;
         iter += 3;
+        col += 3;
       }
       kind = Dot;
       break;
@@ -105,6 +115,7 @@ const struct Token Tokenizer::advance_token() {
 
       kind = (peek() == '>') ? FatArrow : EqEq;
       iter++;
+      col++;
       break;
 
     /// One-character tokens.
@@ -135,6 +146,7 @@ const struct Token Tokenizer::advance_token() {
         lit_kind = Byte;
 
         iter++;
+        col++;
         value = src[iter];
 
         if (peek() != '\'') {
@@ -142,6 +154,7 @@ const struct Token Tokenizer::advance_token() {
         }
 
         iter++;
+        col++;
         break;
 
       } else if (peek() == '"') {
@@ -151,6 +164,7 @@ const struct Token Tokenizer::advance_token() {
         while (peek() != '"') {
           value.push_back(src[iter]);
           iter++;
+          col++;
         }
         break;
       }
@@ -163,6 +177,7 @@ const struct Token Tokenizer::advance_token() {
         while (isalnum(src[iter]) || src[iter] == '_') {
           value.push_back(src[iter]);
           iter++;
+          col++;
         }
 
         if (value == "null") {
@@ -188,6 +203,7 @@ const struct Token Tokenizer::advance_token() {
           }
           value.push_back(src[iter]);
           iter++;
+          col++;
         }
         return Token(kind, meta, value, lit_kind);
       }
@@ -195,6 +211,7 @@ const struct Token Tokenizer::advance_token() {
       break;
   }
   iter++;
+  col++;
 
   if (!lit_kind && value.empty()) {
     return Token(kind, meta);

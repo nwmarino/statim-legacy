@@ -18,14 +18,14 @@ void panic(const char *m, std::optional<const char *> arg) {
 
 void sc_panic(const std::string m, const struct Metadata &data) {
   fprintf(stderr, "statimc: %s\n", m.c_str());
-  fprintf(stderr, "See: %s:%zu\n", data.filename.c_str(), data.line_n);
+  fprintf(stderr, "see: %s:%zu:%zu\n", data.filename.c_str(), data.line_n, data.col_n);
   exit(1);
 }
 
 
-void tokexp_panic(TokenKind expected, const struct Metadata &data) {
-  fprintf(stderr, "statimc: expected token %d\n", expected);
-  fprintf(stderr, "See: %s:%zu\n", data.filename.c_str(), data.line_n);
+void tokexp_panic(const std::string &expected, const struct Metadata &data){
+  fprintf(stderr, "statimc: expected token %s\n", expected.c_str());
+  fprintf(stderr, "see: %s:%zu:%zu\n", data.filename.c_str(), data.line_n, data.col_n);
   exit(1);
 }
 
@@ -38,28 +38,28 @@ void symb_panic(std::string m, const struct Metadata &data) {
 
 void symb_func_panic(const std::string &ident, const struct Metadata &data) {
   fprintf(stderr, "statimc: unresolved function identifier %s\n", ident.c_str());
-  fprintf(stderr, "See: %s:%zu\n", data.filename.c_str(), data.line_n);
+  fprintf(stderr, "see: %s:%zu:%zu\n", data.filename.c_str(), data.line_n, data.col_n);
   exit(1);
 }
 
 
 void symb_var_panic(const std::string &ident, const struct Metadata &data) {
   fprintf(stderr, "statimc: unresolved variable identifier %s\n", ident.c_str());
-  fprintf(stderr, "See: %s:%zu\n", data.filename.c_str(), data.line_n);
+  fprintf(stderr, "see: %s:%zu:%zu\n", data.filename.c_str(), data.line_n, data.col_n);
   exit(1);
 }
 
 
 void symb_decl_panic(const std::string &ident, const struct Metadata &data) {
   fprintf(stderr, "statimc: identifier already exists in this scope: %s\n", ident.c_str());
-  fprintf(stderr, "See: %s:%zu\n", data.filename.c_str(), data.line_n);
+  fprintf(stderr, "see: %s:%zu:%zu\n", data.filename.c_str(), data.line_n, data.col_n);
   exit(1);
 }
 
 
 void symb_type_panic(const std::string &ident, const struct Metadata &data) {
   fprintf(stderr, "statimc: undeclared type: %s\n", ident.c_str());
-  fprintf(stderr, "See: %s:%zu\n", data.filename.c_str(), data.line_n);
+  fprintf(stderr, "see: %s:%zu:%zu\n", data.filename.c_str(), data.line_n, data.col_n);
   exit(1);
 }
 

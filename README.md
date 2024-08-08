@@ -21,7 +21,7 @@
 
 `char` single character type.
 
-`fp` floating point value type.
+`float` floating point value type.
 
 `double` double value type.
 
@@ -174,33 +174,19 @@ else {
 Switch statements,
 
 ```c
-switch expression {
-  case expression:
-    ...
-    break;
-  case expression:
-    ...
-    break;
-  default:
-    ...
-    break;
+match expression {
+  x => ...;
+  y => ...;
+  z => ...;
 }
 ```
 
 ### Loops
 
-While loops,
-
-```c
-while (expression) {
-  ...
-}
-```
-
 For loops,
 
 ```c
-for (start, stop, step) {
+for start, stop, step {
   ...
 }
 ```
@@ -211,7 +197,7 @@ Special "until" loops,
 > the condition.
 
 ```c
-until (expression) {
+until expression {
   ...
 }
 ```

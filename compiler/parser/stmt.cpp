@@ -46,7 +46,7 @@ std::unique_ptr<Statement> parse_compound_stmt(std::shared_ptr<cctx> ctx) {
     }
 
     if (ctx->prev().kind != TokenKind::Semi) {
-      tokexp_panic(TokenKind::Semi, std::move(ctx->prev().meta));
+      tokexp_panic("';'", std::move(ctx->prev().meta));
     }
 
     // eat semi

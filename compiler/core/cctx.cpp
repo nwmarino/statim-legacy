@@ -15,15 +15,37 @@ cctx::cctx(cflags flags, std::vector<cfile> input) : flags(flags), input(input),
   // add primitive types to the symbol table
   symb_add("bool", Symbol(SymbolType::Ty));
   symb_add("i32", Symbol(SymbolType::Ty));
+  symb_add("u32", Symbol(SymbolType::Ty));
   symb_add("i64", Symbol(SymbolType::Ty));
+  symb_add("u64", Symbol(SymbolType::Ty));
+  symb_add("float", Symbol(SymbolType::Ty));
+  symb_add("char", Symbol(SymbolType::Ty));
+  symb_add("byte", Symbol(SymbolType::Ty));
 
   // add keywords to the symbol table
-  symb_add("fn", Symbol(KeywordType::Fn));
-  symb_add("let", Symbol(KeywordType::Let));
-  symb_add("fix", Symbol(KeywordType::Fix));
-  symb_add("if", Symbol(KeywordType::If));
+  symb_add("abstract", Symbol(KeywordType::Abstract));
+  symb_add("bind", Symbol(KeywordType::Bind));
+  symb_add("break", Symbol(KeywordType::Break));
+  symb_add("continue", Symbol(KeywordType::Continue));
   symb_add("else", Symbol(KeywordType::Else));
+  symb_add("enum", Symbol(KeywordType::Enum));
+  symb_add("extern", Symbol(KeywordType::Extern));
+  symb_add("false", Symbol(KeywordType::False));
+  symb_add("fix", Symbol(KeywordType::Fix));
+  symb_add("fn", Symbol(KeywordType::Fn));
+  symb_add("for", Symbol(KeywordType::For));
+  symb_add("if", Symbol(KeywordType::If));
+  symb_add("impl", Symbol(KeywordType::Impl));
+  symb_add("let", Symbol(KeywordType::Let));
+  symb_add("match", Symbol(KeywordType::Match));
+  symb_add("pkg", Symbol(KeywordType::Pkg));
+  symb_add("protect", Symbol(KeywordType::Protect));
   symb_add("return", Symbol(KeywordType::Return));
+  symb_add("struct", Symbol(KeywordType::Struct));
+  symb_add("true", Symbol(KeywordType::True));
+  symb_add("union", Symbol(KeywordType::Union));
+  symb_add("until", Symbol(KeywordType::Until));
+  symb_add("use", Symbol(KeywordType::Use));
 }
 
 struct Token cctx::tk_next() {

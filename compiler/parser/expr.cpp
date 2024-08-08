@@ -194,7 +194,7 @@ std::unique_ptr<Expr> parse_function_call(std::shared_ptr<cctx> ctx, const std::
       args.push_back(std::move(arg));
 
     if (ctx->prev().kind != TokenKind::Comma)
-      tokexp_panic(TokenKind::Comma, std::move(ctx->prev().meta));
+      tokexp_panic("','", std::move(ctx->prev().meta));
 
     // eat arg separator
     ctx->tk_next(); 

@@ -19,7 +19,7 @@ std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx) {
   ctx->tk_next();
 
   if (ctx->prev().kind != TokenKind::OpenParen) {
-    tokexp_panic(TokenKind::OpenParen, ctx->prev().meta);
+    tokexp_panic("'('", ctx->prev().meta);
   }
 
   // eat open parentheses
@@ -34,21 +34,21 @@ std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx) {
   }
 
   if (ctx->prev().kind != TokenKind::CloseParen) {
-    tokexp_panic(TokenKind::CloseParen, ctx->prev().meta);
+    tokexp_panic("')'", ctx->prev().meta);
   }
 
   // eat close parentheses
   ctx->tk_next();
 
   if (ctx->prev().kind != TokenKind::Arrow) {
-    tokexp_panic(TokenKind::Arrow, ctx->prev().meta);
+    tokexp_panic("'->'", ctx->prev().meta);
   }
 
   // eat arrow
   ctx->tk_next();
 
   if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic(TokenKind::Identifier, ctx->prev().meta);
+    tokexp_panic("identifier", ctx->prev().meta);
   }
 
   const std::string ret_ty = ctx->prev().value;
@@ -77,7 +77,7 @@ std::unique_ptr<FunctionAST> parse_definition(std::shared_ptr<cctx> ctx) {
   ctx->tk_next();
 
   if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic(TokenKind::Identifier, ctx->prev().meta);
+    tokexp_panic("identifier", ctx->prev().meta);
   }
 
   std::unique_ptr<PrototypeAST> head = parse_prototype(ctx);
@@ -114,7 +114,7 @@ std::unique_ptr<Statement> parse_immut_decl(std::shared_ptr<cctx> ctx) {
 
   // expect identifier to proceed fix keyword
   if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic(TokenKind::Identifier, ctx->prev().meta);
+    tokexp_panic("identifier", ctx->prev().meta);
   }
 
   // check variable value does not yet exist
@@ -132,7 +132,7 @@ std::unique_ptr<Statement> parse_immut_decl(std::shared_ptr<cctx> ctx) {
 
   // expect type separator
   if (ctx->prev().kind != TokenKind::Colon) {
-    tokexp_panic(TokenKind::Colon, ctx->prev().meta);
+    tokexp_panic("':'", ctx->prev().meta);
   }
 
   // eat the colon
@@ -141,7 +141,7 @@ std::unique_ptr<Statement> parse_immut_decl(std::shared_ptr<cctx> ctx) {
   // parse the type
   const std::string ty = ctx->prev().value;
   if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic(TokenKind::Identifier, ctx->prev().meta);
+    tokexp_panic("identifier", ctx->prev().meta);
   }
 
   /* no types as of yet
@@ -158,7 +158,7 @@ std::unique_ptr<Statement> parse_immut_decl(std::shared_ptr<cctx> ctx) {
 
   // expect assignment operator
   if (ctx->prev().kind != TokenKind::Eq) {
-    tokexp_panic(TokenKind::Eq, ctx->prev().meta);
+    tokexp_panic("'='", ctx->prev().meta);
   }
 
   // eat the assignment operator
@@ -180,7 +180,7 @@ std::unique_ptr<Statement> parse_mut_decl(std::shared_ptr<cctx> ctx) {
 
   // expect identifier to proceed let keyword
   if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic(TokenKind::Identifier, ctx->prev().meta);
+    tokexp_panic("identifier", ctx->prev().meta);
   }
 
   // check variable value does not yet exist
@@ -197,7 +197,7 @@ std::unique_ptr<Statement> parse_mut_decl(std::shared_ptr<cctx> ctx) {
 
   // expect type separator
   if (ctx->prev().kind != TokenKind::Colon) {
-    tokexp_panic(TokenKind::Colon, ctx->prev().meta);
+    tokexp_panic("':'", ctx->prev().meta);
   }
 
   // eat the colon
@@ -206,28 +206,31 @@ std::unique_ptr<Statement> parse_mut_decl(std::shared_ptr<cctx> ctx) {
   // parse the type
   const std::string ty = ctx->prev().value;
   if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic(TokenKind::Identifier, ctx->prev().meta);
+    tokexp_panic("identifier", ctx->prev().meta);
   }
-
-  /* no types as of yet
-
-  // check type exists
-  if (!ctx->symb_get(ty)) {
-    symb_type_panic(ty, std::move(ctx->prev()->meta));
-  }
-  
-  */
 
   // eat the type decl
   ctx->tk_next();
 
+  // if no declaration
+  if (ctx->prev().kind == TokenKind::Semi) {
+    ctx->symb_add(name, Symbol(SymbolType::Variable, meta));
+    return std::make_unique<AssignmentStatement>(name, ty, nullptr);
+  }
+
   // expect assignment operator
   if (ctx->prev().kind != TokenKind::Eq) {
-    tokexp_panic(TokenKind::Eq, ctx->prev().meta);
+    tokexp_panic("'='", ctx->prev().meta);
   }
 
   // eat the assignment operator
   ctx->tk_next();
+
+  // parse the required expression
+  if (std::unique_ptr<Expr> expr = parse_expr(ctx)) {
+    ctx->symb_add(name, Symbol(SymbolType::Variable, meta));
+    return std::make_unique<AssignmentStatement>(name, ty, std::move(expr));
+  }
 
   return nullptr;
 }

@@ -32,7 +32,7 @@ void sc_panic(const std::string m, const struct Metadata &data);
  * @param data     Metadata about the bad token.
  */
 [[noreturn]]
-void tokexp_panic(TokenKind expected, const struct Metadata &data);
+void tokexp_panic(const std::string &expected, const struct Metadata &data);
 
 /**
  * Print an error message regarding an unresolved symbol.

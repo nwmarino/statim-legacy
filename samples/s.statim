@@ -1,0 +1,7 @@
+fn main() -> i32 {
+  fix x: i32 = 0;
+  let y: i32 = 1;
+  let z: bool;
+  let h: i61;
+  return x;
+}

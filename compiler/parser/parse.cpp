@@ -21,7 +21,6 @@ std::unique_ptr<ProgAST> parse_prog(std::shared_ptr<cctx> ctx) {
     }
 
     if (std::unique_ptr<FunctionAST> func = parse_definition(ctx)) {
-      std::cout << "parsed a function definition\n";
       defs.push_back(std::move(func));
     }
   }

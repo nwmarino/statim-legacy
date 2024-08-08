@@ -1,11 +1,24 @@
-main
-	args: 
-	ret: 'i32'
+function main:
+  params: 
+  return: i32
 
 assign
 	name: x
-	type: int
+	type: i32
 	rval: 0 (int)
+
+assign
+	name: y
+	type: i32
+	rval: 1 (int)
+
+assign
+	name: z
+	type: bool
+
+assign
+	name: h
+	type: i61
 
 return
 	var: x

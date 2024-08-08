@@ -28,8 +28,8 @@ const std::string FunctionAST::to_str() {
 const std::string PrototypeAST::to_str() {
   std::string result;
 
-  result += name;
-  result += "\n\targs: ";
+  result += "function " + name + ":\n";
+  result += "  params: ";
 
   for (const std::string &arg : args) {
     result += arg;
@@ -41,7 +41,7 @@ const std::string PrototypeAST::to_str() {
     result.pop_back();
   }
 
-  result += "\n\tret: 'i32'\n";
+  result += "\n  return: i32\n";
 
   return result;
 }
@@ -109,7 +109,13 @@ const std::string VariableExpr::to_str() {
 
 
 const std::string AssignmentStatement::to_str() {
-  return "assign\n\tname: " + ident + "\n\ttype: " + ty + "\n\trval: " + expr->to_str();
+  std::string result;
+
+  result += "assign\n\tname: " + ident + "\n\ttype: " + ty + '\n';
+  if (expr) {
+    result += "\trval: " + expr->to_str();
+  }
+  return result;
 }
 
 
