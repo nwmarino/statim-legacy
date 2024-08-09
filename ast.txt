@@ -11,6 +11,10 @@ assign
 	name: y
 	type: i32
 
+CALL -> bar ( 1 (int)
+2 (int)
+ )
+
 return
 	var: x
 

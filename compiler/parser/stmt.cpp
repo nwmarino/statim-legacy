@@ -30,6 +30,7 @@ std::unique_ptr<Statement> parse_stmt(std::shared_ptr<cctx> ctx) {
           return warn_stmt("unknown keyword: " + ctx->prev().value);
       }
     }
+    return parse_identifier(ctx);
   }
 
   return nullptr;
