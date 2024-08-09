@@ -85,7 +85,7 @@ class NullExpr : public Expr {
 ///
 /// `true`, `false`
 class BoolExpr : public Expr {
-  const bool value;
+  bool value;
 
   public:
     BoolExpr(bool value) : value(value) {};
@@ -187,10 +187,10 @@ class FunctionCallExpr : public Expr {
 /// Functions prototypes.
 class PrototypeAST : public AST {
   std::string name;
-  std::vector<std::string> args;
+  std::vector<std::pair<std::string, std::string>> args;
 
   public:
-    PrototypeAST(const std::string &name, std::vector<std::string> args)
+    PrototypeAST(const std::string &name, std::vector<std::pair<std::string, std::string>> args)
       : name(name), args(std::move(args)) {};
     const std::string to_str();
 };

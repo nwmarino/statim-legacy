@@ -1,6 +1,8 @@
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #include <memory>
+#include <string>
+#include <utility>
 
 #include "../core/ast.h"
 
@@ -31,8 +33,8 @@ const std::string PrototypeAST::to_str() {
   result += "function " + name + ":\n";
   result += "  params: ";
 
-  for (const std::string &arg : args) {
-    result += arg;
+  for (const std::pair<std::string, std::string> &arg : args) {
+    result += arg.second + ' ' + arg.first;
     result += ", ";
   }
 

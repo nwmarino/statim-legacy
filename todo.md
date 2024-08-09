@@ -1,3 +1,15 @@
+Parser
+
+- [x] fixed variables
+- [x] variables, just initialization
+- [x] variables, init and declaration
+- [x] return with expression
+- [x] return w/o expression (implicit null)
+- [x] parse function args in prototype
+- [ ] binary operations
+- [ ] function calls
+
+
 "Validate" pass on AST, filling in types, validating symbol table entries, parameter limits,
 breaking points in loops, returns in functions, etc.
 

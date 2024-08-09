@@ -26,11 +26,33 @@ std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx) {
   ctx->tk_next();
 
   // parse function arguments
-  std::vector<std::string> argNames;
+  std::vector<std::pair<std::string, std::string>> args;
   while (ctx->prev().kind == TokenKind::Identifier) {
-    argNames.push_back(ctx->prev().value);
-    // eat current argument
+    std::string argName = ctx->prev().value;
+
+    // eat the argument name
     ctx->tk_next();
+
+    if (ctx->prev().kind != TokenKind::Colon) {
+      tokexp_panic("':'", ctx->prev().meta);
+    }
+
+    // eat the colon
+    ctx->tk_next();
+
+    if (ctx->prev().kind != TokenKind::Identifier) {
+      tokexp_panic("identifier", ctx->prev().meta);
+    }
+    std::string argTy = ctx->prev().value;
+
+    // eat the argument type
+    ctx->tk_next();
+
+    args.push_back(std::make_pair(argName, argTy));
+
+    if (ctx->prev().kind == TokenKind::Comma) {
+      ctx->tk_next();
+    }
   }
 
   if (ctx->prev().kind != TokenKind::CloseParen) {
@@ -59,13 +81,13 @@ std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx) {
   // eat return type
   ctx->tk_next();
   
-  return std::make_unique<PrototypeAST>(name, std::move(argNames));
+  return std::make_unique<PrototypeAST>(name, std::move(args));
 }
 
 
 std::unique_ptr<FunctionAST> parse_toplevel_definition(std::shared_ptr<cctx> ctx) {
   if (std::unique_ptr<Statement> body = parse_stmt(ctx)) {
-    auto head = std::make_unique<PrototypeAST>("", std::vector<std::string>());
+    auto head = std::make_unique<PrototypeAST>("", std::vector<std::pair<std::string, std::string>>());
     return std::make_unique<FunctionAST>(std::move(head), std::move(body));
   }
   return nullptr;

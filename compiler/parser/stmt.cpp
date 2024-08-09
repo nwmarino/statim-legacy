@@ -65,6 +65,10 @@ std::unique_ptr<Statement> parse_return_stmt(std::shared_ptr<cctx> ctx) {
   // eat the return token
   ctx->tk_next();
 
+  if (ctx->prev().kind == TokenKind::Semi) {
+    return std::make_unique<ReturnStatement>(std::make_unique<NullExpr>());
+  }
+
   if (std::unique_ptr<Expr> expr = parse_expr(ctx)) {
     return std::make_unique<ReturnStatement>(std::move(expr));
   }

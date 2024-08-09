@@ -10,15 +10,22 @@ assign
 assign
 	name: y
 	type: i32
-	rval: 1 (int)
 
-assign
-	name: z
-	type: bool
+return
+	var: x
 
-assign
-	name: h
-	type: i61
+
+function foo:
+  params: 
+  return: i32
+
+return
+	1 (bool)
+
+
+function bar:
+  params: i32 x, i32 y
+  return: i32
 
 return
 	var: x
