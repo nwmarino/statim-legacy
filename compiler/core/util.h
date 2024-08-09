@@ -56,7 +56,7 @@ inline void dump_tkstream(std::shared_ptr<cctx> ctx) {
 inline void write_ast(std::unique_ptr<ProgAST> ast) {
   std::ofstream file("ast.txt");
 
-  file << ast->to_str();
+  file << ast->to_str(1);
 
   file.close();
 }

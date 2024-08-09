@@ -1,37 +1,34 @@
-function main:
+function main
   params: 
   return: i32
 
-assign
-	name: x
-	type: i32
-	rval: 0 (int)
+  assign
+    name: x
+    type: i32
+    rval: 0 (int)
 
-assign
-	name: y
-	type: i32
+  assign
+    name: y
+    type: i32
 
-CALL -> bar ( 1 (int)
-2 (int)
- )
+  call @bar
+    1 (int)
+    2 (int)
 
-return
+  return
 	var: x
 
-
-function foo:
+function foo
   params: 
   return: i32
 
-return
+  return
 	1 (bool)
 
-
-function bar:
-  params: i32 x, i32 y
+function bar
+  params: x: i32, y: i32
   return: i32
 
-return
+  return
 	var: x
-
 

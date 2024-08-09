@@ -6,36 +6,35 @@
 
 #include "../core/ast.h"
 
-const std::string ProgAST::to_str() {
+const std::string ProgAST::to_str(int n) {
   std::string result;
 
   for (std::unique_ptr<FunctionAST> &def : defs) {
-    result += def->to_str() + '\n';
+    result += def->to_str(0);
   }
 
   return result;
 }
 
 
-const std::string FunctionAST::to_str() {
+const std::string FunctionAST::to_str(int n) {
   std::string result;
 
-  result += head->to_str() + '\n';
-  result += body->to_str();
+  result += head->to_str(0) + '\n';
+  result += body->to_str(2);
 
   return result;
 }
 
 
-const std::string PrototypeAST::to_str() {
+const std::string PrototypeAST::to_str(int n) {
   std::string result;
 
-  result += "function " + name + ":\n";
-  result += "  params: ";
+  result.append(n, ' ') += "function " + name + '\n';
+  result.append(n + 2, ' ') += "params: ";
 
   for (const std::pair<std::string, std::string> &arg : args) {
-    result += arg.second + ' ' + arg.first;
-    result += ", ";
+    result += arg.first + ": " + arg.second + ", ";
   }
 
   if (!args.empty()) {
@@ -43,99 +42,101 @@ const std::string PrototypeAST::to_str() {
     result.pop_back();
   }
 
-  result += "\n  return: i32\n";
+  result += '\n';
+
+  result.append(n + 2, ' ') += "return: i32\n";
 
   return result;
 }
 
 
-const std::string CompoundStatement::to_str() {
+const std::string CompoundStatement::to_str(int n) {
   std::string result;
 
   for (std::unique_ptr<Statement> &stmt : stmts) {
-    result += stmt->to_str() + '\n';
+    result += stmt->to_str(n) + '\n';
   }
 
   return result;
 }
 
 
-const std::string ReturnStatement::to_str() {
-  return "return\n\t" + expr->to_str();
+const std::string ReturnStatement::to_str(int n) {
+  return std::string().append(n, ' ') += "return\n\t" + expr->to_str(0);
 }
 
 
-const std::string IntegerExpr::to_str() {
-  return std::to_string(value) + " (int)\n";
+const std::string IntegerExpr::to_str(int n) {
+  return std::string().append(n, ' ') += std::to_string(value) + " (int)\n";
 }
 
 
-const std::string FloatingPointExpr::to_str() {
-  return std::to_string(value) + " (float)\n";
+const std::string FloatingPointExpr::to_str(int n) {
+  return std::string().append(n, ' ') += std::to_string(value) + " (float)\n";
 }
 
 
-const std::string NullExpr::to_str() {
-  return "null\n";
+const std::string NullExpr::to_str(int n) {
+  return std::string().append(n, ' ') += "null\n";
 }
 
 
-const std::string BoolExpr::to_str() {
-  return std::to_string(value) + " (bool)\n";
+const std::string BoolExpr::to_str(int n) {
+  return std::string().append(n, ' ') += std::to_string(value) + " (bool)\n";
 }
 
 
-const std::string CharExpr::to_str() {
-  return std::to_string(value) + " (char)\n";
+const std::string CharExpr::to_str(int n) {
+  return std::string().append(n, ' ') += std::to_string(value) + " (char)\n";
 }
 
 
-const std::string ByteExpr::to_str() {
-  return std::to_string(value) + " (byte)\n";
+const std::string ByteExpr::to_str(int n) {
+  return std::string().append(n, ' ') += std::to_string(value) + " (byte)\n";
 }
 
 
-const std::string StringExpr::to_str() {
-  return value + " (str)\n";
+const std::string StringExpr::to_str(int n) {
+  return std::string().append(n, ' ') + value + " (str)\n";
 }
 
 
-const std::string ByteStringExpr::to_str() {
-  return value + " (bstr)\n";
+const std::string ByteStringExpr::to_str(int n) {
+  return std::string().append(n, ' ') + value + " (bstr)\n";
 }
 
 
-const std::string VariableExpr::to_str() {
-  return "var: " + ident + '\n';
+const std::string VariableExpr::to_str(int n) {
+  return std::string().append(n, ' ') + "var: " + ident + '\n';
 }
 
 
-const std::string AssignmentStatement::to_str() {
+const std::string AssignmentStatement::to_str(int n) {
   std::string result;
 
-  result += "assign\n\tname: " + ident + "\n\ttype: " + ty + '\n';
+  result.append(n, ' ') += "assign\n";
+  result.append(n + 2, ' ') += "name: " + ident + '\n';
+  result.append(n + 2, ' ') += "type: " + ty + '\n';
   if (expr) {
-    result += "\trval: " + expr->to_str();
+    result.append(n + 2, ' ') += "rval: " + expr->to_str(0);
   }
   return result;
 }
 
 
-const std::string BinaryExpr::to_str() {
-  return "(binop) -> " + std::to_string(op) + " : " + left_child->to_str() + " , " + right_child->to_str() + '\n';
+const std::string BinaryExpr::to_str(int n) {
+  return "(binop) -> " + std::to_string(op) + " : " + left_child->to_str(0) + " , " + right_child->to_str(0) + '\n';
 }
 
 
-const std::string FunctionCallExpr::to_str() {
+const std::string FunctionCallExpr::to_str(int n) {
   std::string result;
 
-  result += "CALL -> " + callee + " ( ";
+  result.append(n, ' ') += "call @" + callee + '\n';
 
   for (std::unique_ptr<Expr> &arg : args) {
-    result += arg->to_str();
+    result.append(n + 2, ' ') += arg->to_str(0);
   }
-
-  result += " )\n";
 
   return result;
 }

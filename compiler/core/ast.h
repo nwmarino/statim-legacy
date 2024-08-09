@@ -12,21 +12,21 @@
 class AST {
   public:
     virtual ~AST() = default;
-    const virtual std::string to_str() = 0;
+    const virtual std::string to_str(int n) = 0;
 };
 
 /// A statement.
 class Statement : public AST {
   public:
     virtual ~Statement() = default;
-    const virtual std::string to_str() = 0;
+    const virtual std::string to_str(int n) = 0;
 };
 
 /// An expression (or statement ending with semi).
 class Expr : public Statement {
   public:
     virtual ~Expr() = default;
-    const virtual std::string to_str() = 0;
+    const virtual std::string to_str(int n) = 0;
 };
 
 /// Compound statements.
@@ -35,7 +35,7 @@ class CompoundStatement : public Statement {
 
   public:
     CompoundStatement(std::vector<std::unique_ptr<Statement>> stmts) : stmts(std::move(stmts)) {};
-    const std::string to_str();
+    const std::string to_str(int n);
 };
 
 /// Return statements.
@@ -44,7 +44,7 @@ class ReturnStatement : public Statement {
 
   public:
     ReturnStatement(std::unique_ptr<Expr> expr) : expr(std::move(expr)) {};
-    const std::string to_str();
+    const std::string to_str(int n);
 };
 
 /// Variable declaration.
@@ -58,7 +58,7 @@ class AssignmentStatement : public Statement {
   public:
     AssignmentStatement(const std::string &ident, const std::string &ty, std::unique_ptr<Expr> expr)
       : ident(ident), ty(ty), expr(std::move(expr)) {};
-    const std::string to_str();
+    const std::string to_str(int n);
 };
 
 /// Variable expression.
@@ -69,7 +69,7 @@ class VariableExpr : public Expr {
 
   public:
     VariableExpr(const std::string &ident) : ident(ident) {};
-    const std::string to_str();
+    const std::string to_str(int n);
 };
 
 /// Null literal expressions.
@@ -78,7 +78,7 @@ class VariableExpr : public Expr {
 class NullExpr : public Expr {
   public:
     NullExpr() {};
-    const std::string to_str();
+    const std::string to_str(int n);
 };
 
 /// Boolean literal expressions.
@@ -89,7 +89,7 @@ class BoolExpr : public Expr {
 
   public:
     BoolExpr(bool value) : value(value) {};
-    const std::string to_str();
+    const std::string to_str(int n);
 };
 
 /// Integer literal expressions.
@@ -100,7 +100,7 @@ class IntegerExpr : public Expr {
 
   public:
     IntegerExpr(int value) : value(value) {};
-    const std::string to_str();
+    const std::string to_str(int n);
 };
 
 /// Floating point literal expressions.
@@ -111,7 +111,7 @@ class FloatingPointExpr : public Expr {
 
   public:
     FloatingPointExpr(double value) : value(value) {};
-    const std::string to_str();
+    const std::string to_str(int n);
 };
 
 /// Character literal expressions.
@@ -122,7 +122,7 @@ class CharExpr : public Expr {
 
   public:
     CharExpr(char value) : value(value) {};
-    const std::string to_str();
+    const std::string to_str(int n);
 };
 
 /// String literal expressions.
@@ -133,7 +133,7 @@ class StringExpr : public Expr {
 
   public:
     StringExpr(const std::string &value) : value(value) {};
-    const std::string to_str();
+    const std::string to_str(int n);
 };
 
 /// Byte literal expressions.
@@ -144,7 +144,7 @@ class ByteExpr : public Expr {
 
   public:
     ByteExpr(char value) : value(value) {};
-    const std::string to_str();
+    const std::string to_str(int n);
 };
 
 /// Byte string literal expressions.
@@ -155,7 +155,7 @@ class ByteStringExpr : public Expr {
 
   public:
     ByteStringExpr(const std::string &value) : value(value) {};
-    const std::string to_str();
+    const std::string to_str(int n);
 };
 
 /// Binary operation expressions.
@@ -168,7 +168,7 @@ class BinaryExpr : public Expr {
   public:
     BinaryExpr(char op, std::unique_ptr<Expr> left_child, std::unique_ptr<Expr> right_child)
       : op(op), left_child(std::move(left_child)), right_child(std::move(right_child)) {};
-    const std::string to_str();
+    const std::string to_str(int n);
 };
 
 /// Function call expressions;
@@ -181,7 +181,7 @@ class FunctionCallExpr : public Expr {
   public:
     FunctionCallExpr(const std::string &callee, std::vector<std::unique_ptr<Expr>> args)
       : callee(callee), args(std::move(args)) {};
-    const std::string to_str();
+    const std::string to_str(int n);
 };
 
 /// Functions prototypes.
@@ -192,7 +192,7 @@ class PrototypeAST : public AST {
   public:
     PrototypeAST(const std::string &name, std::vector<std::pair<std::string, std::string>> args)
       : name(name), args(std::move(args)) {};
-    const std::string to_str();
+    const std::string to_str(int n);
 };
 
 /// Function definitions.
@@ -203,7 +203,7 @@ class FunctionAST : public AST {
   public:
     FunctionAST(std::unique_ptr<PrototypeAST> head, std::unique_ptr<Statement> body)
       : head(std::move(head)), body(std::move(body)) {};
-    const std::string to_str();
+    const std::string to_str(int n);
 };
 
 /// A program (list of definitions).
@@ -212,7 +212,7 @@ class ProgAST : public AST {
 
   public:
     ProgAST(std::vector<std::unique_ptr<FunctionAST>> defs) : defs(std::move(defs)) {};
-    const std::string to_str();
+    const std::string to_str(int n);
 };
 
 #endif  // STATIMC_AST_H
