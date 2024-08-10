@@ -1,7 +1,7 @@
 fn main() -> i32 {
   fix x: i32 = 0;
   let y: i32;
-  y = bar(1, 2) + 5;
+  x = bar(1, 2) + 5 * 4 / 2 + 3;
   return y;
 }
 

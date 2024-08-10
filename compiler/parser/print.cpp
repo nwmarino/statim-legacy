@@ -130,12 +130,11 @@ const std::string BinaryExpr::to_str(int n) {
   std::string optr;
 
   switch (op) {
-    case TokenKind::Add:
-      optr = "+";
-      break;
-    case TokenKind::Eq:
-      optr = "=";
-      break;
+    case TokenKind::Add: optr = "+"; break;
+    case TokenKind::Sub: optr = "-"; break;
+    case TokenKind::Star: optr = "*"; break;
+    case TokenKind::Slash: optr = "/"; break;
+    case TokenKind::Eq: optr = "="; break;
   }
 
   result.append(n, ' ') += "binop\n";

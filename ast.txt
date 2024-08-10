@@ -13,11 +13,20 @@ function main
 
   binop
     op: =
-      y (var)
+      x (var)
       binop
         op: +
-          call @bar(1 (int), 2 (int))
-          5 (int)
+          binop
+            op: +
+              call @bar(1 (int), 2 (int))
+              binop
+                op: /
+                  binop
+                    op: *
+                      5 (int)
+                      4 (int)
+                  2 (int)
+          3 (int)
   return
 	y (var)
 

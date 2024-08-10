@@ -52,6 +52,7 @@ const struct Token Tokenizer::advance_token() {
         return advance_token();
       }
       kind = Slash;
+      break;
 
     /// Subtraction or thin arrow.
     case '-':

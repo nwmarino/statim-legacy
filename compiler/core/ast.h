@@ -3,6 +3,7 @@
 #ifndef STATIMC_AST_H
 #define STATIMC_AST_H
 
+#include "token.h"
 #include <string>
 #include <vector>
 #include <memory>
@@ -166,11 +167,11 @@ class ByteStringExpr : public Expr {
 ///
 /// @example `x + y`, `1 - y`, `x * 2`
 class BinaryExpr : public Expr {
-  char op;
+  TokenKind op;
   std::unique_ptr<Expr> left_child, right_child;
 
   public:
-    BinaryExpr(char op, std::unique_ptr<Expr> left_child, std::unique_ptr<Expr> right_child)
+    BinaryExpr(TokenKind op, std::unique_ptr<Expr> left_child, std::unique_ptr<Expr> right_child)
       : op(op), left_child(std::move(left_child)), right_child(std::move(right_child)) {};
     const std::string to_str(int n);
 };
