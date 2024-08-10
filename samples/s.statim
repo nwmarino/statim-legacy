@@ -1,8 +1,8 @@
 fn main() -> i32 {
   fix x: i32 = 0;
   let y: i32;
-  bar(1, 2);
-  return x;
+  y = bar(1, 2) + 5;
+  return y;
 }
 
 fn foo() -> bool { 

@@ -24,12 +24,13 @@ static int get_precedence(TokenKind op) {
       return 20;
 
     case TokenKind::Eq:
-      return 40;
+      return 1;
     
     default:
       return -1;
   }
 }
+
 
 std::unique_ptr<Expr> parse_expr(std::shared_ptr<cctx> ctx) {
   if (std::unique_ptr<Expr> base = parse_primary(ctx)) {
@@ -38,6 +39,7 @@ std::unique_ptr<Expr> parse_expr(std::shared_ptr<cctx> ctx) {
 
   return nullptr;
 }
+
 
 std::unique_ptr<Expr> parse_primary(std::shared_ptr<cctx> ctx) {
   switch (ctx->prev().lit_kind) {
@@ -69,6 +71,7 @@ std::unique_ptr<Expr> parse_primary(std::shared_ptr<cctx> ctx) {
   return warn_expr("unknown primary expression kind: " + std::to_string(ctx->prev().lit_kind));
 }
 
+
 std::unique_ptr<Expr> parse_identifier(std::shared_ptr<cctx> ctx) {
   const std::string ident = ctx->prev().value;
 
@@ -86,6 +89,7 @@ std::unique_ptr<Expr> parse_identifier(std::shared_ptr<cctx> ctx) {
   return std::make_unique<VariableExpr>(ident);
 }
 
+
 std::unique_ptr<Expr> parse_numerical(std::shared_ptr<cctx> ctx) {
   LiteralKind kind = ctx->prev().lit_kind;
   std::string value = ctx->prev().value;
@@ -101,6 +105,7 @@ std::unique_ptr<Expr> parse_numerical(std::shared_ptr<cctx> ctx) {
   return warn_expr("unknown literal kind: " + std::to_string(kind));
 }
 
+
 std::unique_ptr<Expr> parse_boolean(std::shared_ptr<cctx> ctx) {
   std::string value = ctx->prev().value;
 
@@ -115,6 +120,7 @@ std::unique_ptr<Expr> parse_boolean(std::shared_ptr<cctx> ctx) {
   return std::make_unique<BoolExpr>(value == "true");
 }
 
+
 std::unique_ptr<Expr> parse_character(std::shared_ptr<cctx> ctx) {
   char value = ctx->prev().value[0];
 
@@ -123,6 +129,7 @@ std::unique_ptr<Expr> parse_character(std::shared_ptr<cctx> ctx) {
 
   return std::make_unique<CharExpr>(value);
 }
+
 
 std::unique_ptr<Expr> parse_byte(std::shared_ptr<cctx> ctx) {
   char value = ctx->prev().value[0];
@@ -133,6 +140,7 @@ std::unique_ptr<Expr> parse_byte(std::shared_ptr<cctx> ctx) {
   return std::make_unique<ByteExpr>(value);
 }
 
+
 std::unique_ptr<Expr> parse_string(std::shared_ptr<cctx> ctx) {
   std::string value = ctx->prev().value;
 
@@ -142,6 +150,7 @@ std::unique_ptr<Expr> parse_string(std::shared_ptr<cctx> ctx) {
   return std::make_unique<StringExpr>(value);
 }
 
+
 std::unique_ptr<Expr> parse_bytestring(std::shared_ptr<cctx> ctx) {
   std::string value = ctx->prev().value;
 
@@ -150,6 +159,7 @@ std::unique_ptr<Expr> parse_bytestring(std::shared_ptr<cctx> ctx) {
 
   return std::make_unique<ByteStringExpr>(value);
 }
+
 
 std::unique_ptr<Expr> parse_binop(std::shared_ptr<cctx> ctx, std::unique_ptr<Expr> lhs, int precedence) {
   while (true) {
@@ -177,6 +187,7 @@ std::unique_ptr<Expr> parse_binop(std::shared_ptr<cctx> ctx, std::unique_ptr<Exp
     lhs = std::make_unique<BinaryExpr>(op_kind, std::move(lhs), std::move(rhs));
   }
 }
+
 
 std::unique_ptr<Expr> parse_function_call(std::shared_ptr<cctx> ctx, const std::string ident) {
   // verify that ident is a parsed function

@@ -64,6 +64,13 @@ void symb_type_panic(const std::string &ident, const struct Metadata &data) {
 }
 
 
+void symb_const_panic(const std::string &ident, const struct Metadata &data) {
+  fprintf(stderr, "statimc: undeclared constant: %s\n", ident.c_str());
+  fprintf(stderr, "see: %s:%zu:%zu\n", data.filename.c_str(), data.line_n, data.col_n);
+  exit(1);
+}
+
+
 std::unique_ptr<AST> warn(std::string m) {
   std::cout << "statimc: warn: " << m << '\n';
   return nullptr;

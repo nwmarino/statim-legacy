@@ -11,12 +11,15 @@ function main
     name: y
     type: i32
 
-  call @bar
-    1 (int)
-    2 (int)
-
+  binop
+    op: =
+      y (var)
+      binop
+        op: +
+          call @bar(1 (int), 2 (int))
+          5 (int)
   return
-	var: x
+	y (var)
 
 function foo
   params: 
@@ -30,5 +33,5 @@ function bar
   return: i32
 
   return
-	var: x
+	x (var)
 

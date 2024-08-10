@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "../core/ast.h"
+#include "../core/token.h"
 
 const std::string ProgAST::to_str(int n) {
   std::string result;
@@ -62,52 +63,52 @@ const std::string CompoundStatement::to_str(int n) {
 
 
 const std::string ReturnStatement::to_str(int n) {
-  return std::string().append(n, ' ') += "return\n\t" + expr->to_str(0);
+  return std::string().append(n, ' ') += "return\n\t" + expr->to_str(0) + '\n';
 }
 
 
 const std::string IntegerExpr::to_str(int n) {
-  return std::string().append(n, ' ') += std::to_string(value) + " (int)\n";
+  return std::string().append(n, ' ') += std::to_string(value) + " (int)";
 }
 
 
 const std::string FloatingPointExpr::to_str(int n) {
-  return std::string().append(n, ' ') += std::to_string(value) + " (float)\n";
+  return std::string().append(n, ' ') += std::to_string(value) + " (float)";
 }
 
 
 const std::string NullExpr::to_str(int n) {
-  return std::string().append(n, ' ') += "null\n";
+  return std::string().append(n, ' ') += "null";
 }
 
 
 const std::string BoolExpr::to_str(int n) {
-  return std::string().append(n, ' ') += std::to_string(value) + " (bool)\n";
+  return std::string().append(n, ' ') += std::to_string(value) + " (bool)";
 }
 
 
 const std::string CharExpr::to_str(int n) {
-  return std::string().append(n, ' ') += std::to_string(value) + " (char)\n";
+  return std::string().append(n, ' ') += std::to_string(value) + " (char)";
 }
 
 
 const std::string ByteExpr::to_str(int n) {
-  return std::string().append(n, ' ') += std::to_string(value) + " (byte)\n";
+  return std::string().append(n, ' ') += std::to_string(value) + " (byte)";
 }
 
 
 const std::string StringExpr::to_str(int n) {
-  return std::string().append(n, ' ') + value + " (str)\n";
+  return std::string().append(n, ' ') + value + " (str)";
 }
 
 
 const std::string ByteStringExpr::to_str(int n) {
-  return std::string().append(n, ' ') + value + " (bstr)\n";
+  return std::string().append(n, ' ') + value + " (bstr)";
 }
 
 
 const std::string VariableExpr::to_str(int n) {
-  return std::string().append(n, ' ') + "var: " + ident + '\n';
+  return std::string().append(n, ' ') + ident + " (var)";
 }
 
 
@@ -118,25 +119,49 @@ const std::string AssignmentStatement::to_str(int n) {
   result.append(n + 2, ' ') += "name: " + ident + '\n';
   result.append(n + 2, ' ') += "type: " + ty + '\n';
   if (expr) {
-    result.append(n + 2, ' ') += "rval: " + expr->to_str(0);
+    result.append(n + 2, ' ') += "rval: " + expr->to_str(0) + '\n';
   }
   return result;
 }
 
 
 const std::string BinaryExpr::to_str(int n) {
-  return "(binop) -> " + std::to_string(op) + " : " + left_child->to_str(0) + " , " + right_child->to_str(0) + '\n';
+  std::string result;
+  std::string optr;
+
+  switch (op) {
+    case TokenKind::Add:
+      optr = "+";
+      break;
+    case TokenKind::Eq:
+      optr = "=";
+      break;
+  }
+
+  result.append(n, ' ') += "binop\n";
+  result.append(n + 2, ' ') += "op: " + optr + '\n';
+  result += left_child->to_str(n + 4) + '\n';
+  result += right_child->to_str(n + 4) + '\n';
+  result.pop_back();
+  return result;
 }
 
 
 const std::string FunctionCallExpr::to_str(int n) {
   std::string result;
 
-  result.append(n, ' ') += "call @" + callee + '\n';
+  result.append(n, ' ') += "call @" + callee + '(';
 
   for (std::unique_ptr<Expr> &arg : args) {
-    result.append(n + 2, ' ') += arg->to_str(0);
+    result += arg->to_str(0) + ", ";
   }
+
+  if (!args.empty()) {
+    result.pop_back();
+    result.pop_back();
+  }
+
+  result += ')';
 
   return result;
 }

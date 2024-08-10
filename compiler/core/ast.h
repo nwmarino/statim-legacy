@@ -56,6 +56,10 @@ class AssignmentStatement : public Statement {
   std::unique_ptr<Expr> expr;
 
   public:
+    /// Constructor for reassignment.
+    AssignmentStatement(const std::string &ident, std::unique_ptr<Expr> expr)
+      : ident(ident), ty(""), expr(std::move(expr)) {};
+    /// Constructor for initial assignment.
     AssignmentStatement(const std::string &ident, const std::string &ty, std::unique_ptr<Expr> expr)
       : ident(ident), ty(ty), expr(std::move(expr)) {};
     const std::string to_str(int n);

@@ -80,6 +80,16 @@ void symb_decl_panic(const std::string &ident, const struct Metadata &data);
 [[noreturn]]
 void symb_type_panic(const std::string &ident, const struct Metadata &data);
 
+
+/**
+ * Panic about a reassigned constant.
+ * 
+ * @param ident The constant name.
+ * @param data  Metadata about the bad token.
+ */
+[[noreturn]]
+void symb_const_panic(const std::string &ident, const struct Metadata &data);
+
 /**
  * Log an error message.
  * 
