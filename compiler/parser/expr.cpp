@@ -15,20 +15,62 @@
 static int get_precedence(TokenKind op) {
   switch (op)
   {
-    case TokenKind::Add:
-    case TokenKind::Sub:
+    case TokenKind::Increment:
+    case TokenKind::Decrement:
+      return 11;
+
+    case TokenKind::Dot:
       return 10;
+
+    case TokenKind::Not:
+    case TokenKind::Hash:
+    case TokenKind::At:
+    case TokenKind::Range:
+      return 9;
 
     case TokenKind::Star:
     case TokenKind::Slash:
-      return 20;
+      return 8;
+
+    case TokenKind::Add:
+    case TokenKind::Sub:
+      return 7;
+
+    case TokenKind::LeftShift:
+    case TokenKind::RightShift:
+      return 6;
+
+    case TokenKind::LessThan:
+    case TokenKind::LessThanEq:
+    case TokenKind::GreaterThan:
+    case TokenKind::GreaterThanEq:
+      return 5;
+
+    case TokenKind::EqEq:
+    case TokenKind::NotEq:
+      return 4;
+
+    case TokenKind::And:
+    case TokenKind::Or:
+    case TokenKind::Xor:
+      return 3;
+
+    case TokenKind::AndAnd:
+    case TokenKind::OrOr:
+    case TokenKind::XorXor:
+      return 2;
 
     case TokenKind::Eq:
+    case TokenKind::AddEq:
+    case TokenKind::SubEq:
+    case TokenKind::StarEq:
+    case TokenKind::SlashEq:
       return 1;
     
     default:
-      return -1;
+      return 0;
   }
+  return -1;
 }
 
 

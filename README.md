@@ -1,39 +1,49 @@
-# statimc: legacy
-***
+# statimc: phase zero
 
-# Supported
+| Operator | Precedence | Usage 
+|----------|------------|------
+| `=` `+=`, `-=`, `*=`, `/=` | 1 | Assignment
+| `&&`, `\|\|`, `^^` | 2 | Logical Comparison
+| `&`, `\|`, `^` | 3 | Bitwise Comparison
+| `==`, `!=` | 4 | Equality Comparison
+| `<`, `<=`, `>`, `>=` | 5 | Inequalities
+| `<<`, `>>` | 6 | Bitwise Shift
+| `+`, `-` | 7 | Additive Ops
+| `*`, `/` | 8 | Multiplicative Ops
+| `!`, `#`, `@`, `...` | 9 | Unary (not, hash, ref, range)
+| `f()`, `.` | 10 | Calls, Member Access
+| `a++`, `a--` | 11 | Increment, Decrement
+
 
 ### Types
 
-`i32` 32-bit signed integer type.
+`bool` boolean value (0, 1)
 
-### Functions 
+`i32` 32-bit signed integer.
 
-`fn main() -> i32 {}` main entry point
+`u32` 32-bit unsigned integer.
 
-`fn 'identifier' ( args ) -> rt_type` function prototype
+`i64` 64-bit signed integer.
 
-# Future
+`u64` 64-bit unsigned integer.
 
-### Types
+`float` floating point value.
 
-`u32` 32-bit unsigned integer type.
+`float64` 64-bit floating point value.
 
-`char` single character type.
+`char` singular character.
 
-`float` floating point value type.
+`byte` singular byte.
 
-`double` double value type.
+`str` character sequence.
 
-`bool` boolean value type.
+`bstr` byte sequence.
 
-`str` string value type.
-
-`*Type` rune type.
+`#Type` rune type.
 
 ### Variables
 
-Assignments (mutable variables),
+Mutable assignments
 ```rs
 // initialization
 let x: i32;
@@ -45,114 +55,16 @@ x = 5;
 let x: i32 = 5;
 ```
 
-Assignments (immutable variables),
+Fixed assignment
 > Must be declared the same line it is initialized.
 ```rs
 fix y: i32 = 6;
 ```
 
-Alias assignments using the `bind` keyword, 
-> The following example binds a variable `x` to the variable `y`.
+Alias assignments
 ```rs
 let y: i32 = 5;
 bind x, y;
-```
-
-### Unary Operators
-
-Negation operator,
-```rs
-let x: bool = true;
-let not_x: bool = !x;
-```
-
-Increment operator,
-```rs
-let x: i32 = 0;
-x++;
-```
-
-Decrement operator,
-```rs
-let x: i32 = 0;
-x--;
-```
-
-Dereference (retrieve value),
-```rs
-let x: *i32 = 0;
-let y: i32 = *x;
-```
-
-Reference (retrieve address),
-```rs
-let x: *i32 = 0;
-let y = &x;
-``` 
-
-### Binary Operators
-
-Add operator,
-```rs
-let x: i32 = 1 + 5;
-```
-
-Subtraction operator,
-```rs
-let x: i32 = 1 - 5;
-```
-
-Multiplication operator,
-```rs
-let x: i32 = 1 * 5;
-```
-
-Division operator,
-```rs
-let x: i32 = 4 / 2;
-```
-
-Power operator,
-```rs
-let x: i32 = 1 ** 2;
-```
-
-AND operator,
-```rs
-let is_true: bool = true && true;
-let is_false: bool = true && false;
-```
-
-OR operator,
-```rs
-let is_true: bool = true || false;
-let is_false: bool = false || false;
-```
-
-XOR operator,
-```rs
-let is_true: bool = true ^ false;
-let is_false: bool = true ^ true;
-let is_false_two: bool = false ^ false;
-```
-
-Inequality operators,
-```rs
-let is_true: bool = 1 < 2;
-let is_false: bool = 1 > 2;
-
-let is_true_two: bool = 1 <= 2;
-let is_false_two: bool = 1 >= 2;
-```
-
-Value comparisons,
-```rs
-let x: i32 = 1;
-let y: i32 = 2;
-let z: i32 = 1;
-
-let is_true: bool = x == z;
-let is_false: bool = x == y;
 ```
 
 ### Control Flow
@@ -181,23 +93,66 @@ match expression {
 }
 ```
 
-### Loops
+### Looping instructions
 
-For loops,
-
+Until loops
+> Executes body until expression is met.
 ```c
-for start, stop, step {
+until expression {
   ...
 }
 ```
 
-Special "until" loops,
-> Until loops stop all execution once the expression is met. The
-> loop body must possess some flow to statements which can meet
-> the condition.
+### User-defined Types
 
-```c
-until expression {
+Structs
+```rs
+struct A {
+  a: i64;
+  b: u64;
+}
+```
+
+Define an abstract
+```rs
+abstract Fun {
+  fn run() -> i32;
+}
+```
+
+Implement an abstract to a struct,
+```rs
+impl Fun for A {
+  fn run() -> i32 { 
+    ...
+  }
+}
+```
+
+Enumerations
+```rs
+enum Token {
+  Plus,
+  Minus,
+  ...
+}
+```
+
+Unions
+```rs
+union Optional {
+  Token,
+  null
+}
+```
+
+### Packages
+
+Define a package file using `pkg FILE`. Import it elsewhere using the `use FILE`
+keyword. Keep definitions private using protection,
+
+```rs
+protect fn secret_function() -> void {
   ...
 }
 ```

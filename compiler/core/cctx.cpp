@@ -19,8 +19,11 @@ cctx::cctx(cflags flags, std::vector<cfile> input) : flags(flags), input(input),
   symb_add("i64", Symbol(SymbolType::Ty));
   symb_add("u64", Symbol(SymbolType::Ty));
   symb_add("float", Symbol(SymbolType::Ty));
+  symb_add("float64", Symbol(SymbolType::Ty));
   symb_add("char", Symbol(SymbolType::Ty));
   symb_add("byte", Symbol(SymbolType::Ty));
+  symb_add("str", Symbol(SymbolType::Ty));
+  symb_add("bstr", Symbol(SymbolType::Ty));
 
   // add keywords to the symbol table
   symb_add("abstract", Symbol(KeywordType::Abstract));

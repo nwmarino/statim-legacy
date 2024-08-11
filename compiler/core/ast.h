@@ -66,6 +66,17 @@ class AssignmentStatement : public Statement {
     const std::string to_str(int n);
 };
 
+/// Until loop statements.
+class UntilStatement : public Statement { 
+  std::unique_ptr<Expr> cond;
+  std::unique_ptr<Statement> body;
+
+  public:
+    UntilStatement(std::unique_ptr<Expr> cond, std::unique_ptr<Statement> body)
+      : cond(std::move(cond)), body(std::move(body)) {};
+    const std::string to_str(int n);
+};
+
 /// Variable expression.
 ///
 /// `x`, `y`, `z`

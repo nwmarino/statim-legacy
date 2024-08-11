@@ -164,3 +164,14 @@ const std::string FunctionCallExpr::to_str(int n) {
 
   return result;
 }
+
+
+const std::string UntilStatement::to_str(int n) {
+  std::string result;
+
+  result.append(n, ' ') += "until\n";
+  result += cond->to_str(n + 2) + '\n';
+  result += body->to_str(n + 2);
+
+  return result;
+}

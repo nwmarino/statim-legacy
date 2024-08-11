@@ -18,6 +18,7 @@ std::unique_ptr<Statement> parse_stmt(std::shared_ptr<cctx> ctx) {
 
   if (ctx->prev().kind == TokenKind::Identifier) {
     if (ctx->symb_is(ctx->prev().value, SymbolType::Keyword)) {
+      std::cout << "h :" + ctx->prev().value + '\n';
       KeywordType kw = ctx->symb_get(ctx->prev().value).keyword;
       switch (kw) {
         case KeywordType::Return:
@@ -26,6 +27,8 @@ std::unique_ptr<Statement> parse_stmt(std::shared_ptr<cctx> ctx) {
           return parse_immut_decl(ctx);
         case KeywordType::Let:
           return parse_mut_decl(ctx);
+        case KeywordType::Until:
+          return parse_until_stmt(ctx);
         default:
           return warn_stmt("unknown keyword: " + ctx->prev().value);
       }
@@ -35,6 +38,7 @@ std::unique_ptr<Statement> parse_stmt(std::shared_ptr<cctx> ctx) {
 
   return nullptr;
 }
+
 
 std::unique_ptr<Statement> parse_compound_stmt(std::shared_ptr<cctx> ctx) {
   // eat opening block
@@ -62,6 +66,7 @@ std::unique_ptr<Statement> parse_compound_stmt(std::shared_ptr<cctx> ctx) {
   return std::make_unique<CompoundStatement>(std::move(stmts));
 }
 
+
 std::unique_ptr<Statement> parse_return_stmt(std::shared_ptr<cctx> ctx) {
   // eat the return token
   ctx->tk_next();
@@ -72,6 +77,20 @@ std::unique_ptr<Statement> parse_return_stmt(std::shared_ptr<cctx> ctx) {
 
   if (std::unique_ptr<Expr> expr = parse_expr(ctx)) {
     return std::make_unique<ReturnStatement>(std::move(expr));
+  }
+
+  return nullptr;
+}
+
+
+std::unique_ptr<Statement> parse_until_stmt(std::shared_ptr<cctx> ctx) {
+  // eat the until token
+  ctx->tk_next();
+
+  if (std::unique_ptr<Expr> cond = parse_expr(ctx)) {
+    if (std::unique_ptr<Statement> body = parse_stmt(ctx)) {
+      return std::make_unique<UntilStatement>(std::move(cond), std::move(body));
+    }
   }
 
   return nullptr;

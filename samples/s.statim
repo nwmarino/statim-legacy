@@ -1,14 +1,5 @@
 fn main() -> i32 {
   fix x: i32 = 0;
-  let y: i32;
-  x = bar(1, 2) + 5 * 4 / 2 + 3;
+
   return y;
-}
-
-fn foo() -> bool { 
-  return true;
-}
-
-fn bar(x: i32, y: i32) -> i32 {
-  return x;
 }

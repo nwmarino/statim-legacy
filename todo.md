@@ -18,6 +18,12 @@ breaking points in loops, returns in functions, etc.
 - Check that a type exists within the scope of a declaration.
   - Check that the rval is of the same type.
 
+Until loop
+- Check that the expression is not a constant.
+  - Check that the expression is not always false.
+- Check that the expression can be evaluated to truthy/falsy.
+
+- Check that any `continue`, `break` statements are within the scope of a loop.
 
 
 Then, lower to IR (control flow graph) which is comprised of basic blocks, locals (memory locations on the

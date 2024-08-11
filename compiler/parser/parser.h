@@ -111,13 +111,9 @@ std::unique_ptr<Statement> parse_return_stmt(std::shared_ptr<cctx> ctx);
 [[nodiscard]]
 std::unique_ptr<Statement> parse_if_stmt(std::shared_ptr<cctx> ctx);
 
-/// Parse a while statement.
+/// Parse an until loop statement.
 [[nodiscard]]
-std::unique_ptr<Statement> parse_while_stmt(std::shared_ptr<cctx> ctx);
-
-/// Parse a break statement.
-[[nodiscard]]
-std::unique_ptr<Statement> parse_break_stmt(std::shared_ptr<cctx> ctx);
+std::unique_ptr<Statement> parse_until_stmt(std::shared_ptr<cctx> ctx);
 
 /// Parse a match statement.
 [[nodiscard]]
