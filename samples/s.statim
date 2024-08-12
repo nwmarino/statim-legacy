@@ -1,5 +1,18 @@
 fn main() -> i32 {
-  fix x: i32 = 0;
+  fix x: bool = false;
+  until x {
+    x = true;
+  };
 
-  return y;
+  if x {
+    return 1;
+  } else if 5 {
+    return 0;
+  } else if 6 {
+    return 6;
+  } else {
+    return 0;
+  };
+
+  return 0;
 }

@@ -15,12 +15,13 @@ std::unique_ptr<Statement> parse_stmt(std::shared_ptr<cctx> ctx) {
   if (ctx->prev().kind == TokenKind::OpenBrace) {
     return parse_compound_stmt(ctx);
   }
-
+  
   if (ctx->prev().kind == TokenKind::Identifier) {
     if (ctx->symb_is(ctx->prev().value, SymbolType::Keyword)) {
-      std::cout << "h :" + ctx->prev().value + '\n';
       KeywordType kw = ctx->symb_get(ctx->prev().value).keyword;
       switch (kw) {
+        case KeywordType::If:
+          return parse_if_stmt(ctx);
         case KeywordType::Return:
           return parse_return_stmt(ctx);
         case KeywordType::Fix:
@@ -46,6 +47,7 @@ std::unique_ptr<Statement> parse_compound_stmt(std::shared_ptr<cctx> ctx) {
 
   std::vector<std::unique_ptr<Statement>> stmts = {};
   while (ctx->prev().kind != TokenKind::CloseBrace) {
+
     if (std::unique_ptr<Statement> stmt = parse_stmt(ctx)) {
       stmts.push_back(std::move(stmt));
     }
@@ -56,8 +58,6 @@ std::unique_ptr<Statement> parse_compound_stmt(std::shared_ptr<cctx> ctx) {
 
     // eat semi
     ctx->tk_next();
-
-    //return warn_stmt("expected '}' after compound statement");
   }
 
   // eat closing block
@@ -77,6 +77,37 @@ std::unique_ptr<Statement> parse_return_stmt(std::shared_ptr<cctx> ctx) {
 
   if (std::unique_ptr<Expr> expr = parse_expr(ctx)) {
     return std::make_unique<ReturnStatement>(std::move(expr));
+  }
+
+  return nullptr;
+}
+
+
+std::unique_ptr<Statement> parse_if_stmt(std::shared_ptr<cctx> ctx) {
+  // eat the if token
+  ctx->tk_next();
+
+  if (std::unique_ptr<Expr> cond = parse_expr(ctx)) {
+    std::unique_ptr<Statement> then_body = parse_stmt(ctx);
+
+    if (!then_body) {
+      return nullptr;
+    }
+
+    if (ctx->symb_is_kw(ctx->prev().value, KeywordType::Else)) {
+      // eat the else token
+      ctx->tk_next();
+
+      std::unique_ptr<Statement> else_body = parse_stmt(ctx);
+
+      if (!else_body) {
+        return nullptr;
+      }
+
+      return std::make_unique<IfStatement>(std::move(cond), std::move(then_body), std::move(else_body));
+    }
+
+    return std::make_unique<IfStatement>(std::move(cond), std::move(then_body), nullptr);
   }
 
   return nullptr;

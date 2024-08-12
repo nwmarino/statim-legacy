@@ -67,6 +67,10 @@ class cctx {
     [[nodiscard]]
     bool symb_is(const std::string &name, SymbolType type);
 
+    /// Check if a symbol exists and is a keyword.
+    [[nodiscard]]
+    bool symb_is_kw(const std::string &name, KeywordType kw);
+
     /// Get the last token in the stream.
     [[nodiscard]]
     inline struct Token prev() { return m_prev; }

@@ -66,6 +66,18 @@ class AssignmentStatement : public Statement {
     const std::string to_str(int n);
 };
 
+/// If statement
+class IfStatement : public Statement {
+  std::unique_ptr<Expr> cond;
+  std::unique_ptr<Statement> then_body;
+  std::unique_ptr<Statement> else_body;
+
+  public:
+    IfStatement(std::unique_ptr<Expr> cond, std::unique_ptr<Statement> then_body, std::unique_ptr<Statement> else_body)
+      : cond(std::move(cond)), then_body(std::move(then_body)), else_body(std::move(else_body)) {};
+    const std::string to_str(int n);
+};
+
 /// Until loop statements.
 class UntilStatement : public Statement { 
   std::unique_ptr<Expr> cond;

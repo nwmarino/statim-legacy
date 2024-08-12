@@ -68,7 +68,7 @@ static int get_precedence(TokenKind op) {
       return 1;
     
     default:
-      return 0;
+      return -1;
   }
   return -1;
 }

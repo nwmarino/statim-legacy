@@ -3,6 +3,7 @@
 #include "cctx.h"
 #include "token.h"  
 #include "util.h"
+#include <iostream>
 
 cctx::cctx(cflags flags, std::vector<cfile> input) : flags(flags), input(input), m_prev(Token(Eof)) {
   std::string f_src = read_to_str(input[0].path);
@@ -57,7 +58,7 @@ struct Token cctx::tk_next() {
 }
 
 void cctx::symb_add(const std::string &name, const struct Symbol &symbol) {
- this->symb_table->put(name, symbol);
+  symb_table->put(name, symbol);
 }
 
 struct Symbol cctx::symb_get(const std::string &name) {
@@ -74,4 +75,8 @@ bool cctx::symb_del(const std::string &name) {
 
 bool cctx::symb_is(const std::string &name, SymbolType type) {
   return symb_exists(name) && symb_get(name).type == type;
+}
+
+bool cctx::symb_is_kw(const std::string &name, KeywordType kw) {
+  return symb_is(name, SymbolType::Keyword) && symb_get(name).keyword == kw;
 }

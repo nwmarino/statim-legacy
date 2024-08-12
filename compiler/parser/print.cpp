@@ -63,7 +63,13 @@ const std::string CompoundStatement::to_str(int n) {
 
 
 const std::string ReturnStatement::to_str(int n) {
-  return std::string().append(n, ' ') += "return\n\t" + expr->to_str(0) + '\n';
+  std::string result;
+
+  result.append(n, ' ') += "return\n";
+  if (expr) {
+    result.append(n + 2, ' ') += "expr: " + expr->to_str(0);
+  }
+  return result;
 }
 
 
@@ -166,11 +172,30 @@ const std::string FunctionCallExpr::to_str(int n) {
 }
 
 
+const std::string IfStatement::to_str(int n) {
+  std::string result;
+
+  result.append(n, ' ') += "if\n";
+  result.append(n + 2, ' ') += "cond: " + cond->to_str(0) + '\n';
+
+  result += then_body->to_str(n + 2);
+
+  if (else_body) {
+    result += '\n';
+    result.append(n, ' ') += "else\n";
+    result += else_body->to_str(n + 2);
+  }
+
+  return result;
+}
+
+
 const std::string UntilStatement::to_str(int n) {
   std::string result;
 
   result.append(n, ' ') += "until\n";
-  result += cond->to_str(n + 2) + '\n';
+  result.append(n + 2, ' ') += "cond: " + cond->to_str(0) + "\n\n";
+
   result += body->to_str(n + 2);
 
   return result;

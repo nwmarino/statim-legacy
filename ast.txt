@@ -4,46 +4,37 @@ function main
 
   assign
     name: x
-    type: i32
-    rval: 0 (int)
+    type: bool
+    rval: 0 (bool)
 
-  assign
-    name: y
-    type: i32
+  until
+    cond: x (var)
 
-  binop
-    op: =
-      x (var)
-      binop
-        op: +
-          binop
-            op: +
-              binop
-                op: +
-                  call @bar(1 (int), 2 (int))
-                  binop
-                    op: /
-                      binop
-                        op: *
-                          5 (int)
-                          4 (int)
-                      2 (int)
-              3 (int)
-          call @fuz()
-  return
-	y (var)
+    binop
+      op: =
+        x (var)
+        1 (bool)
 
-function foo
-  params: 
-  return: i32
+  if
+    cond: x (var)
+    return
+      expr: 1 (int)
 
-  return
-	1 (bool)
+  else
+    if
+      cond: 5 (int)
+      return
+        expr: 0 (int)
 
-function bar
-  params: x: i32, y: i32
-  return: i32
+    else
+      if
+        cond: 6 (int)
+        return
+          expr: 6 (int)
+
+      else
+        return
+          expr: 0 (int)
 
   return
-	x (var)
-
+    expr: 0 (int)
