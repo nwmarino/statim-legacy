@@ -149,24 +149,29 @@ std::unique_ptr<Statement> parse_match_stmt(std::shared_ptr<cctx> ctx) {
 
   std::vector<std::unique_ptr<MatchCase>> cases = {};
   while (ctx->prev().kind != TokenKind::CloseBrace) {
+    std::unique_ptr<Expr> case_expr;
+
     if (ctx->prev().kind == TokenKind::Identifier && ctx->prev().value == "_") {
-      // default case
+      // eat the default token
+      ctx->tk_next();
+      
+      case_expr = std::make_unique<DefaultExpr>();
+    } else {
+      case_expr = parse_expr(ctx);
     }
 
-    if (std::unique_ptr<Expr> case_expr = parse_expr(ctx)) {
-      if (ctx->prev().kind != TokenKind::FatArrow) {
-        tokexp_panic("'=>'", std::move(ctx->prev().meta));
-      }
+    if (!case_expr) {
+      return warn_stmt("expected expression after match 'case'");
+    }
 
-      // eat the fat arrow
-      ctx->tk_next();
+    if (ctx->prev().kind != TokenKind::FatArrow) {
+      tokexp_panic("'=>'", std::move(ctx->prev().meta));
+    }
 
-      std::unique_ptr<Statement> case_stmt = parse_stmt(ctx);
+    // eat the fat arrow
+    ctx->tk_next();
 
-      if (!case_stmt) {
-        return warn_stmt("expected statement after match '=>'");
-      }
-
+    if (std::unique_ptr<Statement> case_stmt = parse_stmt(ctx)) {
       cases.push_back(std::make_unique<MatchCase>(std::move(case_expr), std::move(case_stmt)));
     }
 

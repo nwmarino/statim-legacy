@@ -202,6 +202,11 @@ const std::string UntilStatement::to_str(int n) {
 }
 
 
+const std::string DefaultExpr::to_str(int n) {
+  return std::string().append(n, ' ') += "default";
+}
+
+
 const std::string MatchCase::to_str(int n) {
   std::string result;
 

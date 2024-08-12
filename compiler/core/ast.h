@@ -111,6 +111,13 @@ class MatchStatement : public Statement {
     const std::string to_str(int n);
 };
 
+/// Default expression.
+class DefaultExpr : public Expr {
+  public:
+    DefaultExpr() {};
+    const std::string to_str(int n);
+};
+
 /// Variable expression.
 ///
 /// `x`, `y`, `z`
