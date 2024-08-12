@@ -71,7 +71,7 @@ bind x, y;
 
 If/else statements,
 
-```c
+```rs
 if expression {
   ...
 }
@@ -83,13 +83,14 @@ else {
 }
 ```
 
-Switch statements,
+Pattern matching,
 
-```c
+```rs
 match expression {
-  x => ...;
-  y => ...;
-  z => ...;
+  x => ...,
+  y => ...,
+  z => ...,
+  _ => ...
 }
 ```
 
@@ -97,7 +98,7 @@ match expression {
 
 Until loops
 > Executes body until expression is met.
-```c
+```rs
 until expression {
   ...
 }

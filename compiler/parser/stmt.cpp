@@ -30,6 +30,8 @@ std::unique_ptr<Statement> parse_stmt(std::shared_ptr<cctx> ctx) {
           return parse_mut_decl(ctx);
         case KeywordType::Until:
           return parse_until_stmt(ctx);
+        case KeywordType::Match:
+          return parse_match_stmt(ctx);
         default:
           return warn_stmt("unknown keyword: " + ctx->prev().value);
       }
@@ -74,7 +76,7 @@ std::unique_ptr<Statement> parse_return_stmt(std::shared_ptr<cctx> ctx) {
   if (ctx->prev().kind == TokenKind::Semi) {
     return std::make_unique<ReturnStatement>(std::make_unique<NullExpr>());
   }
-
+  
   if (std::unique_ptr<Expr> expr = parse_expr(ctx)) {
     return std::make_unique<ReturnStatement>(std::move(expr));
   }
@@ -125,4 +127,63 @@ std::unique_ptr<Statement> parse_until_stmt(std::shared_ptr<cctx> ctx) {
   }
 
   return nullptr;
+}
+
+
+std::unique_ptr<Statement> parse_match_stmt(std::shared_ptr<cctx> ctx) {
+  // eat the match token
+  ctx->tk_next();
+
+  std::unique_ptr<Expr> match_expr = parse_expr(ctx);
+
+  if (!match_expr) {
+    return warn_stmt("expected expression after 'match'");
+  }
+
+  if (ctx->prev().kind != TokenKind::OpenBrace) {
+    tokexp_panic("'{'", std::move(ctx->prev().meta));
+  }
+
+  // eat opening block
+  ctx->tk_next();
+
+  std::vector<std::unique_ptr<MatchCase>> cases = {};
+  while (ctx->prev().kind != TokenKind::CloseBrace) {
+    if (ctx->prev().kind == TokenKind::Identifier && ctx->prev().value == "_") {
+      // default case
+    }
+
+    if (std::unique_ptr<Expr> case_expr = parse_expr(ctx)) {
+      if (ctx->prev().kind != TokenKind::FatArrow) {
+        tokexp_panic("'=>'", std::move(ctx->prev().meta));
+      }
+
+      // eat the fat arrow
+      ctx->tk_next();
+
+      std::unique_ptr<Statement> case_stmt = parse_stmt(ctx);
+
+      if (!case_stmt) {
+        return warn_stmt("expected statement after match '=>'");
+      }
+
+      cases.push_back(std::make_unique<MatchCase>(std::move(case_expr), std::move(case_stmt)));
+    }
+
+    if (ctx->prev().kind == TokenKind::CloseBrace) {
+      break;
+    }
+
+    if (ctx->prev().kind != TokenKind::Comma) {
+      tokexp_panic("','", std::move(ctx->prev().meta));
+    }
+
+    // eat the comma
+    ctx->tk_next();
+  }
+
+  // eat closing block
+  ctx->tk_next();
+
+  return std::make_unique<MatchStatement>(std::move(match_expr), std::move(cases));
 }

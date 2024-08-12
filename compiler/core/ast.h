@@ -89,6 +89,28 @@ class UntilStatement : public Statement {
     const std::string to_str(int n);
 };
 
+/// Match case.
+class MatchCase : public AST {
+  std::unique_ptr<Expr> expr;
+  std::unique_ptr<Statement> body;
+
+  public:
+    MatchCase(std::unique_ptr<Expr> expr, std::unique_ptr<Statement> body)
+      : expr(std::move(expr)), body(std::move(body)) {};
+    const std::string to_str(int n);
+};
+
+/// Match statement.
+class MatchStatement : public Statement {
+  std::unique_ptr<Expr> expr;
+  std::vector<std::unique_ptr<MatchCase>> cases;
+
+  public:
+    MatchStatement(std::unique_ptr<Expr> expr, std::vector<std::unique_ptr<MatchCase>> cases)
+      : expr(std::move(expr)), cases(std::move(cases)) {};
+    const std::string to_str(int n);
+};
+
 /// Variable expression.
 ///
 /// `x`, `y`, `z`

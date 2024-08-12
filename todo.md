@@ -25,6 +25,9 @@ Until loop
 
 - Check that any `continue`, `break` statements are within the scope of a loop.
 
+Match statement
+- Check that a default _ case exists.
+
 
 Then, lower to IR (control flow graph) which is comprised of basic blocks, locals (memory locations on the
 stack), and expressions which can be evaluated.

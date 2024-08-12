@@ -119,6 +119,36 @@ const struct Token Tokenizer::advance_token() {
       col++;
       break;
 
+    /// Less than (equals) or left shift.
+    case '<':
+      if (peek() == '=') {
+        kind = LessThanEq;
+        iter++;
+        col++;
+      } else if (peek() == '<') {
+        kind = LeftShift;
+        iter++;
+        col++;
+      } else {
+        kind = LessThan;
+      }
+      break;
+
+    /// Greater than (equals) or right shift.
+    case '>':
+      if (peek() == '=') {
+        kind = GreaterThanEq;
+        iter++;
+        col++;
+      } else if (peek() == '>') {
+        kind = RightShift;
+        iter++;
+        col++;
+      } else {
+        kind = GreaterThan;
+      }
+      break;
+
     /// One-character tokens.
     case '{': kind = OpenBrace; break;
     case '}': kind = CloseBrace; break;
@@ -134,8 +164,6 @@ const struct Token Tokenizer::advance_token() {
     case '@': kind = At; break;
     case '#': kind = Hash; break;
     case '!': kind = Not; break;
-    case '<': kind = LessThan; break;
-    case '>': kind = GreaterThan; break;
     case '&': kind = And; break;
     case '|': kind = Or; break;
     case '^': kind = Xor; break;
@@ -172,7 +200,7 @@ const struct Token Tokenizer::advance_token() {
 
     /// Identifiers, numerics, unknowns.
     default:
-      if (isalpha(chr)) {
+      if (isalpha(chr) || chr == '_') {
         kind = Identifier;
         
         while (isalnum(src[iter]) || src[iter] == '_') {

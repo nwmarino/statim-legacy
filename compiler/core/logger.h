@@ -91,6 +91,14 @@ void symb_type_panic(const std::string &ident, const struct Metadata &data);
 void symb_const_panic(const std::string &ident, const struct Metadata &data);
 
 /**
+ * Panic about a missing match expression.
+ * 
+ * @param data Metadata about the bad token.
+ */
+[[noreturn]]
+void match_panic(const struct Metadata &data);
+
+/**
  * Log an error message.
  * 
  * @param m The error message.

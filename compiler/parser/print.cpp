@@ -200,3 +200,29 @@ const std::string UntilStatement::to_str(int n) {
 
   return result;
 }
+
+
+const std::string MatchCase::to_str(int n) {
+  std::string result;
+
+  result.append(n, ' ') += "case\n";
+  result.append(n + 2, ' ') += "expr: " + expr->to_str(0) + '\n';
+
+  result += body->to_str(n + 2);
+
+  return result;
+}
+
+
+const std::string MatchStatement::to_str(int n) {
+  std::string result;
+
+  result.append(n, ' ') += "match\n";
+  result.append(n + 2, ' ') += "expr: " + expr->to_str(0) + '\n';
+
+  for (std::unique_ptr<MatchCase> &match_case : cases) {
+    result += match_case->to_str(n + 2) + '\n';
+  }
+
+  return result;
+}

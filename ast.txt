@@ -3,38 +3,20 @@ function main
   return: i32
 
   assign
-    name: x
-    type: bool
-    rval: 0 (bool)
+    name: number
+    type: i32
+    rval: 21 (int)
 
-  until
-    cond: x (var)
-
-    binop
-      op: =
-        x (var)
-        1 (bool)
-
-  if
-    cond: x (var)
-    return
+  match
+    expr: number (var)
+    case
       expr: 1 (int)
-
-  else
-    if
-      cond: 5 (int)
       return
         expr: 0 (int)
-
-    else
-      if
-        cond: 6 (int)
-        return
-          expr: 6 (int)
-
-      else
-        return
-          expr: 0 (int)
+    case
+      expr: 2 (int)
+      return
+        expr: 1 (int)
 
   return
     expr: 0 (int)
