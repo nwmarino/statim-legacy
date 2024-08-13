@@ -121,6 +121,9 @@ std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx) {
     ret_ty = "void";
   }
 
+  // add function to symbol table
+  ctx->symb_add(name, Symbol(SymbolType::Function, ctx->prev().meta));
+
   return std::make_unique<PrototypeAST>(name, std::move(args), ret_ty);
 }
 
