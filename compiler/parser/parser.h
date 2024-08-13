@@ -21,7 +21,7 @@ std::unique_ptr<ProgAST> parse_prog(std::shared_ptr<cctx> ctx);
 
 /// Parse a top level definition.
 [[nodiscard]]
-std::unique_ptr<FunctionAST> parse_toplevel_definition(std::shared_ptr<cctx> ctx);
+std::unique_ptr<AST> parse_toplevel_definition(std::shared_ptr<cctx> ctx);
 
 /// Parse a function definition.
 [[nodiscard]]
@@ -30,6 +30,10 @@ std::unique_ptr<FunctionAST> parse_definition(std::shared_ptr<cctx> ctx);
 /// Parse a function prototype.
 [[nodiscard]]
 std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx);
+
+/// Parse a struct definition.
+[[nodiscard]]
+std::unique_ptr<StructAST> parse_struct(std::shared_ptr<cctx> ctx);
 
 /// Parse a variable declaration.
 [[nodiscard]]

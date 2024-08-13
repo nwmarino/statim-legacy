@@ -263,12 +263,57 @@ class FunctionAST : public AST {
     const std::string to_str(int n);
 };
 
-/// A program (list of definitions).
-class ProgAST : public AST {
+/// Abstract interface for a struct.
+class AbstractAST : public AST {
+  std::string name;
+  std::vector<std::unique_ptr<PrototypeAST>> decls;
+
+  public:
+    AbstractAST(const std::string &name, std::vector<std::unique_ptr<PrototypeAST>> decls)
+      : name(name), decls(std::move(decls)) {};
+    const std::string to_str(int n);
+};
+
+/// Struct definitions.
+class StructAST : public AST {
+  std::string name;
+  std::vector<std::pair<std::string, std::string>> fields;
+
+  public:
+    StructAST(const std::string &name, std::vector<std::pair<std::string, std::string>> fields)
+      : name(name), fields(std::move(fields)) {};
+    const std::string to_str(int n);
+};
+
+/// Implementation of a struct.
+class ImplAST : public AST {
+  std::string struct_name;
+  std::string abstract;
   std::vector<std::unique_ptr<FunctionAST>> defs;
 
   public:
-    ProgAST(std::vector<std::unique_ptr<FunctionAST>> defs) : defs(std::move(defs)) {};
+    ImplAST(const std::string &struct_name, const std::string &abstract, std::vector<std::unique_ptr<FunctionAST>> defs)
+      : struct_name(struct_name), abstract(abstract), defs(std::move(defs)) {};
+    const std::string to_str(int n);
+};
+
+/// A program (list of definitions).
+class ProgAST : public AST {
+  std::vector<std::unique_ptr<AST>> defs;
+
+  public:
+    ProgAST(std::vector<std::unique_ptr<AST>> defs) : defs(std::move(defs)) {};
+    const std::string to_str(int n);
+};
+
+/// A package (list of definitions).
+class PackageAST : public AST {
+  std::string name;
+  std::vector<std::unique_ptr<AST>> defs;
+
+  public:
+    PackageAST(const std::string &name, std::vector<std::unique_ptr<AST>> defs)
+      : name(name), defs(std::move(defs)) {};
     const std::string to_str(int n);
 };
 

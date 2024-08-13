@@ -10,8 +10,8 @@
 const std::string ProgAST::to_str(int n) {
   std::string result;
 
-  for (std::unique_ptr<FunctionAST> &def : defs) {
-    result += def->to_str(0);
+  for (std::unique_ptr<AST> &def : defs) {
+    result += def->to_str(0) + '\n';
   }
 
   return result;
@@ -227,6 +227,19 @@ const std::string MatchStatement::to_str(int n) {
 
   for (std::unique_ptr<MatchCase> &match_case : cases) {
     result += match_case->to_str(n + 2) + '\n';
+  }
+
+  return result;
+}
+
+
+const std::string StructAST::to_str(int n) {
+  std::string result;
+
+  result.append(n, ' ') += "struct " + name + '\n';
+
+  for (const std::pair<std::string, std::string> &field : fields) {
+    result.append(n + 2, ' ') += field.first + ": " + field.second + '\n';
   }
 
   return result;

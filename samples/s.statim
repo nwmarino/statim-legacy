@@ -2,6 +2,8 @@ fn main() {
   return;
 }
 
-fn foo() -> i32 {
-  return 1;
+struct A {
+  b: i64,
+  a: i64,
+  a: i32
 }

@@ -4,9 +4,9 @@ function main
 
   return
     expr: null
-function foo
-  params: 
-  return: i32
 
-  return
-    expr: 1 (int)
+struct A
+  b: i64
+  a: i64
+  a: i32
+

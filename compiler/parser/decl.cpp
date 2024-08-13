@@ -9,6 +9,35 @@
 #include "../core/logger.h"
 #include "../core/symbol.h"
 
+std::unique_ptr<AST> parse_toplevel_definition(std::shared_ptr<cctx> ctx) {
+  if (ctx->prev().kind == TokenKind::Identifier && ctx->symb_is_kw(ctx->prev().value, KeywordType::Struct)) {
+    return parse_struct(ctx);
+  }
+  return nullptr;
+}
+
+
+std::unique_ptr<FunctionAST> parse_definition(std::shared_ptr<cctx> ctx) {
+  // eat fn keyword
+  ctx->tk_next();
+
+  if (ctx->prev().kind != TokenKind::Identifier) {
+    tokexp_panic("identifier", ctx->prev().meta);
+  }
+
+  std::unique_ptr<PrototypeAST> head = parse_prototype(ctx);
+
+  if (!head)
+    return nullptr;
+
+  if (std::unique_ptr<Statement> body = parse_stmt(ctx)) {
+    return std::make_unique<FunctionAST>(std::move(head), std::move(body));
+  }
+
+  return nullptr;
+}
+
+
 std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx) {
   const std::string name = ctx->prev().value;
   if (ctx->symb_exists(name)) {
@@ -96,33 +125,74 @@ std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx) {
 }
 
 
-std::unique_ptr<FunctionAST> parse_toplevel_definition(std::shared_ptr<cctx> ctx) {
-  if (std::unique_ptr<Statement> body = parse_stmt(ctx)) {
-    auto head = std::make_unique<PrototypeAST>("", std::vector<std::pair<std::string, std::string>>());
-    return std::make_unique<FunctionAST>(std::move(head), std::move(body));
-  }
-  return nullptr;
-}
-
-
-std::unique_ptr<FunctionAST> parse_definition(std::shared_ptr<cctx> ctx) {
-  // eat fn keyword
+std::unique_ptr<StructAST> parse_struct(std::shared_ptr<cctx> ctx) {
+  // eat struct keyword
   ctx->tk_next();
 
   if (ctx->prev().kind != TokenKind::Identifier) {
     tokexp_panic("identifier", ctx->prev().meta);
   }
 
-  std::unique_ptr<PrototypeAST> head = parse_prototype(ctx);
-
-  if (!head)
-    return nullptr;
-
-  if (std::unique_ptr<Statement> body = parse_stmt(ctx)) {
-    return std::make_unique<FunctionAST>(std::move(head), std::move(body));
+  const std::string name = ctx->prev().value;
+  if (ctx->symb_exists(name)) {
+    symb_decl_panic(name, ctx->prev().meta);
   }
 
-  return nullptr;
+  // eat struct identifier
+  ctx->tk_next();
+
+  if (ctx->prev().kind != TokenKind::OpenBrace) {
+    tokexp_panic("'{'", ctx->prev().meta);
+  }
+
+  // eat open brace
+  ctx->tk_next();
+
+  std::vector<std::pair<std::string, std::string>> fields;
+  while (ctx->prev().kind == TokenKind::Identifier) {
+    std::string field_name = ctx->prev().value;
+
+    // eat field name
+    ctx->tk_next();
+
+    if (ctx->prev().kind != TokenKind::Colon) {
+      tokexp_panic("':'", ctx->prev().meta);
+    }
+
+    // eat colon
+    ctx->tk_next();
+
+    if (ctx->prev().kind != TokenKind::Identifier) {
+      tokexp_panic("identifier", ctx->prev().meta);
+    }
+
+    std::string field_ty = ctx->prev().value;
+
+    // eat field type
+    ctx->tk_next();
+
+    fields.push_back(std::make_pair(field_name, field_ty));
+
+    if (ctx->prev().kind == TokenKind::CloseBrace) {
+      break;
+    }
+
+    if (ctx->prev().kind != TokenKind::Comma) {
+      tokexp_panic("','", ctx->prev().meta);
+    }
+
+    // eat the comma
+    ctx->tk_next();
+  }
+
+  if (ctx->prev().kind != TokenKind::CloseBrace) {
+    tokexp_panic("'}'", ctx->prev().meta);
+  }
+
+  // eat close brace
+  ctx->tk_next();
+
+  return std::make_unique<StructAST>(name, std::move(fields));
 }
 
 

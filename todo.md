@@ -35,3 +35,7 @@ If statements
 Match statement
 - Check that a default _ case exists.
   - For boolean matches, only a true and false must exist.
+
+Structs
+- Check that each field name is unique.
+- Check that the field type exists.
