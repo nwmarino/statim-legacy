@@ -35,6 +35,10 @@ std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx);
 [[nodiscard]]
 std::unique_ptr<StructAST> parse_struct(std::shared_ptr<cctx> ctx);
 
+/// Parse an abstract definition.
+[[nodiscard]]
+std::unique_ptr<AbstractAST> parse_abstract(std::shared_ptr<cctx> ctx);
+
 /// Parse a variable declaration.
 [[nodiscard]]
 std::unique_ptr<Statement> parse_var_decl(std::shared_ptr<cctx> ctx);

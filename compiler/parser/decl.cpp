@@ -196,6 +196,59 @@ std::unique_ptr<StructAST> parse_struct(std::shared_ptr<cctx> ctx) {
 }
 
 
+std::unique_ptr<AbstractAST> parse_abstract(std::shared_ptr<cctx> ctx) {
+  // eat abstract keyword
+  ctx->tk_next();
+
+  if (ctx->prev().kind != TokenKind::Identifier) {
+    tokexp_panic("identifier", ctx->prev().meta);
+  }
+  std::string name = ctx->prev().value;
+
+  // eat abstract identifier
+  ctx->tk_next();
+
+  if (ctx->prev().kind != TokenKind::OpenBrace) {
+    tokexp_panic("'{'", ctx->prev().meta);
+  }
+
+  // eat open brace
+  ctx->tk_next();
+
+  std::vector<std::unique_ptr<PrototypeAST>> methods;
+  while (ctx->prev().kind != TokenKind::CloseBrace) {
+    if (ctx->symb_is_kw(ctx->prev().value, KeywordType::Fn)) {
+      // eat the fn keyword
+      ctx->tk_next();
+
+      if (std::unique_ptr<PrototypeAST> method = parse_prototype(ctx)) {
+        methods.push_back(std::move(method));
+      }
+    }
+
+    if (ctx->prev().kind == TokenKind::CloseBrace) {
+      break;
+    }
+
+    if (ctx->prev().kind != TokenKind::Semi) {
+      tokexp_panic("';'", ctx->prev().meta);
+    }
+
+    // eat the semi
+    ctx->tk_next();
+  }
+
+  if (ctx->prev().kind != TokenKind::CloseBrace) {
+    tokexp_panic("'}'", ctx->prev().meta);
+  }
+
+  // eat close brace
+  ctx->tk_next();
+
+  return std::make_unique<AbstractAST>(name, std::move(methods));
+}
+
+
 std::unique_ptr<Statement> parse_var_decl(std::shared_ptr<cctx> ctx) {
   switch (ctx->symb_get(ctx->prev().value).keyword) {
     case KeywordType::Fix:

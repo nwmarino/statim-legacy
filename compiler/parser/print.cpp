@@ -244,3 +244,16 @@ const std::string StructAST::to_str(int n) {
 
   return result;
 }
+
+
+const std::string AbstractAST::to_str(int n ) {
+  std::string result;
+
+  result.append(n, ' ') += "abstract " + name + '\n';
+
+  for (const std::unique_ptr<PrototypeAST> &decl : decls) {
+    result += decl->to_str(n + 2) + '\n';
+  }
+
+  return result;
+}

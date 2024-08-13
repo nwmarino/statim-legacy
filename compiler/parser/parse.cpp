@@ -33,6 +33,10 @@ std::unique_ptr<ProgAST> parse_prog(std::shared_ptr<cctx> ctx) {
       if (std::unique_ptr<StructAST> struc = parse_struct(ctx)) {
         defs.push_back(std::move(struc));
       }
+    } else if (ctx->symb_is_kw(ctx->prev().value, KeywordType::Abstract)) {
+      if (std::unique_ptr<AbstractAST> abstr = parse_abstract(ctx)) {
+        defs.push_back(std::move(abstr));
+      }
     } else {
       symb_panic("unexpected token", ctx->prev().meta);
     }

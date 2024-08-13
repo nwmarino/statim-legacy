@@ -10,3 +10,13 @@ struct A
   a: i64
   a: i32
 
+abstract Interface
+  function read
+    params: 
+    return: i32
+
+  function write
+    params: 
+    return: i32
+
+
