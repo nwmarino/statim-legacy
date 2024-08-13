@@ -15,7 +15,8 @@ Parser
 Pass 1
 
 Prototypes
-- If is "main", check that no return type is given.
+- If is "main", check that return type is void.
+- Otherwise, check that a return type is given.
 
 Variables
 - Check that the provided literal is of the same type.

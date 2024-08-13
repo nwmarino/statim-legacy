@@ -2,27 +2,11 @@ function main
   params: 
   return: i32
 
-  assign
-    name: number
-    type: i32
-    rval: 21 (int)
-
-  match
-    expr: number (var)
-    case
-      expr: 1 (int)
-      return
-        expr: 0 (int)
-    case
-      expr: 2 (int)
-      return
-        expr: 1 (int)
-
-    case
-      expr: default
-      return
-        expr: 2 (int)
-
+  return
+    expr: null
+function foo
+  params: 
+  return: i32
 
   return
-    expr: 0 (int)
+    expr: 1 (int)

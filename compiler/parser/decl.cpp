@@ -62,25 +62,36 @@ std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx) {
   // eat close parentheses
   ctx->tk_next();
 
-  if (ctx->prev().kind != TokenKind::Arrow) {
+  // check main does not have arguments
+  if (name == "main" && args.size() != 0) {
+    return warn_proto("entry function 'main' should not possess arguments");
+  }
+
+  // parse return type
+  std::string ret_ty;
+  if (name != "main") {
+    if (ctx->prev().kind != TokenKind::Arrow) {
     tokexp_panic("'->'", ctx->prev().meta);
+    }
+
+    // eat arrow
+    ctx->tk_next();
+
+    if (ctx->prev().kind != TokenKind::Identifier) {
+      tokexp_panic("identifier", ctx->prev().meta);
+    }
+
+    ret_ty = ctx->prev().value;
+    if (!ctx->symb_exists(ret_ty)) {
+      symb_type_panic(ret_ty, ctx->prev().meta);
+    }
+
+    // eat return type
+    ctx->tk_next();
+  } else {
+    ret_ty = "void";
   }
 
-  // eat arrow
-  ctx->tk_next();
-
-  if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic("identifier", ctx->prev().meta);
-  }
-
-  const std::string ret_ty = ctx->prev().value;
-  if (!ctx->symb_exists(ret_ty)) {
-    symb_type_panic(ret_ty, ctx->prev().meta);
-  }
-
-  // eat return type
-  ctx->tk_next();
-  
   return std::make_unique<PrototypeAST>(name, std::move(args));
 }
 
