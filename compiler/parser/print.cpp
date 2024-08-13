@@ -45,7 +45,7 @@ const std::string PrototypeAST::to_str(int n) {
 
   result += '\n';
 
-  result.append(n + 2, ' ') += "return: i32\n";
+  result.append(n + 2, ' ') += "return: " + ret_ty + '\n';
 
   return result;
 }

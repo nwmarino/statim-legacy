@@ -245,10 +245,11 @@ class FunctionCallExpr : public Expr {
 class PrototypeAST : public AST {
   std::string name;
   std::vector<std::pair<std::string, std::string>> args;
+  std::string ret_ty;
 
   public:
-    PrototypeAST(const std::string &name, std::vector<std::pair<std::string, std::string>> args)
-      : name(name), args(std::move(args)) {};
+    PrototypeAST(const std::string &name, std::vector<std::pair<std::string, std::string>> args, const std::string &ret_ty)
+      : name(name), args(std::move(args)), ret_ty(ret_ty) {};
     const std::string to_str(int n);
 };
 

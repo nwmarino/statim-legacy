@@ -8,7 +8,8 @@ struct A {
   a: i32
 }
 
-abstract Interface {
+abstract Ab {
   fn read() -> i32;
-  fn write() -> u64;
+  fn read() -> i32;
+  fn write() -> str;
 }

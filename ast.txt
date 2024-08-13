@@ -1,6 +1,6 @@
 function main
   params: 
-  return: i32
+  return: void
 
   return
     expr: null
@@ -10,13 +10,17 @@ struct A
   a: i64
   a: i32
 
-abstract Interface
+abstract Ab
+  function read
+    params: 
+    return: i32
+
   function read
     params: 
     return: i32
 
   function write
     params: 
-    return: i32
+    return: str
 
 
