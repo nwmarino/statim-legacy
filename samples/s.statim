@@ -1,11 +1,3 @@
 fn main() -> i32 {
-  fix number: i32 = 21;
-
-  match number {
-    1 => return 0,
-    2 => return 1,
-    _ => return 2
-  };
-
   return 0;
 }

@@ -17,10 +17,12 @@ function main
       expr: 2 (int)
       return
         expr: 1 (int)
+
     case
       expr: default
       return
         expr: 2 (int)
+
 
   return
     expr: 0 (int)
