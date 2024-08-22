@@ -49,6 +49,9 @@ class cctx {
     /// Get the next token in the stream.
     struct Token tk_next();
 
+    /// Begin parsing the next input file.
+    void file_next();
+
     /// Add a symbol to the symbol table.
     void symb_add(const std::string &name, const struct Symbol &symbol);
 

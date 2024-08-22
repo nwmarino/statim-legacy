@@ -1,5 +1,6 @@
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
+#include <filesystem>
 #include <iostream>
 #include <memory>
 
@@ -19,35 +20,48 @@ static void print_tkstream(std::shared_ptr<cctx> ctx) {
   }
 }
 
-/// Parse input files and options from the command line.
-static void parse_args(int argc, char *argv[], cflags &flags, std::vector<cfile> &input) {
+/// Parse command line arguments.
+static void parse_args(int argc, char *argv[], cflags &flags) {
   flags.emit_asm = false;
   
   for (int i = 1; i < argc; i++) {
     if (std::string(argv[i]) == "-S") {
       flags.emit_asm = true;
-    } else {
-      cfile file;
-      file.filename = parse_filename(argv[i]);
-      file.path = argv[i];
-      
-      input.push_back(file);
+    }
+  }
+}
+
+/// Parse the program source tree.
+static void parse_files(std::vector<cfile> files, std::filesystem::path dir) {
+  for (const std::filesystem::directory_entry &dir_entry : std::filesystem::directory_iterator{dir}) {
+    if (dir_entry.is_directory()) {
+      parse_files(files, dir_entry.path());
+    }
+
+    if (dir_entry.is_regular_file()) {
+      if (dir_entry.path().extension() == ".statim" || dir_entry.path().extension() == ".stm") {
+        cfile file;
+        file.filename = parse_filename(dir_entry.path().string());
+        file.path = dir_entry.path().string();
+        files.push_back(file);
+      }
     }
   }
 }
 
 /// Main entry point for the compiler.
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
-    panic("no input files", nullptr);
-  }
+  std::cout << read_cwd();
 
   cflags flags;
-  std::vector<cfile> input;
+  std::vector<cfile> files;
   
-  parse_args(argc, argv, flags, input);
+  parse_args(argc, argv, flags);
+  parse_files(files, std::filesystem::current_path());
 
-  std::shared_ptr<cctx> ctx = std::make_shared<cctx>(flags, input);
+  return 0;
+
+  std::shared_ptr<cctx> ctx = std::make_shared<cctx>(flags, files);
 
   std::unique_ptr<ProgAST> prog = parse_prog(ctx);
   write_ast(std::move(prog));

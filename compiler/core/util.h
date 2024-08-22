@@ -3,6 +3,7 @@
 #ifndef STATIMC_UTIL_H
 #define STATIMC_UTIL_H
 
+#include <filesystem>
 #include <fstream>
 #include <string>
 
@@ -28,12 +29,21 @@ inline std::string read_to_str(const std::string &path) {
   return contents;
 }
 
+
 /// Parse a file name from a path.
 [[nodiscard]]
 inline std::string parse_filename(const std::string &path) {
   std::size_t pos = path.find_last_of("/\\");
   return path.substr(pos + 1);
 }
+
+
+/// Read in the current working directory.
+[[nodiscard]]
+inline std::string read_cwd() {
+  return std::filesystem::current_path().string();
+}
+
 
 /// Dump all tokens currently in a lexer stream to a file.
 inline void dump_tkstream(std::shared_ptr<cctx> ctx) {
@@ -51,6 +61,7 @@ inline void dump_tkstream(std::shared_ptr<cctx> ctx) {
 
   file.close();
 }
+
 
 /// Write an ast to a file.
 inline void write_ast(std::unique_ptr<ProgAST> ast) {

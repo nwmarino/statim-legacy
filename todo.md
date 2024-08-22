@@ -12,11 +12,12 @@ Parser
 - [x] control flow
 - [x] match statements
 
-Pass 1
+Pass 1: Finish name resolution, typing
 
 Prototypes
 - If is "main", check that return type is void.
 - Otherwise, check that a return type is given.
+- Add function name to scope table.
 
 Variables
 - Check that the provided literal is of the same type.

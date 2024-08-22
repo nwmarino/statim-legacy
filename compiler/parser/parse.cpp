@@ -14,6 +14,22 @@ std::unique_ptr<ProgAST> parse_prog(std::shared_ptr<cctx> ctx) {
   // eat eof
   ctx->tk_next();
 
+  std::vector<std::unique_ptr<PackageAST>> pkgs = {};
+  while (ctx->prev().kind != TokenKind::Eof) {
+    break;
+    if (ctx->prev().kind == TokenKind::Semi) {
+      ctx->tk_next();
+      continue;
+    }
+  }
+
+  return std::make_unique<ProgAST>(std::move(pkgs));
+}
+
+
+std::unique_ptr<PackageAST> parse_package(std::shared_ptr<cctx> ctx) {
+  std::string name = ctx->filename();
+
   std::vector<std::unique_ptr<AST>> defs = {};
   while (ctx->prev().kind != TokenKind::Eof) {
     if (ctx->prev().kind == TokenKind::Semi) {
@@ -37,10 +53,12 @@ std::unique_ptr<ProgAST> parse_prog(std::shared_ptr<cctx> ctx) {
       if (std::unique_ptr<AbstractAST> abstr = parse_abstract(ctx)) {
         defs.push_back(std::move(abstr));
       }
+    } else if (ctx->symb_is_kw(ctx->prev().value,KeywordType::Enum)) {
+      if (std::unique_ptr<EnumAST> enm = parse_enum(ctx)) {
+        defs.push_back(std::move(enm));
+      }
     } else {
-      symb_panic("unexpected token", ctx->prev().meta);
+      symb_panic("unexpected token: " + ctx->prev().value, ctx->prev().meta);
     }
   }
-
-  return std::make_unique<ProgAST>(std::move(defs));
 }

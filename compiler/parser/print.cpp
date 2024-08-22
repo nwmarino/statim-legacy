@@ -10,9 +10,24 @@
 const std::string ProgAST::to_str(int n) {
   std::string result;
 
+  for (std::unique_ptr<PackageAST> &pkg : pkgs) {
+    result += pkg->to_str(0) + '\n';
+  }
+
+  return result;
+}
+
+
+const std::string PackageAST::to_str(int n) {
+  std::string result;
+
+  result.append(n, ' ') += "package " + name + '\n';
+
   for (std::unique_ptr<AST> &def : defs) {
     result += def->to_str(0) + '\n';
   }
+
+  result.append(n, ' ') += "end package " + name + '\n';
 
   return result;
 }
@@ -253,6 +268,19 @@ const std::string AbstractAST::to_str(int n ) {
 
   for (const std::unique_ptr<PrototypeAST> &decl : decls) {
     result += decl->to_str(n + 2) + '\n';
+  }
+
+  return result;
+}
+
+
+const std::string EnumAST::to_str(int n) {
+  std::string result;
+
+  result.append(n, ' ') += "enum " + name + '\n';
+
+  for (const std::string &variant : variants) {
+    result.append(n + 2, ' ') += variant + '\n';
   }
 
   return result;

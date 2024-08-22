@@ -235,6 +235,9 @@ typedef enum KeywordType {
   /// else
   Else,
 
+  /// end
+  End,
+
   /// enum
   Enum,
 

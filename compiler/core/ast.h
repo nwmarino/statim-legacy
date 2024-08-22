@@ -251,6 +251,7 @@ class PrototypeAST : public AST {
     PrototypeAST(const std::string &name, std::vector<std::pair<std::string, std::string>> args, const std::string &ret_ty)
       : name(name), args(std::move(args)), ret_ty(ret_ty) {};
     const std::string to_str(int n);
+    const std::string get_name() { return name; }
 };
 
 /// Function definitions.
@@ -262,6 +263,7 @@ class FunctionAST : public AST {
     FunctionAST(std::unique_ptr<PrototypeAST> head, std::unique_ptr<Statement> body)
       : head(std::move(head)), body(std::move(body)) {};
     const std::string to_str(int n);
+    const std::string get_name() { return head->get_name(); }
 };
 
 /// Abstract interface for a struct.
@@ -286,6 +288,17 @@ class StructAST : public AST {
     const std::string to_str(int n);
 };
 
+/// Enum definitions.
+class EnumAST : public AST {
+  std::string name;
+  std::vector<std::string> variants;
+
+  public:
+    EnumAST(const std::string &name, std::vector<std::string> variants)
+      : name(name), variants(std::move(variants)) {};
+    const std::string to_str(int n);
+};
+
 /// Implementation of a struct.
 class ImplAST : public AST {
   std::string struct_name;
@@ -298,15 +311,6 @@ class ImplAST : public AST {
     const std::string to_str(int n);
 };
 
-/// A program (list of definitions).
-class ProgAST : public AST {
-  std::vector<std::unique_ptr<AST>> defs;
-
-  public:
-    ProgAST(std::vector<std::unique_ptr<AST>> defs) : defs(std::move(defs)) {};
-    const std::string to_str(int n);
-};
-
 /// A package (list of definitions).
 class PackageAST : public AST {
   std::string name;
@@ -315,6 +319,15 @@ class PackageAST : public AST {
   public:
     PackageAST(const std::string &name, std::vector<std::unique_ptr<AST>> defs)
       : name(name), defs(std::move(defs)) {};
+    const std::string to_str(int n);
+};
+
+/// A program (list of packages).
+class ProgAST : public AST {
+  std::vector<std::unique_ptr<PackageAST>> pkgs;
+
+  public:
+    ProgAST(std::vector<std::unique_ptr<PackageAST>> pkgs) : pkgs(std::move(pkgs)) {};
     const std::string to_str(int n);
 };
 

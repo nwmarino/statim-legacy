@@ -121,9 +121,6 @@ std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx) {
     ret_ty = "void";
   }
 
-  // add function to symbol table
-  ctx->symb_add(name, Symbol(SymbolType::Function, ctx->prev().meta));
-
   return std::make_unique<PrototypeAST>(name, std::move(args), ret_ty);
 }
 
@@ -249,6 +246,59 @@ std::unique_ptr<AbstractAST> parse_abstract(std::shared_ptr<cctx> ctx) {
   ctx->tk_next();
 
   return std::make_unique<AbstractAST>(name, std::move(methods));
+}
+
+
+std::unique_ptr<EnumAST> parse_enum(std::shared_ptr<cctx> ctx) {
+  // eat enum keyword
+  ctx->tk_next();
+
+  if (ctx->prev().kind != TokenKind::Identifier) {
+    tokexp_panic("identifier", ctx->prev().meta);
+  }
+  std::string name = ctx->prev().value;
+
+  // eat enum identifier
+  ctx->tk_next();
+
+  if (ctx->prev().kind != TokenKind::OpenBrace) {
+    tokexp_panic("'{'", ctx->prev().meta);
+  }
+
+  // eat open brace
+  ctx->tk_next();
+
+  std::vector<std::string> variants;
+  while (ctx->prev().kind != TokenKind::CloseBrace) {
+    if (ctx->prev().kind != TokenKind::Identifier) {
+      tokexp_panic("identifier", ctx->prev().meta);
+    }
+
+    variants.push_back(ctx->prev().value);
+
+    // eat the variant
+    ctx->tk_next();
+
+    if (ctx->prev().kind == TokenKind::CloseBrace) {
+      break;
+    }
+
+    if (ctx->prev().kind != TokenKind::Comma) {
+      tokexp_panic("','", ctx->prev().meta);
+    }
+
+    // eat the comma
+    ctx->tk_next();
+  }
+
+  if (ctx->prev().kind != TokenKind::CloseBrace) {
+    tokexp_panic("'}'", ctx->prev().meta);
+  }
+
+  // eat close brace
+  ctx->tk_next();
+
+  return std::make_unique<EnumAST>(name, std::move(variants));
 }
 
 

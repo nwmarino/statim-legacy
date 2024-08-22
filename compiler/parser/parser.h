@@ -15,6 +15,10 @@
 [[nodiscard]]
 std::unique_ptr<ProgAST> parse_prog(std::shared_ptr<cctx> ctx);
 
+/// Parse a package.
+[[nodiscard]]
+std::unique_ptr<PackageAST> parse_package(std::shared_ptr<cctx> ctx);
+
 
 /// Declaration parsing functions.
 /// For implementations, see compiler/parser/decl.cpp.
@@ -38,6 +42,10 @@ std::unique_ptr<StructAST> parse_struct(std::shared_ptr<cctx> ctx);
 /// Parse an abstract definition.
 [[nodiscard]]
 std::unique_ptr<AbstractAST> parse_abstract(std::shared_ptr<cctx> ctx);
+
+/// Parse an enum definition.
+[[nodiscard]]
+std::unique_ptr<EnumAST> parse_enum(std::shared_ptr<cctx> ctx);
 
 /// Parse a variable declaration.
 [[nodiscard]]

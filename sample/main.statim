@@ -1,0 +1,10 @@
+pkg sec;
+pkg tri;
+
+fn main() {
+  return;
+}
+
+fn foo() -> u32 {
+  return bar();
+}
