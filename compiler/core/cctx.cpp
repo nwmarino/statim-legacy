@@ -3,6 +3,7 @@
 #include "cctx.h"
 #include "token.h"  
 #include "util.h"
+#include <iostream>
 
 cctx::cctx(cflags flags, std::vector<cfile> input) : flags(flags), input(input), m_prev(Token(Eof)) {
   file_next();
@@ -56,14 +57,14 @@ struct Token cctx::tk_next() {
 
 void cctx::file_next() {
   if (input.size() != 0) {
-    std::string f_src = read_to_str(input[0].path);
-    std::string f_filename = input[0].filename;
+    std::string f_src = read_to_str(input.at(input.size() - 1).path);
+    std::string f_filename = input.at(input.size() - 1).filename;
     std::size_t f_len = f_src.size();
 
     this->m_filename = f_filename;
     lexer = std::make_unique<Tokenizer>(f_src, f_filename, f_len);
 
-    input.erase(input.begin());
+    input.pop_back();
   }
 }
 

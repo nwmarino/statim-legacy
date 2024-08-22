@@ -21,7 +21,22 @@ const std::string ProgAST::to_str(int n) {
 const std::string PackageAST::to_str(int n) {
   std::string result;
 
-  result.append(n, ' ') += "package " + name + '\n';
+  result.append(n, ' ') += "start package " + name + '\n';
+
+  if (!imports.empty()) {
+    result.append(n + 2, ' ') += "imports: ";
+
+    for (const std::string &import : imports) {
+      result += import + ", ";
+    }
+
+    result.pop_back();
+    result.pop_back();
+
+    result += '\n';
+  }
+
+  result += '\n';
 
   for (std::unique_ptr<AST> &def : defs) {
     result += def->to_str(0) + '\n';

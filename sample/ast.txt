@@ -1,0 +1,42 @@
+start package main
+  imports: sec, tri
+
+function main
+  params: 
+  return: void
+
+  return
+    expr: null
+
+function foo
+  params: 
+  return: u32
+
+  return
+    expr: call @bar()
+
+end package main
+
+start package sec
+  imports: tri
+
+function bar
+  params: 
+  return: u32
+
+  return
+    expr: 1 (int)
+
+end package sec
+
+start package tri
+
+function util
+  params: 
+  return: bool
+
+  return
+    expr: 0 (bool)
+
+end package tri
+

@@ -315,10 +315,11 @@ class ImplAST : public AST {
 class PackageAST : public AST {
   std::string name;
   std::vector<std::unique_ptr<AST>> defs;
+  std::vector<std::string> imports;
 
   public:
-    PackageAST(const std::string &name, std::vector<std::unique_ptr<AST>> defs)
-      : name(name), defs(std::move(defs)) {};
+    PackageAST(const std::string &name, std::vector<std::unique_ptr<AST>> defs, std::vector<std::string> imports)
+      : name(name), defs(std::move(defs)), imports(std::move(imports)) {};
     const std::string to_str(int n);
 };
 

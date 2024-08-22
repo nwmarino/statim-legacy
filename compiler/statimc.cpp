@@ -20,6 +20,7 @@ static void print_tkstream(std::shared_ptr<cctx> ctx) {
   }
 }
 
+
 /// Parse command line arguments.
 static void parse_args(int argc, char *argv[], cflags &flags) {
   flags.emit_asm = false;
@@ -31,11 +32,12 @@ static void parse_args(int argc, char *argv[], cflags &flags) {
   }
 }
 
+
 /// Parse the program source tree.
-static void parse_files(std::vector<cfile> files, std::filesystem::path dir) {
+static std::vector<cfile> parse_files(std::vector<cfile> files, std::filesystem::path dir) {
   for (const std::filesystem::directory_entry &dir_entry : std::filesystem::directory_iterator{dir}) {
     if (dir_entry.is_directory()) {
-      parse_files(files, dir_entry.path());
+      files = parse_files(files, dir_entry.path());
     }
 
     if (dir_entry.is_regular_file()) {
@@ -47,21 +49,19 @@ static void parse_files(std::vector<cfile> files, std::filesystem::path dir) {
       }
     }
   }
+
+  return files;
 }
+
 
 /// Main entry point for the compiler.
 int main(int argc, char *argv[]) {
-  std::cout << read_cwd();
-
   cflags flags;
-  std::vector<cfile> files;
   
   parse_args(argc, argv, flags);
-  parse_files(files, std::filesystem::current_path());
+  std::vector<cfile> files = parse_files(std::vector<cfile>(), std::filesystem::current_path());
 
-  return 0;
-
-  std::shared_ptr<cctx> ctx = std::make_shared<cctx>(flags, files);
+  std::shared_ptr<cctx> ctx = std::make_shared<cctx>(flags, std::move(files));
 
   std::unique_ptr<ProgAST> prog = parse_prog(ctx);
   write_ast(std::move(prog));
