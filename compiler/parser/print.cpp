@@ -300,3 +300,16 @@ const std::string EnumAST::to_str(int n) {
 
   return result;
 }
+
+
+const std::string ImplAST::to_str(int n) {
+  std::string result;
+
+  result.append(n, ' ') += "implement " + abstract + " -> " + struct_name + '\n';
+
+  for (const std::unique_ptr<FunctionAST> &def : defs) {
+    result += def->to_str(n + 2) + '\n';
+  }
+
+  return result;
+}

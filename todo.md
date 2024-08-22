@@ -45,6 +45,7 @@ Abstract
 - Check that return types exist.
 
 Impl
+- Add methods and implement to struct.
 
 Packages
 - Check multiple packages of the same name do not exist.

@@ -263,6 +263,65 @@ std::unique_ptr<AbstractAST> parse_abstract(std::shared_ptr<cctx> ctx) {
 }
 
 
+std::unique_ptr<ImplAST> parse_impl(std::shared_ptr<cctx> ctx) {
+  // eat impl keyword
+  ctx->tk_next();
+
+  if (ctx->prev().kind != TokenKind::Identifier) {
+    tokexp_panic("identifier", ctx->prev().meta);
+  }
+
+  std::string abs_name = ctx->prev().value;
+
+  // eat abstract identifier
+  ctx->tk_next();
+
+  if (!ctx->symb_is_kw(ctx->prev().value, KeywordType::For)) {
+    tokexp_panic("'for'", ctx->prev().meta);
+  }
+
+  // eat for keyword
+  ctx->tk_next();
+
+  if (ctx->prev().kind != TokenKind::Identifier) {
+    tokexp_panic("identifier", ctx->prev().meta);
+  }
+
+  std::string struct_name = ctx->prev().value;
+
+  // eat struct identifier
+  ctx->tk_next();
+
+  if (ctx->prev().kind != TokenKind::OpenBrace) {
+    tokexp_panic("'{'", ctx->prev().meta);
+  }
+
+  // eat open brace
+  ctx->tk_next();
+
+  std::vector<std::unique_ptr<FunctionAST>> methods = {};
+  while (ctx->prev().kind != TokenKind::CloseBrace) {
+    if (ctx->symb_is_kw(ctx->prev().value, KeywordType::Fn)) {
+      if (std::unique_ptr<FunctionAST> method = parse_definition(ctx)) {
+        methods.push_back(std::move(method));
+        continue;
+      }
+    }
+
+    if (ctx->prev().kind == TokenKind::CloseBrace) {
+      break;
+    }
+
+    impl_panic(ctx->prev().meta);
+  }
+
+  // eat close brace
+  ctx->tk_next();
+
+  return std::make_unique<ImplAST>(abs_name, struct_name, std::move(methods));
+}
+
+
 std::unique_ptr<EnumAST> parse_enum(std::shared_ptr<cctx> ctx) {
   // eat enum keyword
   ctx->tk_next();

@@ -85,6 +85,10 @@ std::unique_ptr<PackageAST> parse_package(std::shared_ptr<cctx> ctx) {
       if (std::unique_ptr<EnumAST> enm = parse_enum(ctx)) {
         defs.push_back(std::move(enm));
       }
+    } else if (ctx->symb_is_kw(ctx->prev().value, KeywordType::Impl)) {
+      if (std::unique_ptr<ImplAST> impl = parse_impl(ctx)) {
+        defs.push_back(std::move(impl));
+      }
     } else {
       symb_panic("unexpected token: " + ctx->prev().value, ctx->prev().meta);
     }

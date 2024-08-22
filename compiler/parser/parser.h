@@ -43,6 +43,10 @@ std::unique_ptr<StructAST> parse_struct(std::shared_ptr<cctx> ctx);
 [[nodiscard]]
 std::unique_ptr<AbstractAST> parse_abstract(std::shared_ptr<cctx> ctx);
 
+/// Parse an abstract implementation.
+[[nodiscard]]
+std::unique_ptr<ImplAST> parse_impl(std::shared_ptr<cctx> ctx);
+
 /// Parse an enum definition.
 [[nodiscard]]
 std::unique_ptr<EnumAST> parse_enum(std::shared_ptr<cctx> ctx);

@@ -99,6 +99,14 @@ void symb_const_panic(const std::string &ident, const struct Metadata &data);
 void match_panic(const struct Metadata &data);
 
 /**
+ * Panic about an unresolved implementation.
+ * 
+ * @param data Metadata about the bad token.
+ */
+[[noreturn]]
+void impl_panic(const struct Metadata &data);
+
+/**
  * Panic about a repeated struct field.
  * 
  * @param ident The field name.

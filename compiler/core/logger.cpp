@@ -78,6 +78,13 @@ void match_panic(const struct Metadata &data) {
 }
 
 
+void impl_panic(const struct Metadata &data) {
+  fprintf(stderr, "statimc: expected function implementation\n");
+  fprintf(stderr, "see: %s:%zu:%zu\n", data.filename.c_str(), data.line_n, data.col_n);
+  exit(1);
+}
+
+
 void struct_field_panic(const std::string &ident, const std::string &struc, const struct Metadata &data) {
   fprintf(stderr, "statimc: struct field already exists: %s in %s\n", ident.c_str(), struc.c_str());
   fprintf(stderr, "see: %s:%zu:%zu\n", data.filename.c_str(), data.line_n, data.col_n);

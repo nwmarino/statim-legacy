@@ -8,17 +8,6 @@ function main
   return
     expr: null
 
-function foo
-  params: 
-  return: u32
-
-  return
-    expr: call @bar()
-
-enum Bob
-  A
-  B
-
 abstract Ab
   function read
     params: 
@@ -28,21 +17,26 @@ abstract Ab
     params: 
     return: i32
 
-  function foo
-    params: 
-    return: u32
-
-
-function foo
-  params: 
-  return: u32
-
-  return
-    expr: 1 (int)
 
 struct A
   A: i64
   B: i64
+
+implement A -> Ab
+function read
+  params: 
+  return: i32
+
+  return
+    expr: 1 (int)
+
+function write
+  params: 
+  return: i32
+
+  return
+    expr: 1 (int)
+
 
 end package main
 

@@ -281,10 +281,12 @@ class AbstractAST : public AST {
 class StructAST : public AST {
   std::string name;
   std::vector<std::pair<std::string, std::string>> fields;
+  std::vector<std::string> impls;
+  std::vector<std::unique_ptr<FunctionAST>> methods;
 
   public:
     StructAST(const std::string &name, std::vector<std::pair<std::string, std::string>> fields)
-      : name(name), fields(std::move(fields)) {};
+      : name(name), fields(std::move(fields)), impls(), methods() {};
     const std::string to_str(int n);
 };
 

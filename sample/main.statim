@@ -5,26 +5,22 @@ fn main() {
   return;
 }
 
-fn foo() -> u32 {
-  return bar();
-}
-
-enum Bob {
-  A,
-  B,
-}
-
 abstract Ab {
   fn read() -> i32;
   fn write() -> i32;
-  fn foo() -> u32;
-}
-
-fn foo() -> u32 {
-  return 1;
 }
 
 struct A {
   A: i64,
   B: i64,
+}
+
+impl Ab for A {
+  fn read() -> i32 {
+    return 1;
+  }
+
+  fn write() -> i32 { 
+    return 1;
+  }
 }
