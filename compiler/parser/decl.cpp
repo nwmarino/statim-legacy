@@ -152,6 +152,13 @@ std::unique_ptr<StructAST> parse_struct(std::shared_ptr<cctx> ctx) {
   while (ctx->prev().kind == TokenKind::Identifier) {
     std::string field_name = ctx->prev().value;
 
+    // check that the field does not already exist
+    for (const std::pair<std::string, std::string> &field : fields) {
+      if (field.first == field_name) {
+        struct_field_panic(field_name, name, ctx->prev().meta);
+      }
+    }
+
     // eat field name
     ctx->tk_next();
 
@@ -215,13 +222,20 @@ std::unique_ptr<AbstractAST> parse_abstract(std::shared_ptr<cctx> ctx) {
   // eat open brace
   ctx->tk_next();
 
-  std::vector<std::unique_ptr<PrototypeAST>> methods;
+  std::vector<std::unique_ptr<PrototypeAST>> methods = {};
   while (ctx->prev().kind != TokenKind::CloseBrace) {
     if (ctx->symb_is_kw(ctx->prev().value, KeywordType::Fn)) {
       // eat the fn keyword
       ctx->tk_next();
 
       if (std::unique_ptr<PrototypeAST> method = parse_prototype(ctx)) {
+        // check that the method does not already exist in the abstract
+        for (const std::unique_ptr<PrototypeAST> &decl : methods) {
+          if (decl->get_name() == method->get_name()) {
+            abstract_proto_panic(method->get_name(), name, ctx->prev().meta);
+          }
+        }
+
         methods.push_back(std::move(method));
       }
     }
@@ -272,6 +286,13 @@ std::unique_ptr<EnumAST> parse_enum(std::shared_ptr<cctx> ctx) {
   while (ctx->prev().kind != TokenKind::CloseBrace) {
     if (ctx->prev().kind != TokenKind::Identifier) {
       tokexp_panic("identifier", ctx->prev().meta);
+    }
+
+    // check that the variant does not already exist
+    for (const std::string &variant : variants) {
+      if (variant == ctx->prev().value) {
+        enum_variant_panic(ctx->prev().value, name, ctx->prev().meta);
+      }
     }
 
     variants.push_back(ctx->prev().value);

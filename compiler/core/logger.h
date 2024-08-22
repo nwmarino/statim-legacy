@@ -99,6 +99,36 @@ void symb_const_panic(const std::string &ident, const struct Metadata &data);
 void match_panic(const struct Metadata &data);
 
 /**
+ * Panic about a repeated struct field.
+ * 
+ * @param ident The field name.
+ * @param struc The struct name.
+ * @param data  Metadata about the bad token.
+ */
+[[noreturn]]
+void struct_field_panic(const std::string &ident, const std::string &struc, const struct Metadata &data);
+
+/**
+ * Panic about a repeated abstract method.
+ * 
+ * @param ident The method name.
+ * @param abs   The abstrat name.
+ * @param data  Metadata about the bad token.
+ */
+[[noreturn]]
+void abstract_proto_panic(const std::string &ident, const std::string &abs, const struct Metadata &data);
+
+/**
+ * Panic about a repeated enum variant.
+ * 
+ * @param ident   The variant name.
+ * @param enumer  The enum name.
+ * @param data    Metadata about the bad token.
+ */
+[[noreturn]]
+void enum_variant_panic(const std::string &ident, const std::string &enumer, const struct Metadata &data);
+
+/**
  * Log an error message.
  * 
  * @param m The error message.

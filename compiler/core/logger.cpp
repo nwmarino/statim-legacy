@@ -78,6 +78,27 @@ void match_panic(const struct Metadata &data) {
 }
 
 
+void struct_field_panic(const std::string &ident, const std::string &struc, const struct Metadata &data) {
+  fprintf(stderr, "statimc: struct field already exists: %s in %s\n", ident.c_str(), struc.c_str());
+  fprintf(stderr, "see: %s:%zu:%zu\n", data.filename.c_str(), data.line_n, data.col_n);
+  exit(1);
+}
+
+
+void abstract_proto_panic(const std::string &ident, const std::string &abs, const struct Metadata &data) {
+  fprintf(stderr, "statimc: abstract method already exists: %s in %s\n", ident.c_str(), abs.c_str());
+  fprintf(stderr, "see: %s:%zu:%zu\n", data.filename.c_str(), data.line_n, data.col_n);
+  exit(1);
+}
+
+
+void enum_variant_panic(const std::string &ident, const std::string &enumer, const struct Metadata &data) {
+  fprintf(stderr, "statimc: enum variant already exists: %s in %s\n", ident.c_str(), enumer.c_str());
+  fprintf(stderr, "see: %s:%zu:%zu\n", data.filename.c_str(), data.line_n, data.col_n);
+  exit(1);
+}
+
+
 std::unique_ptr<AST> warn(std::string m) {
   std::cout << "statimc: warn: " << m << '\n';
   return nullptr;

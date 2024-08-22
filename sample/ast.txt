@@ -15,6 +15,35 @@ function foo
   return
     expr: call @bar()
 
+enum Bob
+  A
+  B
+
+abstract Ab
+  function read
+    params: 
+    return: i32
+
+  function write
+    params: 
+    return: i32
+
+  function foo
+    params: 
+    return: u32
+
+
+function foo
+  params: 
+  return: u32
+
+  return
+    expr: 1 (int)
+
+struct A
+  A: i64
+  B: i64
+
 end package main
 
 start package sec

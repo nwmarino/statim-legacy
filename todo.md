@@ -11,6 +11,7 @@ Parser
 - [x] until loops
 - [x] control flow
 - [x] match statements
+- [x] import statements
 
 Pass 1: Finish name resolution, typing
 
@@ -38,5 +39,13 @@ Match statement
   - For boolean matches, only a true and false must exist.
 
 Structs
-- Check that each field name is unique.
 - Check that the field type exists.
+
+Abstract
+- Check that return types exist.
+
+Impl
+
+Packages
+- Check multiple packages of the same name do not exist.
+- Check a package is not imported more than once.
