@@ -37,14 +37,14 @@ void symb_panic(std::string m, const struct Metadata &data) {
 
 
 void symb_func_panic(const std::string &ident, const struct Metadata &data) {
-  fprintf(stderr, "statimc: unresolved function identifier %s\n", ident.c_str());
+  fprintf(stderr, "statimc: unresolved function identifier: %s\n", ident.c_str());
   fprintf(stderr, "see: %s:%zu:%zu\n", data.filename.c_str(), data.line_n, data.col_n);
   exit(1);
 }
 
 
 void symb_var_panic(const std::string &ident, const struct Metadata &data) {
-  fprintf(stderr, "statimc: unresolved variable identifier %s\n", ident.c_str());
+  fprintf(stderr, "statimc: unresolved variable identifier: %s\n", ident.c_str());
   fprintf(stderr, "see: %s:%zu:%zu\n", data.filename.c_str(), data.line_n, data.col_n);
   exit(1);
 }
@@ -107,30 +107,43 @@ void enum_variant_panic(const std::string &ident, const std::string &enumer, con
 
 
 std::unique_ptr<AST> warn(std::string m) {
-  std::cout << "statimc: warn: " << m << '\n';
+  fprintf(stderr, "statimc: warn: %s\n", m.c_str());
   return nullptr;
 }
 
 
-std::unique_ptr<Expr> warn_expr(std::string m) {
-  warn(m);
+std::unique_ptr<Expr> warn(std::string m, const struct Metadata &data) {
+  fprintf(stderr, "statimc: warn: %s\n", m.c_str());
+  fprintf(stderr, "see: %s:%zu:%zu\n", data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
 
 
-std::unique_ptr<PrototypeAST> warn_proto(std::string m) {
-  warn(m);
+std::unique_ptr<Expr> warn_expr(std::string m, const struct Metadata &data) {
+  warn(m, data);
   return nullptr;
 }
 
 
-std::unique_ptr<Statement> warn_stmt(std::string m) {
-  warn(m);
+std::unique_ptr<PrototypeAST> warn_proto(std::string m, const struct Metadata &data) {
+  warn(m, data);
   return nullptr;
 }
 
 
-std::unique_ptr<Statement> warn_const(std::string m) {
-  warn(m);
+std::unique_ptr<FunctionAST> warn_func(std::string m, const struct Metadata &data) {
+  warn(m, data);
+  return nullptr;
+}
+
+
+std::unique_ptr<Statement> warn_stmt(std::string m, const struct Metadata &data) {
+  warn(m, data);
+  return nullptr;
+}
+
+
+std::unique_ptr<Statement> warn_const(std::string m, const struct Metadata &data) {
+  warn(m, data);
   return nullptr;
 }

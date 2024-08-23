@@ -1,40 +1,18 @@
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
-#include <iostream>
 #include <memory>
 #include <utility>
 
+#include "parser.h"
 #include "../core/ast.h"
 #include "../core/cctx.h"
-#include "../core/token.h"
 #include "../core/logger.h"
-#include "parser.h"
+#include "../core/token.h"
 
-std::unique_ptr<ProgAST> parse_prog(std::shared_ptr<cctx> ctx) {
-  // eat eof
-  ctx->tk_next();
-  
-  std::vector<std::unique_ptr<PackageAST>> pkgs = {};
-  while (ctx->prev().kind != TokenKind::Eof) {
-    if (std::unique_ptr<PackageAST> pkg = parse_package(ctx)) {
-      pkgs.push_back(std::move(pkg));
-
-      // move to next file
-      ctx->file_next();
-
-      // eat eof
-      ctx->tk_next();
-      continue;
-    }
-    
-    // panic about unexpected token
-    symb_panic("unexpected token: " + ctx->prev().value, ctx->prev().meta);
-  }
-
-  return std::make_unique<ProgAST>(std::move(pkgs));
-}
-
-
+/// Parses a package import statement.
+///
+/// Imports appear in the form of `pkg <identifier>`.
+/// The identifier refers to some other file expected by the compiler.
 static std::string parse_import(std::shared_ptr<cctx> ctx) {
   // eat pkg keyword
   ctx->tk_next();
@@ -52,45 +30,86 @@ static std::string parse_import(std::shared_ptr<cctx> ctx) {
 }
 
 
+/// Parses a program as a syntax tree.
+///
+/// A program is a collection of packages, found by the compiler.
+/// Each package is a collection of definitions and imports.
+std::unique_ptr<ProgAST> parse_prog(std::shared_ptr<cctx> ctx) {
+  std::vector<std::unique_ptr<PackageAST>> pkgs;
+  do {
+    // move to next file
+    ctx->file_next();
+
+    if (std::unique_ptr<PackageAST> pkg = parse_package(ctx)) {
+      pkgs.push_back(std::move(pkg));
+    } else {
+      symb_panic("unexpected token: " + ctx->prev().value, ctx->prev().meta);
+    }
+  } while (ctx->prev().kind != TokenKind::Eof);
+
+  return std::make_unique<ProgAST>(std::move(pkgs));
+}
+
+
+/// Parses a statim source package.
+///
+/// A package is a collection of definitions and imports.
+/// Definitions include functions, structs, abstracts, enums, and impls.
+/// Imports are other packages that are used in the current package.
 std::unique_ptr<PackageAST> parse_package(std::shared_ptr<cctx> ctx) {
   std::string name = ctx->filename().substr(0, ctx->filename().find_last_of('.'));
 
-  std::vector<std::unique_ptr<AST>> defs = {};
-  std::vector<std::string> imports = {};
+  std::vector<std::unique_ptr<AST>> defs;
+  std::vector<std::string> imports;
   while (ctx->prev().kind != TokenKind::Eof) {
-    if (ctx->prev().kind == TokenKind::Semi) {
-      ctx->tk_next();
-      continue;
-    }
-
+    // verify any leading token is an ident
     if (ctx->prev().kind != TokenKind::Identifier) {
       tokexp_panic("identifier", ctx->prev().meta);
     }
 
-    if (ctx->symb_is_kw(ctx->prev().value, KeywordType::Pkg)) {
-      imports.push_back(parse_import(ctx));
-    } else if (ctx->symb_is_kw(ctx->prev().value, KeywordType::Fn)) {
-      if (std::unique_ptr<FunctionAST> func = parse_definition(ctx)) {
-        defs.push_back(std::move(func));
-      }
-    } else if (ctx->symb_is_kw(ctx->prev().value, KeywordType::Struct)) {
-      if (std::unique_ptr<StructAST> struc = parse_struct(ctx)) {
-        defs.push_back(std::move(struc));
-      }
-    } else if (ctx->symb_is_kw(ctx->prev().value, KeywordType::Abstract)) {
-      if (std::unique_ptr<AbstractAST> abstr = parse_abstract(ctx)) {
-        defs.push_back(std::move(abstr));
-      }
-    } else if (ctx->symb_is_kw(ctx->prev().value,KeywordType::Enum)) {
-      if (std::unique_ptr<EnumAST> enm = parse_enum(ctx)) {
-        defs.push_back(std::move(enm));
-      }
-    } else if (ctx->symb_is_kw(ctx->prev().value, KeywordType::Impl)) {
-      if (std::unique_ptr<ImplAST> impl = parse_impl(ctx)) {
-        defs.push_back(std::move(impl));
+    // parse definition based on keyword
+    if (ctx->symb_is(ctx->prev().value, SymbolType::Keyword)) {
+      KeywordType kw = ctx->symb_get(ctx->prev().value).keyword;
+      switch (kw) {
+        case KeywordType::Abstract:
+          if (std::unique_ptr<AbstractAST> abstr = parse_abstract(ctx)) {
+            defs.push_back(std::move(abstr));
+          }
+          break;
+        case KeywordType::Pkg:
+          imports.push_back(parse_import(ctx));
+          break;
+        case KeywordType::Fn:
+          if (std::unique_ptr<FunctionAST> func = parse_definition(ctx)) {
+            defs.push_back(std::move(func));
+          }
+          break;
+        case KeywordType::Struct:
+          if (std::unique_ptr<StructAST> struc = parse_struct(ctx)) {
+            defs.push_back(std::move(struc));
+          }
+          break;
+        
+        case KeywordType::Enum:
+          if (std::unique_ptr<EnumAST> enm = parse_enum(ctx)) {
+            defs.push_back(std::move(enm));
+          }
+          break;
+        case KeywordType::Impl:
+          if (std::unique_ptr<ImplAST> impl = parse_impl(ctx)) {
+            defs.push_back(std::move(impl));
+          }
+          break;
+        default:
+          symb_panic("unknown keyword: " + ctx->prev().value, ctx->prev().meta);
       }
     } else {
-      symb_panic("unexpected token: " + ctx->prev().value, ctx->prev().meta);
+      symb_panic("unresolved token: " + ctx->prev().value, ctx->prev().meta);
+    }
+
+    // eat possible semi
+    if (ctx->prev().kind == TokenKind::Semi) {
+      ctx->tk_next();
     }
   }
 

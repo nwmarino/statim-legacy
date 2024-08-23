@@ -139,14 +139,6 @@ enum Token {
 }
 ```
 
-Unions
-```rs
-union Optional {
-  Token,
-  null
-}
-```
-
 ### Packages
 
 Define a package file using `pkg FILE`. Import it elsewhere using the `use FILE`

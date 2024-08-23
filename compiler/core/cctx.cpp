@@ -6,8 +6,6 @@
 #include <iostream>
 
 cctx::cctx(cflags flags, std::vector<cfile> input) : flags(flags), input(input), m_prev(Token(Eof)) {
-  file_next();
-
   // add primitive types to the symbol table
   symb_add("bool", Symbol(SymbolType::Ty));
   symb_add("i32", Symbol(SymbolType::Ty));
@@ -61,8 +59,9 @@ void cctx::file_next() {
     std::string f_filename = input.at(input.size() - 1).filename;
     std::size_t f_len = f_src.size();
 
+    this->lexer = std::make_unique<Tokenizer>(f_src, f_filename, f_len);
     this->m_filename = f_filename;
-    lexer = std::make_unique<Tokenizer>(f_src, f_filename, f_len);
+    this->tk_next();
 
     input.pop_back();
   }

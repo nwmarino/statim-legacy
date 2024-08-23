@@ -145,35 +145,57 @@ void enum_variant_panic(const std::string &ident, const std::string &enumer, con
 std::unique_ptr<AST> warn(std::string m);
 
 /**
+ * Log an error message with metadata.
+ * 
+ * @param m    The error message.
+ * @param data Metadata about the bad input.
+ * @return     nullptr
+ */
+std::unique_ptr<Expr> warn(std::string m, const struct Metadata &data);
+
+/**
  * Log an error message for an expression.
  * 
- * @param m The error message.
- * @return  nullptr
+ * @param m    The error message.
+ * @param data Metadata about the bad input.
+ * @return     nullptr
  */
-std::unique_ptr<Expr> warn_expr(std::string m);
+std::unique_ptr<Expr> warn_expr(std::string m, const struct Metadata &data);
 
 /**
  * Log an error message for a prototype.
  * 
- * @param m The error message.
- * @return  nullptr
+ * @param m    The error message.
+ * @param data Metadata about the bad input.
+ * @return     nullptr
  */
-std::unique_ptr<PrototypeAST> warn_proto(std::string m);
+std::unique_ptr<PrototypeAST> warn_proto(std::string m, const struct Metadata &data);
+
+/**
+ * Log an error message for a function.
+ * 
+ * @param m    The error message.
+ * @param data Metadata about the bad input.
+ * @return     nullptr
+ */
+std::unique_ptr<FunctionAST> warn_func(std::string m, const struct Metadata &data);
 
 /**
  * Log an error message for a statement.
  * 
- * @param m The error message.
- * @return  nullptr
+ * @param m    The error message.
+ * @param data Metadata about the bad input.
+ * @return     nullptr
  */
-std::unique_ptr<Statement> warn_stmt(std::string m);
+std::unique_ptr<Statement> warn_stmt(std::string m, const struct Metadata &data);
 
 /**
  * Log an error message for an uninitialized constant.
  * 
- * @param m The error message.
- * @return  nullptr
+ * @param m    The error message.
+ * @param data Metadata about the bad input.
+ * @return     nullptr
  */
-std::unique_ptr<Statement> warn_const(std::string m);
+std::unique_ptr<Statement> warn_const(std::string m, const struct Metadata &data);
 
 #endif  // STATIMC_LOGGER_H
