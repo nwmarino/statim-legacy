@@ -1,4 +1,0 @@
-fn main() -> i32 {
-  fix x: int = 0;
-  return x;
-}

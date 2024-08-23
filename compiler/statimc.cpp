@@ -1,5 +1,6 @@
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
+#include <filesystem>
 #include <iostream>
 #include <memory>
 
@@ -19,39 +20,50 @@ static void print_tkstream(std::shared_ptr<cctx> ctx) {
   }
 }
 
-/// Parse input files and options from the command line.
-static void parse_args(int argc, char *argv[], cflags &flags, std::vector<cfile> &input) {
+
+/// Parse command line arguments.
+static void parse_args(int argc, char *argv[], cflags &flags) {
   flags.emit_asm = false;
   
   for (int i = 1; i < argc; i++) {
     if (std::string(argv[i]) == "-S") {
       flags.emit_asm = true;
-    } else {
-      cfile file;
-      file.filename = parse_filename(argv[i]);
-      file.path = argv[i];
-      
-      input.push_back(file);
     }
   }
 }
 
-/// Main entry point for the compiler.
-int main(int argc, char *argv[]) {
-  if (argc < 2) {
-    panic("no input files", nullptr);
+
+/// Parse the program source tree.
+static std::vector<cfile> parse_files(std::vector<cfile> files, std::filesystem::path dir) {
+  for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator{dir}) {
+    if (entry.is_directory()) {
+      files = parse_files(files, entry.path());
+    }
+
+    if (entry.is_regular_file() && entry.path().extension() == ".statim" ) {
+      cfile file;
+      file.filename = parse_filename(entry.path().string());
+      file.path = entry.path().string();
+      files.push_back(file);
+    }
   }
 
-  cflags flags;
-  std::vector<cfile> input;
-  
-  parse_args(argc, argv, flags, input);
+  return files;
+}
 
-  std::shared_ptr<cctx> ctx = std::make_shared<cctx>(flags, input);
+
+/// Main entry point for the compiler.
+int main(int argc, char *argv[]) {
+  cflags flags;
+  parse_args(argc, argv, flags);
+  std::vector<cfile> files = parse_files(std::vector<cfile>(), std::filesystem::current_path());
+
+  if (files.size() == 0) {
+    panic("no source files found in cwd", std::filesystem::current_path().string().c_str());
+  }
+
+  std::shared_ptr<cctx> ctx = std::make_shared<cctx>(flags, std::move(files));
 
   std::unique_ptr<ProgAST> prog = parse_prog(ctx);
   write_ast(std::move(prog));
-  //print_tkstream(ctx);
-  //dump_tkstream(ctx);
-  return 0;
 }

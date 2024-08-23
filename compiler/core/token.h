@@ -82,6 +82,8 @@ typedef enum {
   AndAnd,
   /// "||"
   OrOr,
+  /// "^^"
+  XorXor,
   /// "->"
   Arrow,
   /// "=>"
@@ -144,22 +146,24 @@ typedef enum {
 struct Metadata {
   std::string filename;
   std::size_t line_n;
+  std::size_t col_n;
 
   /// Default constructor.
-  inline Metadata() : filename("unknown"), line_n(0) {};
+  inline Metadata() : filename("unknown"), line_n(0), col_n(0) {};
 
   /// Constructor for basic token metadata.
-  inline Metadata(const std::string &filename, const std::size_t line_n)
-    : filename(filename), line_n(line_n) {};
+  inline Metadata(const std::string &filename, const std::size_t line_n, const std::size_t col_n)
+    : filename(filename), line_n(line_n), col_n(col_n) {};
 
   /// Copy constructor.
   inline Metadata(const Metadata &meta)
-    : filename(meta.filename), line_n(meta.line_n) {};
+    : filename(meta.filename), line_n(meta.line_n), col_n(meta.col_n) {};
 
   /// Assignment operator.
   inline Metadata &operator=(const Metadata &meta) {
     filename = meta.filename;
     line_n = meta.line_n;
+    col_n = meta.col_n;
     return *this;
   }
 };
@@ -216,29 +220,11 @@ struct Token {
 
 // An enum of recognized keywords.
 typedef enum KeywordType {
-  /// fn
-  Fn,
+  /// abstract
+  Abstract,
 
-  /// let
-  Let,
-
-  /// fix
-  Fix,
-
-  /// if
-  If,
-
-  /// else
-  Else,
-
-  /// while
-  While,
-
-  /// for
-  For,
-
-  /// return
-  Return,
+  /// bind
+  Bind,
 
   /// break
   Break,
@@ -246,8 +232,65 @@ typedef enum KeywordType {
   /// continue
   Continue,
 
+  /// else
+  Else,
+
+  /// end
+  End,
+
+  /// enum
+  Enum,
+
+  /// extern
+  Extern,
+
+  /// false
+  False,
+
+  /// fix
+  Fix,
+
+  /// fn
+  Fn,
+
+  /// for
+  For,
+
+  /// if
+  If,
+
+  /// impl
+  Impl,
+
+  /// let
+  Let,
+
   /// match
-  Match
+  Match,
+
+  /// pkg
+  Pkg,
+
+  /// protect
+  Protect,
+
+  /// return
+  Return,
+
+  /// struct
+  Struct,
+
+  /// true
+  True,
+
+  /// union
+  Union,
+
+  /// until
+  Until,
+
+  /// use
+  Use
 } KeywordType;
 
 #endif  // STATIMC_TOKEN_H

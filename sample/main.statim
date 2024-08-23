@@ -1,0 +1,27 @@
+pkg sec;
+pkg tri;
+
+fn main() {
+  match {}
+  return;
+}
+
+impl Ab for A {
+  fn read() -> i32 {
+    return 1;
+  }
+
+  fn write() -> i32 { 
+    return 1;
+  }
+}
+
+abstract Ab {
+  fn read() -> i32;
+  fn write() -> i32;
+}
+
+struct A {
+  A: i64,
+  B: i64,
+}

@@ -21,10 +21,13 @@ typedef enum SymbolType {
   /// Function definitions
   Function,
 
-  // Keywords
+  /// Keywords
   Keyword,
 
-  // Type definitions
+  /// Abstracts
+  Interface,
+
+  /// Type definitions (structs, enums, unions)
   Ty
 } SymbolType;
 

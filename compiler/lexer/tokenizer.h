@@ -15,6 +15,7 @@ class Tokenizer {
   char prev;
   std::size_t iter;
   std::size_t line;
+  std::size_t col;
   
   /// Peek at the next character in the stream. Does not consume it.
   [[nodiscard]]

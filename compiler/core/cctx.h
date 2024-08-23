@@ -49,6 +49,9 @@ class cctx {
     /// Get the next token in the stream.
     struct Token tk_next();
 
+    /// Begin parsing the next input file.
+    void file_next();
+
     /// Add a symbol to the symbol table.
     void symb_add(const std::string &name, const struct Symbol &symbol);
 
@@ -66,6 +69,10 @@ class cctx {
     /// Check if a symbol exists and is of a certain type.
     [[nodiscard]]
     bool symb_is(const std::string &name, SymbolType type);
+
+    /// Check if a symbol exists and is a keyword.
+    [[nodiscard]]
+    bool symb_is_kw(const std::string &name, KeywordType kw);
 
     /// Get the last token in the stream.
     [[nodiscard]]
