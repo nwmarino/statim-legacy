@@ -2,7 +2,6 @@ pkg sec;
 pkg tri;
 
 fn main() {
-  match {}
   return;
 }
 

@@ -31,6 +31,18 @@ typedef enum SymbolType {
   Ty
 } SymbolType;
 
+/// A type definition kind.
+typedef enum TyKind {
+  /// A struct type.
+  TY_STRUCT,
+
+  /// An enum type.
+  TY_ENUM,
+
+  /// A union type.
+  TY_UNION
+} TyKind;
+
 /// A recognized smybol in a program.
 struct Symbol {
   /// The symbol type.
@@ -42,11 +54,17 @@ struct Symbol {
   /// Possible keyword type.
   KeywordType keyword;
 
+  /// Possible type kind.
+  TyKind type_kind;
+
   // Compiler-defined constructor.
   inline Symbol(SymbolType type) : type(type) {};
 
   // Basic user-defined constructor.
   inline Symbol(SymbolType type, const Metadata &meta) : type(type), meta(meta) {};
+
+  // Type symbol constructor.
+  inline Symbol(TyKind kind, const Metadata &meta) : type(SymbolType::Ty), meta(meta), type_kind(kind) {};
 
   // Keyword constructor.
   inline Symbol(KeywordType keyword) : type(SymbolType::Keyword), keyword(keyword) {};

@@ -38,7 +38,7 @@
 
 `bstr` byte sequence.
 
-`#Type` rune type.
+> `#Type` rune type.
 
 ### Variables
 
@@ -54,11 +54,21 @@ x = 5;
 let x: i32 = 5;
 ```
 
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
+
 Immutable local assignments using `fix`:
 > Must be declared the same line it is initialized.
 ```rs
 fix y: i32 = 6;
 ```
+
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
 
 Binding statements with `bind`:
 > Binds a new variable to an existing one for its lifetime.
@@ -66,6 +76,11 @@ Binding statements with `bind`:
 let y: i32 = 5;
 bind x, y;
 ```
+
+- [ ] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
 
 ### Control Flow
 
@@ -83,6 +98,11 @@ else {
 }
 ```
 
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
+
 Pattern matching using `match`:
 
 ```rs
@@ -94,6 +114,11 @@ match expression {
 }
 ```
 
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
+
 ### Looping instructions
 
 Until loop statements:
@@ -104,6 +129,11 @@ until expression {
 }
 ```
 
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
+
 ### User-defined Types
 
 Define a type using `struct`:
@@ -113,12 +143,22 @@ struct Dog {
 }
 ```
 
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
+
 Define an abstract interface using `abstract`:
 ```rs
 abstract MakeNoise {
   fn woof() -> str;
 }
 ```
+
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
 
 Implement all interface methods to a struct using `impl`:
 ```rs
@@ -129,10 +169,19 @@ impl MakeNoise for Dog {
 }
 ```
 
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
+
 Check that a `struct` type implements an interface using `impls`:
 ```rs
 Dog impls MakeNoise == true
 ```
+
+- [ ] Parsing
+- [ ] Lowering
+- [ ] Codegen
 
 Declare an enumerated type using `enum`:
 ```rs
@@ -143,11 +192,15 @@ enum Token {
 }
 ```
 
+- [x] Parsing
+- [ ] Lowering
+- [ ] Codegen
+
 ### Packages
 
 Import another source file using `pkg FILENAME`.
 
-Keep definitions private using the `protect` keyword:
+Keep definitions private to their package using the `protect` keyword:
 ```rs
 protect fn secret_function() -> void {
   ...

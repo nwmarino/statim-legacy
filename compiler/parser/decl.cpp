@@ -51,7 +51,7 @@ std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx) {
   // parse function arguments
   std::vector<std::pair<std::string, std::string>> args;
   while (ctx->prev().kind == TokenKind::Identifier) {
-    std::string argName = ctx->prev().value;
+    const std::string arg_name = ctx->prev().value;
     ctx->tk_next(); // eat the argument name
 
     if (ctx->prev().kind != TokenKind::Colon) {
@@ -62,10 +62,10 @@ std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx) {
     if (ctx->prev().kind != TokenKind::Identifier) {
       tokexp_panic("identifier", ctx->prev().meta);
     }
-    std::string arg_type = ctx->prev().value;
+    const std::string arg_type = ctx->prev().value;
     ctx->tk_next(); // eat the type identifier
 
-    args.push_back(std::make_pair(argName, arg_type));
+    args.push_back(std::make_pair(arg_name, arg_type));
 
     if (ctx->prev().kind == TokenKind::Comma) {
       ctx->tk_next();
@@ -94,7 +94,7 @@ std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx) {
     tokexp_panic("identifier", ctx->prev().meta);
   }
 
-  std::string ret_type = ctx->prev().value;
+  const std::string ret_type = ctx->prev().value;
   ctx->tk_next(); // eat type identifier
 
   return std::make_unique<PrototypeAST>(name, std::move(args), ret_type);
@@ -113,6 +113,7 @@ std::unique_ptr<StructAST> parse_struct(std::shared_ptr<cctx> ctx) {
   }
 
   const std::string name = ctx->prev().value;
+  const struct Metadata meta = ctx->prev().meta;
   ctx->tk_next(); // eat name identifier
 
   if (ctx->prev().kind != TokenKind::OpenBrace) {
@@ -122,7 +123,7 @@ std::unique_ptr<StructAST> parse_struct(std::shared_ptr<cctx> ctx) {
 
   std::vector<std::pair<std::string, std::string>> fields;
   while (ctx->prev().kind == TokenKind::Identifier) {
-    std::string field_name = ctx->prev().value;
+    const std::string field_name = ctx->prev().value;
 
     // check that the field does not already exist
     for (const std::pair<std::string, std::string> &field : fields) {
@@ -141,7 +142,7 @@ std::unique_ptr<StructAST> parse_struct(std::shared_ptr<cctx> ctx) {
       tokexp_panic("identifier", ctx->prev().meta);
     }
 
-    std::string field_type = ctx->prev().value;
+    const std::string field_type = ctx->prev().value;
     ctx->tk_next(); // eat field type identifier
 
     fields.push_back(std::make_pair(field_name, field_type));
@@ -162,7 +163,7 @@ std::unique_ptr<StructAST> parse_struct(std::shared_ptr<cctx> ctx) {
   ctx->tk_next(); // eat close brace
 
   // add struct to symbol table
-  ctx->symb_add(name, Symbol(SymbolType::Ty));
+  ctx->symb_add(name, Symbol(TyKind::TY_STRUCT, meta));
   return std::make_unique<StructAST>(name, std::move(fields));
 }
 
@@ -177,7 +178,8 @@ std::unique_ptr<AbstractAST> parse_abstract(std::shared_ptr<cctx> ctx) {
   if (ctx->prev().kind != TokenKind::Identifier) {
     tokexp_panic("identifier", ctx->prev().meta);
   }
-  std::string name = ctx->prev().value;
+  const std::string name = ctx->prev().value;
+  const struct Metadata meta = ctx->prev().meta;
   ctx->tk_next(); // eat the name identifier
 
   if (ctx->prev().kind != TokenKind::OpenBrace) {
@@ -217,7 +219,7 @@ std::unique_ptr<AbstractAST> parse_abstract(std::shared_ptr<cctx> ctx) {
   ctx->tk_next(); // eat close brace
 
   // add abstract to symbol table
-  ctx->symb_add(name, Symbol(SymbolType::Interface));
+  ctx->symb_add(name, Symbol(SymbolType::Interface, meta));
   return std::make_unique<AbstractAST>(name, std::move(methods));
 }
 
@@ -232,7 +234,7 @@ std::unique_ptr<ImplAST> parse_impl(std::shared_ptr<cctx> ctx) {
     tokexp_panic("identifier", ctx->prev().meta);
   }
 
-  std::string abs_name = ctx->prev().value;
+  const std::string abs_name = ctx->prev().value;
   ctx->tk_next(); // eat the abstract name identifier
 
   if (!ctx->symb_is_kw(ctx->prev().value, KeywordType::For)) {
@@ -244,7 +246,7 @@ std::unique_ptr<ImplAST> parse_impl(std::shared_ptr<cctx> ctx) {
     tokexp_panic("identifier", ctx->prev().meta);
   }
 
-  std::string struct_name = ctx->prev().value;
+  const std::string struct_name = ctx->prev().value;
   ctx->tk_next(); // eat the struct name identifier
 
   if (ctx->prev().kind != TokenKind::OpenBrace) {
@@ -279,7 +281,8 @@ std::unique_ptr<EnumAST> parse_enum(std::shared_ptr<cctx> ctx) {
     tokexp_panic("identifier", ctx->prev().meta);
   }
 
-  std::string name = ctx->prev().value;
+  const std::string name = ctx->prev().value;
+  const struct Metadata meta = ctx->prev().meta;
   ctx->tk_next(); // eat the name identifier
 
   if (ctx->prev().kind != TokenKind::OpenBrace) {
@@ -315,7 +318,7 @@ std::unique_ptr<EnumAST> parse_enum(std::shared_ptr<cctx> ctx) {
   ctx->tk_next(); // eat close brace
 
   // add enum to symbol table
-  ctx->symb_add(name, Symbol(SymbolType::Ty));
+  ctx->symb_add(name, Symbol(TyKind::TY_ENUM, meta));
   return std::make_unique<EnumAST>(name, std::move(variants));
 }
 

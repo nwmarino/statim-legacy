@@ -5,7 +5,6 @@ function main
   params: 
   return: void
 
-  call @far()
   return
     expr: null
 
