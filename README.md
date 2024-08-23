@@ -14,8 +14,7 @@
 | `f()`, `.` | 10 | Calls, Member Access
 | `a++`, `a--` | 11 | Increment, Decrement
 
-
-### Types
+### Primitive Types
 
 `bool` boolean value (0, 1)
 
@@ -43,7 +42,7 @@
 
 ### Variables
 
-Mutable assignments
+Mutable local assignments using `let`:
 ```rs
 // initialization
 let x: i32;
@@ -55,13 +54,14 @@ x = 5;
 let x: i32 = 5;
 ```
 
-Fixed assignment
+Immutable local assignments using `fix`:
 > Must be declared the same line it is initialized.
 ```rs
 fix y: i32 = 6;
 ```
 
-Alias assignments
+Binding statements with `bind`:
+> Binds a new variable to an existing one for its lifetime.
 ```rs
 let y: i32 = 5;
 bind x, y;
@@ -69,7 +69,7 @@ bind x, y;
 
 ### Control Flow
 
-If/else statements,
+If then/else then statements using `if`, `else`:
 
 ```rs
 if expression {
@@ -83,7 +83,7 @@ else {
 }
 ```
 
-Pattern matching,
+Pattern matching using `match`:
 
 ```rs
 match expression {
@@ -96,7 +96,7 @@ match expression {
 
 ### Looping instructions
 
-Until loops
+Until loop statements:
 > Executes body until expression is met.
 ```rs
 until expression {
@@ -106,31 +106,35 @@ until expression {
 
 ### User-defined Types
 
-Structs
+Define a type using `struct`:
 ```rs
-struct A {
-  a: i64;
-  b: u64;
+struct Dog {
+  name: str;
 }
 ```
 
-Define an abstract
+Define an abstract interface using `abstract`:
 ```rs
-abstract Fun {
-  fn run() -> i32;
+abstract MakeNoise {
+  fn woof() -> str;
 }
 ```
 
-Implement an abstract to a struct,
+Implement all interface methods to a struct using `impl`:
 ```rs
-impl Fun for A {
-  fn run() -> i32 { 
+impl MakeNoise for Dog {
+  fn woof() -> str { 
     ...
   }
 }
 ```
 
-Enumerations
+Check that a `struct` type implements an interface using `impls`:
+```rs
+Dog impls MakeNoise == true
+```
+
+Declare an enumerated type using `enum`:
 ```rs
 enum Token {
   Plus,
@@ -141,9 +145,9 @@ enum Token {
 
 ### Packages
 
-Define a package file using `pkg FILE`. Import it elsewhere using the `use FILE`
-keyword. Keep definitions private using protection,
+Import another source file using `pkg FILENAME`.
 
+Keep definitions private using the `protect` keyword:
 ```rs
 protect fn secret_function() -> void {
   ...
