@@ -23,8 +23,6 @@ std::unique_ptr<FunctionAST> parse_definition(std::shared_ptr<cctx> ctx) {
   }
 
   if (std::unique_ptr<Statement> body = parse_stmt(ctx)) {
-    // add function to symbol table
-    ctx->symb_add(head->get_name(), Symbol(SymbolType::Function));
 
     return std::make_unique<FunctionAST>(std::move(head), std::move(body));
   }

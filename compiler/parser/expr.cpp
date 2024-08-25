@@ -132,11 +132,6 @@ std::unique_ptr<Expr> parse_identifier(std::shared_ptr<cctx> ctx) {
     return parse_function_call(ctx, ident);
   }
 
-  // panic if the identifier does not refer to a variable in this scope
-  if (!ctx->symb_is(ident, SymbolType::Constant) && !ctx->symb_is(ident, SymbolType::Variable)) {
-    symb_var_panic(ident, std::move(ctx->prev().meta));
-  }
-
   return std::make_unique<VariableExpr>(ident);
 }
 
@@ -251,9 +246,6 @@ std::unique_ptr<Expr> parse_binop(std::shared_ptr<cctx> ctx, std::unique_ptr<Exp
 
 /// Parses a function call expression.
 std::unique_ptr<Expr> parse_function_call(std::shared_ptr<cctx> ctx, const std::string ident) {
-  if (!ctx->symb_is(ident, SymbolType::Function)) {
-    symb_func_panic(ident, std::move(ctx->prev().meta));
-  }
   ctx->tk_next(); // eat open parentheses
 
   std::vector<std::unique_ptr<Expr>> args;
