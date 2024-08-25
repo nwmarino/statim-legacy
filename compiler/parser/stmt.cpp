@@ -51,13 +51,9 @@ std::unique_ptr<Statement> parse_compound_stmt(std::shared_ptr<cctx> ctx) {
       stmts.push_back(std::move(stmt));
     }
 
-    if (ctx->prev().kind != TokenKind::Semi) {
-      tokexp_panic("';'", std::move(ctx->prev().meta));
-    }
-    ctx->tk_next(); // eat semi
+    ctx->tk_expect(TokenKind::Semi, "';'");
   }
   ctx->tk_next(); // eat closing brace
-
   return std::make_unique<CompoundStatement>(std::move(stmts));
 }
 
@@ -142,10 +138,7 @@ std::unique_ptr<Statement> parse_match_stmt(std::shared_ptr<cctx> ctx) {
     return warn_stmt("expected expression after 'match'", ctx->prev().meta);
   }
 
-  if (ctx->prev().kind != TokenKind::OpenBrace) {
-    tokexp_panic("'{'", std::move(ctx->prev().meta));
-  }
-  ctx->tk_next(); // eat opening brace
+  ctx->tk_expect(TokenKind::OpenBrace, "'{'");
 
   std::vector<std::unique_ptr<MatchCase>> cases;
   while (ctx->prev().kind != TokenKind::CloseBrace) {
@@ -161,10 +154,7 @@ std::unique_ptr<Statement> parse_match_stmt(std::shared_ptr<cctx> ctx) {
       return warn_stmt("expected expression after match 'case'", ctx->prev().meta);
     }
 
-    if (ctx->prev().kind != TokenKind::FatArrow) {
-      tokexp_panic("'=>'", std::move(ctx->prev().meta));
-    }
-    ctx->tk_next(); // eat fat arrow
+    ctx->tk_expect(TokenKind::FatArrow, "'=>'");
 
     if (std::unique_ptr<Statement> case_stmt = parse_stmt(ctx)) {
       cases.push_back(std::make_unique<MatchCase>(std::move(case_expr), std::move(case_stmt)));
@@ -174,12 +164,8 @@ std::unique_ptr<Statement> parse_match_stmt(std::shared_ptr<cctx> ctx) {
       break;
     }
 
-    if (ctx->prev().kind != TokenKind::Comma) {
-      tokexp_panic("','", std::move(ctx->prev().meta));
-    }
-    ctx->tk_next(); // eat comma
+    ctx->tk_expect(TokenKind::Comma, "','");
   }
   ctx->tk_next(); // eat closing brace
-
   return std::make_unique<MatchStatement>(std::move(match_expr), std::move(cases));
 }

@@ -266,10 +266,7 @@ std::unique_ptr<Expr> parse_function_call(std::shared_ptr<cctx> ctx, const std::
       break;
     }
 
-    if (ctx->prev().kind != TokenKind::Comma) {
-      tokexp_panic("','", std::move(ctx->prev().meta));
-    }
-    ctx->tk_next(); // eat the comma
+    ctx->tk_expect(TokenKind::Comma, "','");
   }
   ctx->tk_next(); // eat close parentheses
 

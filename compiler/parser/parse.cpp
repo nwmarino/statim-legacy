@@ -14,17 +14,11 @@
 /// Imports appear in the form of `pkg <identifier>`.
 /// The identifier refers to some other file expected by the compiler.
 static std::string parse_import(std::shared_ptr<cctx> ctx) {
-  // eat pkg keyword
-  ctx->tk_next();
+  ctx->tk_next(); // eat the `pkg` identifier
 
-  if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic("identifier", ctx->prev().meta);
-  }
-
+  ctx->assert_ident();
   std::string import_name = ctx->prev().value;
-
-  // eat identifier
-  ctx->tk_next();
+  ctx->tk_next(); // eat identifier
 
   return import_name;
 }
@@ -35,16 +29,16 @@ static std::string parse_import(std::shared_ptr<cctx> ctx) {
 /// A program is a collection of packages, found by the compiler.
 /// Each package is a collection of definitions and imports.
 std::unique_ptr<ProgAST> parse_prog(std::shared_ptr<cctx> ctx) {
+  ctx->file_next();
   std::vector<std::unique_ptr<PackageAST>> pkgs;
   do {
-    // move to next file
-    ctx->file_next();
-
     if (std::unique_ptr<PackageAST> pkg = parse_package(ctx)) {
       pkgs.push_back(std::move(pkg));
     } else {
       symb_panic("unexpected token: " + ctx->prev().value, ctx->prev().meta);
     }
+
+    ctx->file_next();
   } while (ctx->prev().kind != TokenKind::Eof);
 
   return std::make_unique<ProgAST>(std::move(pkgs));
@@ -62,10 +56,7 @@ std::unique_ptr<PackageAST> parse_package(std::shared_ptr<cctx> ctx) {
   std::vector<std::unique_ptr<AST>> defs;
   std::vector<std::string> imports;
   while (ctx->prev().kind != TokenKind::Eof) {
-    // verify any leading token is an ident
-    if (ctx->prev().kind != TokenKind::Identifier) {
-      tokexp_panic("identifier", ctx->prev().meta);
-    }
+    ctx->assert_ident(); // verify any leading token is an ident
 
     // parse definition based on keyword
     if (ctx->symb_is(ctx->prev().value, SymbolType::Keyword)) {

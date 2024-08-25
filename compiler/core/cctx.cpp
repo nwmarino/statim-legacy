@@ -53,6 +53,21 @@ struct Token cctx::tk_next() {
 }
 
 
+void cctx::tk_expect(TokenKind kind, const std::string &msg) {
+  if (this->m_prev.kind != kind) {
+    tokexp_panic(msg, this->m_prev.meta);
+  }
+  this->tk_next(); // eat the token
+}
+
+
+void cctx::assert_ident() {
+  if (this->m_prev.kind != TokenKind::Identifier) {
+    tokexp_panic("identifier", this->m_prev.meta);
+  }
+}
+
+
 void cctx::file_next() {
   if (input.size() != 0) {
     std::string f_src = read_to_str(input.at(input.size() - 1).path);
@@ -69,6 +84,10 @@ void cctx::file_next() {
 
 
 void cctx::symb_add(const std::string &name, const struct Symbol &symbol) {
+  if (symb_table->exists(name)) {
+    sc_panic("identifier already exists: " + name, this->prev().meta);
+  }
+
   symb_table->put(name, symbol);
 }
 

@@ -49,6 +49,12 @@ class cctx {
     /// Get the next token in the stream.
     struct Token tk_next();
 
+    /// Expect the next token to be a certain kind.
+    void tk_expect(TokenKind kind, const std::string &msg);
+
+    /// Assert that the next token to be an identifier. Does not consume the token.
+    void assert_ident();
+
     /// Begin parsing the next input file.
     void file_next();
 

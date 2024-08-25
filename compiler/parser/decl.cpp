@@ -16,10 +16,7 @@
 std::unique_ptr<FunctionAST> parse_definition(std::shared_ptr<cctx> ctx) {
   ctx->tk_next(); // eat the `fn` identifier
 
-  if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic("identifier", ctx->prev().meta);
-  }
-
+  ctx->assert_ident();
   std::unique_ptr<PrototypeAST> head = parse_prototype(ctx);
   if (!head) {
     return warn_func("function definition missing prototype", ctx->prev().meta);
@@ -43,10 +40,7 @@ std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx) {
   const std::string name = ctx->prev().value;
   ctx->tk_next(); // eat name identifier
 
-  if (ctx->prev().kind != TokenKind::OpenParen) {
-    tokexp_panic("'('", ctx->prev().meta);
-  }
-  ctx->tk_next(); // eat open parentheses
+  ctx->tk_expect(TokenKind::OpenParen, "'('");
 
   // parse function arguments
   std::vector<std::pair<std::string, std::string>> args;
@@ -54,14 +48,9 @@ std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx) {
     const std::string arg_name = ctx->prev().value;
     ctx->tk_next(); // eat the argument name
 
-    if (ctx->prev().kind != TokenKind::Colon) {
-      tokexp_panic("':'", ctx->prev().meta);
-    }
-    ctx->tk_next(); // eat the separator
+    ctx->tk_expect(TokenKind::Colon, "':'");
 
-    if (ctx->prev().kind != TokenKind::Identifier) {
-      tokexp_panic("identifier", ctx->prev().meta);
-    }
+    ctx->assert_ident();
     const std::string arg_type = ctx->prev().value;
     ctx->tk_next(); // eat the type identifier
 
@@ -72,28 +61,18 @@ std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx) {
     }
   }
 
-  if (ctx->prev().kind != TokenKind::CloseParen) {
-    tokexp_panic("')'", ctx->prev().meta);
-  }
-  ctx->tk_next(); // eat close parentheses
-
-  if (name == "main") {
-    if (args.size() != 0) {
-      return warn_proto("entry function 'main' should not possess arguments", ctx->prev().meta);
-    }
-
-    return std::make_unique<PrototypeAST>(name, std::move(args), "void");
-  }
+  ctx->tk_expect(TokenKind::CloseParen, "')'");
 
   if (ctx->prev().kind != TokenKind::Arrow) {
+    if (ctx->prev().kind == TokenKind::OpenBrace) {
+      // implicit void return if no type is provided
+      return std::make_unique<PrototypeAST>(name, std::move(args), "void");
+    }
     tokexp_panic("'->'", ctx->prev().meta);
   }
   ctx->tk_next(); // eat the arrow
 
-  if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic("identifier", ctx->prev().meta);
-  }
-
+  ctx->assert_ident();
   const std::string ret_type = ctx->prev().value;
   ctx->tk_next(); // eat type identifier
 
@@ -108,18 +87,12 @@ std::unique_ptr<PrototypeAST> parse_prototype(std::shared_ptr<cctx> ctx) {
 std::unique_ptr<StructAST> parse_struct(std::shared_ptr<cctx> ctx) {
   ctx->tk_next(); // eat the `struct` identifier
 
-  if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic("identifier", ctx->prev().meta);
-  }
-
+  ctx->assert_ident();
   const std::string name = ctx->prev().value;
   const struct Metadata meta = ctx->prev().meta;
   ctx->tk_next(); // eat name identifier
 
-  if (ctx->prev().kind != TokenKind::OpenBrace) {
-    tokexp_panic("'{'", ctx->prev().meta);
-  }
-  ctx->tk_next(); // eat open brace
+  ctx->tk_expect(TokenKind::OpenBrace, "'{'");
 
   std::vector<std::pair<std::string, std::string>> fields;
   while (ctx->prev().kind == TokenKind::Identifier) {
@@ -133,15 +106,9 @@ std::unique_ptr<StructAST> parse_struct(std::shared_ptr<cctx> ctx) {
     }
     ctx->tk_next(); // eat field name identifier
 
-    if (ctx->prev().kind != TokenKind::Colon) {
-      tokexp_panic("':'", ctx->prev().meta);
-    }
-    ctx->tk_next(); // eat separator
+    ctx->tk_expect(TokenKind::Colon, "':'");
 
-    if (ctx->prev().kind != TokenKind::Identifier) {
-      tokexp_panic("identifier", ctx->prev().meta);
-    }
-
+    ctx->assert_ident();
     const std::string field_type = ctx->prev().value;
     ctx->tk_next(); // eat field type identifier
 
@@ -151,19 +118,9 @@ std::unique_ptr<StructAST> parse_struct(std::shared_ptr<cctx> ctx) {
       break;
     }
 
-    if (ctx->prev().kind != TokenKind::Comma) {
-      tokexp_panic("','", ctx->prev().meta);
-    }
-    ctx->tk_next(); // eat the comma
+    ctx->tk_expect(TokenKind::Comma, "','");
   }
-
-  if (ctx->prev().kind != TokenKind::CloseBrace) {
-    tokexp_panic("'}'", ctx->prev().meta);
-  }
-  ctx->tk_next(); // eat close brace
-
-  // add struct to symbol table
-  ctx->symb_add(name, Symbol(TyKind::TY_STRUCT, meta));
+  ctx->tk_expect(TokenKind::CloseBrace, "'}'");
   return std::make_unique<StructAST>(name, std::move(fields));
 }
 
@@ -175,17 +132,12 @@ std::unique_ptr<StructAST> parse_struct(std::shared_ptr<cctx> ctx) {
 std::unique_ptr<AbstractAST> parse_abstract(std::shared_ptr<cctx> ctx) {
   ctx->tk_next(); // eat the `abstract` identifier
 
-  if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic("identifier", ctx->prev().meta);
-  }
+  ctx->assert_ident();
   const std::string name = ctx->prev().value;
   const struct Metadata meta = ctx->prev().meta;
   ctx->tk_next(); // eat the name identifier
 
-  if (ctx->prev().kind != TokenKind::OpenBrace) {
-    tokexp_panic("'{'", ctx->prev().meta);
-  }
-  ctx->tk_next(); // eat open brace
+  ctx->tk_expect(TokenKind::CloseBrace, "'}'");
 
   std::vector<std::unique_ptr<PrototypeAST>> methods;
   while (ctx->prev().kind != TokenKind::CloseBrace) {
@@ -207,19 +159,9 @@ std::unique_ptr<AbstractAST> parse_abstract(std::shared_ptr<cctx> ctx) {
       break;
     }
 
-    if (ctx->prev().kind != TokenKind::Semi) {
-      tokexp_panic("';'", ctx->prev().meta);
-    }
-    ctx->tk_next(); // eat the semi
+    ctx->tk_expect(TokenKind::Semi, "';'");
   }
-
-  if (ctx->prev().kind != TokenKind::CloseBrace) {
-    tokexp_panic("'}'", ctx->prev().meta);
-  }
-  ctx->tk_next(); // eat close brace
-
-  // add abstract to symbol table
-  ctx->symb_add(name, Symbol(SymbolType::Interface, meta));
+  ctx->tk_next(); // eat the open brace
   return std::make_unique<AbstractAST>(name, std::move(methods));
 }
 
@@ -230,10 +172,7 @@ std::unique_ptr<AbstractAST> parse_abstract(std::shared_ptr<cctx> ctx) {
 std::unique_ptr<ImplAST> parse_impl(std::shared_ptr<cctx> ctx) {
   ctx->tk_next(); // eat the `impl` identifier
 
-  if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic("identifier", ctx->prev().meta);
-  }
-
+  ctx->assert_ident();
   const std::string abs_name = ctx->prev().value;
   ctx->tk_next(); // eat the abstract name identifier
 
@@ -242,17 +181,11 @@ std::unique_ptr<ImplAST> parse_impl(std::shared_ptr<cctx> ctx) {
   }
   ctx->tk_next(); // eat the `for` identifier
 
-  if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic("identifier", ctx->prev().meta);
-  }
-
+  ctx->assert_ident();
   const std::string struct_name = ctx->prev().value;
   ctx->tk_next(); // eat the struct name identifier
 
-  if (ctx->prev().kind != TokenKind::OpenBrace) {
-    tokexp_panic("'{'", ctx->prev().meta);
-  }
-  ctx->tk_next(); // eat open brace
+  ctx->tk_expect(TokenKind::OpenBrace, "'{'");
 
   std::vector<std::unique_ptr<FunctionAST>> methods;
   while (ctx->prev().kind != TokenKind::CloseBrace) {
@@ -265,7 +198,6 @@ std::unique_ptr<ImplAST> parse_impl(std::shared_ptr<cctx> ctx) {
     }
   }
   ctx->tk_next(); // eat close brace
-
   return std::make_unique<ImplAST>(abs_name, struct_name, std::move(methods));
 }
 
@@ -277,24 +209,16 @@ std::unique_ptr<ImplAST> parse_impl(std::shared_ptr<cctx> ctx) {
 std::unique_ptr<EnumAST> parse_enum(std::shared_ptr<cctx> ctx) {
   ctx->tk_next(); // eat the `enum` identifier
 
-  if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic("identifier", ctx->prev().meta);
-  }
-
+  ctx->assert_ident();
   const std::string name = ctx->prev().value;
   const struct Metadata meta = ctx->prev().meta;
-  ctx->tk_next(); // eat the name identifier
 
-  if (ctx->prev().kind != TokenKind::OpenBrace) {
-    tokexp_panic("'{'", ctx->prev().meta);
-  }
-  ctx->tk_next(); // eat open brace
+  ctx->tk_next(); // eat the name identifier
+  ctx->tk_expect(TokenKind::OpenBrace, "'{'");
 
   std::vector<std::string> variants;
   while (ctx->prev().kind != TokenKind::CloseBrace) {
-    if (ctx->prev().kind != TokenKind::Identifier) {
-      tokexp_panic("identifier", ctx->prev().meta);
-    }
+    ctx->assert_ident();
 
     // check that the variant does not already exist
     for (const std::string &variant : variants) {
@@ -310,15 +234,9 @@ std::unique_ptr<EnumAST> parse_enum(std::shared_ptr<cctx> ctx) {
       break;
     }
 
-    if (ctx->prev().kind != TokenKind::Comma) {
-      tokexp_panic("','", ctx->prev().meta);
-    }
-    ctx->tk_next(); // eat the comma
+    ctx->tk_expect(TokenKind::Comma, "','");
   }
   ctx->tk_next(); // eat close brace
-
-  // add enum to symbol table
-  ctx->symb_add(name, Symbol(TyKind::TY_ENUM, meta));
   return std::make_unique<EnumAST>(name, std::move(variants));
 }
 
@@ -347,35 +265,20 @@ std::unique_ptr<Statement> parse_var_decl(std::shared_ptr<cctx> ctx) {
 std::unique_ptr<Statement> parse_immut_decl(std::shared_ptr<cctx> ctx) {
   ctx->tk_next(); // eat the `fix` identifier
 
-  if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic("identifier", ctx->prev().meta);
-  }
-
+  ctx->assert_ident();
   const std::string name = ctx->prev().value;
   struct Metadata meta = ctx->prev().meta;
-
   ctx->tk_next(); // eat the name identifier
 
-  if (ctx->prev().kind != TokenKind::Colon) {
-    tokexp_panic("':'", ctx->prev().meta);
-  }
-  ctx->tk_next(); // eat the separator 
+  ctx->tk_expect(TokenKind::Colon, "':'");
 
-  if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic("identifier", ctx->prev().meta);
-  }
-
+  ctx->assert_ident();
   const std::string type = ctx->prev().value;
   ctx->tk_next(); // eat the type identifier
 
-  if (ctx->prev().kind != TokenKind::Eq) {
-    tokexp_panic("'='", ctx->prev().meta);
-  }
-  ctx->tk_next(); // eat the assignment operator
+  ctx->tk_expect(TokenKind::Eq, "'='");
 
   if (std::unique_ptr<Expr> expr = parse_expr(ctx)) {
-    // add constant to the symbol table
-    ctx->symb_add(name, Symbol(SymbolType::Constant, meta));
     return std::make_unique<AssignmentStatement>(name, type, std::move(expr));
   }
 
@@ -389,42 +292,25 @@ std::unique_ptr<Statement> parse_immut_decl(std::shared_ptr<cctx> ctx) {
 std::unique_ptr<Statement> parse_mut_decl(std::shared_ptr<cctx> ctx) {
   ctx->tk_next(); // eat the `let` identifier
 
-  if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic("identifier", ctx->prev().meta);
-  }
-
+  ctx->assert_ident();
   const std::string name = ctx->prev().value;
   struct Metadata meta = ctx->prev().meta;
-  
   ctx->tk_next(); // eat the name identifier
 
-  if (ctx->prev().kind != TokenKind::Colon) {
-    tokexp_panic("':'", ctx->prev().meta);
-  }
-  ctx->tk_next(); // eat the separator
+  ctx->tk_expect(TokenKind::Colon, "':'");
 
-  if (ctx->prev().kind != TokenKind::Identifier) {
-    tokexp_panic("identifier", ctx->prev().meta);
-  }
-
+  ctx->assert_ident();
   const std::string type = ctx->prev().value;
   ctx->tk_next(); // eat the type identifier
 
   // if the declaration is only an initialization
   if (ctx->prev().kind == TokenKind::Semi) {
-    // add variable to the symbol table
-    ctx->symb_add(name, Symbol(SymbolType::Variable, meta));
     return std::make_unique<AssignmentStatement>(name, type, std::make_unique<NullExpr>());
   }
 
-  if (ctx->prev().kind != TokenKind::Eq) {
-    tokexp_panic("'='", ctx->prev().meta);
-  }
-  ctx->tk_next(); // eat the assignment operator
+  ctx->tk_expect(TokenKind::Eq, "'='");
 
   if (std::unique_ptr<Expr> expr = parse_expr(ctx)) {
-    // add variable to the symbol table
-    ctx->symb_add(name, Symbol(SymbolType::Variable, meta));
     return std::make_unique<AssignmentStatement>(name, type, std::move(expr));
   }
 

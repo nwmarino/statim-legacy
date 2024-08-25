@@ -1,5 +1,5 @@
 start package main
-  imports: sec, tri
+  imports: sec
 
 function main
   params: 
@@ -8,35 +8,20 @@ function main
   return
     expr: null
 
-implement A -> Ab
-function read
-  params: 
-  return: i32
-
-  return
-    expr: 1 (int)
-
-function write
-  params: 
-  return: i32
-
-  return
-    expr: 1 (int)
-
-
-abstract Ab
-  function read
-    params: 
-    return: i32
-
-  function write
-    params: 
-    return: i32
-
-
 struct A
   A: i64
   B: i64
 
 end package main
+
+start package sec
+
+function bar
+  params: 
+  return: u32
+
+  return
+    expr: 1 (int)
+
+end package sec
 
