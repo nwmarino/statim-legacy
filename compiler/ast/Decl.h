@@ -4,11 +4,6 @@
 /// Declaration AST nodes.
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
-
 #include "Stmt.h"
 
 /// Base class for all AST declarations.
@@ -20,7 +15,9 @@ class Decl
 };
 
 
-/// Function declaration related classes. ///
+/// Function declaration related classes.
+///
+/// Functions hold a list of parameters and a body.
 
 /// Class for function parameters.
 class FunctionParam
@@ -95,7 +92,9 @@ class FunctionDecl : public Decl
 };
 
 
-/// Abstract declaration related classes. ///
+/// Abstract declaration related classes.
+///
+/// Abstract declarations hold a list of function prototypes.
 
 /// Class for abstract declarations.
 class AbstractDecl : public Decl
@@ -127,7 +126,9 @@ class AbstractDecl : public Decl
 };
 
 
-/// Enum declaration related classes. ///
+/// Enum declaration related classes.
+///
+/// Enums hold a list of variants which are expanded into constants.
 
 /// Class for enum variants.
 class EnumVariant
@@ -143,6 +144,10 @@ class EnumVariant
     /// Gets the name of this enum variant.
     [[nodiscard]]
     inline const std::string get_name() const { return name; }
+
+    /// Returns a string representation of this enum variant.
+    [[nodiscard]]
+    const std::string to_string(int n);
 };
 
 /// Class for enum declarations.
@@ -175,7 +180,9 @@ class EnumDecl : public Decl
 };
 
 
-/// Implementation declaration related classes. ///
+/// Implementation declaration related classes.
+///
+/// Impls apply abstract declarations to structs.
 
 /// Class for implementation declarations.
 class ImplDecl : public Decl
@@ -212,7 +219,9 @@ class ImplDecl : public Decl
 };
 
 
-/// Struct declaration related classes. ///
+/// Struct declaration related classes.
+///
+/// Structs hold a list of members and methods.
 
 /// Class for struct members.
 class StructMember
@@ -233,6 +242,10 @@ class StructMember
     /// Gets the type of this struct member.
     [[nodiscard]]
     inline const std::string get_type() const { return type; }
+
+    /// Returns a string representation of this struct member.
+    [[nodiscard]]
+    const std::string to_string(int n);
 };
 
 /// Class for struct declarations.
