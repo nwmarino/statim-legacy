@@ -59,34 +59,33 @@ std::unique_ptr<PackageAST> parse_package(std::shared_ptr<cctx> ctx) {
     ctx->assert_ident(); // verify any leading token is an ident
 
     // parse definition based on keyword
-    if (ctx->symb_is(ctx->prev().value, SymbolType::Keyword)) {
-      KeywordType kw = ctx->symb_get(ctx->prev().value).keyword;
-      switch (kw) {
-        case KeywordType::Abstract:
+    if (ctx->symb_is(ctx->prev().value, SymbolKind::Keyword)) {
+      switch (ctx->kw_type()) {
+        case KeywordKind::Abstract:
           if (std::unique_ptr<AbstractAST> abstr = parse_abstract(ctx)) {
             defs.push_back(std::move(abstr));
           }
           break;
-        case KeywordType::Pkg:
+        case KeywordKind::Pkg:
           imports.push_back(parse_import(ctx));
           break;
-        case KeywordType::Fn:
+        case KeywordKind::Fn:
           if (std::unique_ptr<FunctionAST> func = parse_definition(ctx)) {
             defs.push_back(std::move(func));
           }
           break;
-        case KeywordType::Struct:
+        case KeywordKind::Struct:
           if (std::unique_ptr<StructAST> struc = parse_struct(ctx)) {
             defs.push_back(std::move(struc));
           }
           break;
         
-        case KeywordType::Enum:
+        case KeywordKind::Enum:
           if (std::unique_ptr<EnumAST> enm = parse_enum(ctx)) {
             defs.push_back(std::move(enm));
           }
           break;
-        case KeywordType::Impl:
+        case KeywordKind::Impl:
           if (std::unique_ptr<ImplAST> impl = parse_impl(ctx)) {
             defs.push_back(std::move(impl));
           }

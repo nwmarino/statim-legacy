@@ -1,18 +1,14 @@
-/// Copyright 2024 Nick Marino (github.com/nwmarino)
-
 #include <filesystem>
 #include <iostream>
-#include <memory>
 
-#include "core/cctx.h"
-#include "core/token.h"
+#include "core/CContext.h"
+#include "core/Token.h"
 #include "core/util.h"
-#include "parser/parser.h"
 
 /// Consume and print out all tokens currently in a lexer stream.
-static void print_tkstream(std::shared_ptr<cctx> ctx) {
+static void print_tkstream(std::unique_ptr<CContext> &Cctx) {
   while (1) {
-    struct Token token = ctx->tk_next();
+    struct Token token = Cctx->next();
     if (token.kind == TokenKind::Eof) {
       break;
     }
@@ -22,7 +18,7 @@ static void print_tkstream(std::shared_ptr<cctx> ctx) {
 
 
 /// Parse command line arguments.
-static void parse_args(int argc, char *argv[], cflags &flags) {
+static void parse_args(int argc, char *argv[], CFlags &flags) {
   flags.emit_asm = false;
   
   for (int i = 1; i < argc; i++) {
@@ -34,14 +30,14 @@ static void parse_args(int argc, char *argv[], cflags &flags) {
 
 
 /// Parse the program source tree.
-static std::vector<cfile> parse_files(std::vector<cfile> files, std::filesystem::path dir) {
+static std::vector<CFile> parse_files(std::vector<CFile> files, std::filesystem::path dir) {
   for (const std::filesystem::directory_entry &entry : std::filesystem::directory_iterator{dir}) {
     if (entry.is_directory()) {
       files = parse_files(files, entry.path());
     }
 
     if (entry.is_regular_file() && entry.path().extension() == ".statim" ) {
-      cfile file;
+      CFile file;
       file.filename = parse_filename(entry.path().string());
       file.path = entry.path().string();
       files.push_back(file);
@@ -54,16 +50,14 @@ static std::vector<cfile> parse_files(std::vector<cfile> files, std::filesystem:
 
 /// Main entry point for the compiler.
 int main(int argc, char *argv[]) {
-  cflags flags;
+  CFlags flags;
   parse_args(argc, argv, flags);
-  std::vector<cfile> files = parse_files(std::vector<cfile>(), std::filesystem::current_path());
+  std::vector<CFile> files = parse_files(std::vector<CFile>(), std::filesystem::current_path());
 
   if (files.size() == 0) {
-    panic("no source files found in cwd", std::filesystem::current_path().string().c_str());
+    panic("no source files found in cwd: " + std::filesystem::current_path().string());
   }
 
-  std::shared_ptr<cctx> ctx = std::make_shared<cctx>(flags, std::move(files));
+  std::unique_ptr<CContext> Cctx = std::make_unique<CContext>(flags, std::move(files));
 
-  std::unique_ptr<ProgAST> prog = parse_prog(ctx);
-  write_ast(std::move(prog));
 }

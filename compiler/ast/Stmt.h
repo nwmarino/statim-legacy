@@ -50,30 +50,6 @@ class CompoundStmt : public Stmt
 };
 
 
-/// This class represents a function return statement.
-class ReturnStmt : public Stmt
-{
-  private:
-    std::unique_ptr<Expr> expr;
-
-  public:
-    /// Constructor for return statements with an expression.
-    ReturnStmt(std::unique_ptr<Expr> expr) : expr(std::move(expr)) {};
-
-    /// Determine if this return statement has an expression.
-    [[nodiscard]]
-    inline bool has_expr() const { return expr != nullptr; }
-
-    /// Gets the expression of this return statement.
-    [[nodiscard]]
-    inline std::unique_ptr<Expr> get_expr() { return std::move(expr); }
-
-    /// Returns a string representation of this return statement.
-    [[nodiscard]]
-    const std::string to_string(int n);
-};
-
-
 /// This class represents an if statement.
 class IfStmt : public Stmt
 {
@@ -108,32 +84,6 @@ class IfStmt : public Stmt
     inline std::unique_ptr<Stmt> get_else_body() { return std::move(else_body); }
 
     /// Returns a string representation of this if statement.
-    [[nodiscard]]
-    const std::string to_string(int n);
-};
-
-
-/// This class represents a looping until statement.
-class UntilStmt : public Stmt
-{
-  private:
-    std::unique_ptr<Expr> cond;
-    std::unique_ptr<Stmt> body;
-
-  public:
-    /// Constructor for until statements.
-    UntilStmt(std::unique_ptr<Expr> cond, std::unique_ptr<Stmt> body)
-      : cond(std::move(cond)), body(std::move(body)) {};
-
-    /// Gets the condition of this until statement.
-    [[nodiscard]]
-    inline std::unique_ptr<Expr> get_cond() { return std::move(cond); }
-
-    /// Gets the body of this until statement.
-    [[nodiscard]]
-    inline std::unique_ptr<Stmt> get_body() { return std::move(body); }
-
-    /// Returns a string representation of this until statement.
     [[nodiscard]]
     const std::string to_string(int n);
 };
@@ -204,6 +154,56 @@ class MatchStmt : public Stmt
     inline std::vector<std::unique_ptr<MatchCase>> get_cases() { return std::move(cases); }
 
     /// Returns a string representation of this match statement.
+    [[nodiscard]]
+    const std::string to_string(int n);
+};
+
+
+/// This class represents a function return statement.
+class ReturnStmt : public Stmt
+{
+  private:
+    std::unique_ptr<Expr> expr;
+
+  public:
+    /// Constructor for return statements with an expression.
+    ReturnStmt(std::unique_ptr<Expr> expr) : expr(std::move(expr)) {};
+
+    /// Determine if this return statement has an expression.
+    [[nodiscard]]
+    inline bool has_expr() const { return expr != nullptr; }
+
+    /// Gets the expression of this return statement.
+    [[nodiscard]]
+    inline std::unique_ptr<Expr> get_expr() { return std::move(expr); }
+
+    /// Returns a string representation of this return statement.
+    [[nodiscard]]
+    const std::string to_string(int n);
+};
+
+
+/// This class represents a looping until statement.
+class UntilStmt : public Stmt
+{
+  private:
+    std::unique_ptr<Expr> cond;
+    std::unique_ptr<Stmt> body;
+
+  public:
+    /// Constructor for until statements.
+    UntilStmt(std::unique_ptr<Expr> cond, std::unique_ptr<Stmt> body)
+      : cond(std::move(cond)), body(std::move(body)) {};
+
+    /// Gets the condition of this until statement.
+    [[nodiscard]]
+    inline std::unique_ptr<Expr> get_cond() { return std::move(cond); }
+
+    /// Gets the body of this until statement.
+    [[nodiscard]]
+    inline std::unique_ptr<Stmt> get_body() { return std::move(body); }
+
+    /// Returns a string representation of this until statement.
     [[nodiscard]]
     const std::string to_string(int n);
 };

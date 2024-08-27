@@ -1,12 +1,9 @@
-/// Copyright 2024 Nick Marino (github.com/nwmarino)
-
 #include <cstdio>
-#include <iostream>
 #include <string>
 
-#include "../core/logger.h"
-#include "../core/token.h"
-#include "tokenizer.h"
+#include "../core/Logger.h"
+#include "../core/Token.h"
+#include "Tokenizer.h"
 
 Tokenizer::Tokenizer(const std::string src, const std::string filename, std::size_t len)
   : src(src), filename(filename), len(len), prev('\0'), iter(0), line(1), col(1) {};
@@ -74,7 +71,7 @@ const struct Token Tokenizer::advance_token() {
       value = src[iter];
 
       if (peek() != '\'') {
-        sc_panic("Bad char literal", meta);
+        panic("bad char literal", meta);
       }
 
       iter++;
@@ -97,7 +94,7 @@ const struct Token Tokenizer::advance_token() {
     case '.':
       if (peek() == '.') {
         if (peek_two() != '.') {
-          sc_panic("Bad range syntax", meta);
+          panic("bad range syntax", meta);
           break;
         }
         kind = Range;
@@ -179,7 +176,7 @@ const struct Token Tokenizer::advance_token() {
         value = src[iter];
 
         if (peek() != '\'') {
-          sc_panic("Bad byte char literal", meta);
+          panic("bad byte char literal", meta);
         }
 
         iter++;
@@ -236,7 +233,7 @@ const struct Token Tokenizer::advance_token() {
         }
         return Token(kind, meta, value, lit_kind);
       }
-      sc_panic("Unresolved sequence: " + std::string(1, chr), meta);
+      panic("unresolved sequence: " + std::string(1, chr), meta);
       break;
   }
   iter++;

@@ -10,8 +10,8 @@
 
 #include "token.h"
 
-/// A symbol type.
-typedef enum SymbolType {
+/// Recognized kinds of symbols.
+typedef enum SymbolKind {
   /// Mutable variables
   Variable,
 
@@ -28,11 +28,92 @@ typedef enum SymbolType {
   Interface,
 
   /// Type definitions (structs, enums, unions)
-  Ty
-} SymbolType;
+  TypeDef,
+
+  /// Package
+  Package
+} SymbolKind;
+
+// An enum of recognized keywords.
+typedef enum KeywordKind {
+  /// abstract
+  Abstract,
+
+  /// bind
+  Bind,
+
+  /// break
+  Break,
+
+  /// continue
+  Continue,
+
+  /// else
+  Else,
+
+  /// end
+  End,
+
+  /// enum
+  Enum,
+
+  /// extern
+  Extern,
+
+  /// false
+  False,
+
+  /// fix
+  Fix,
+
+  /// fn
+  Fn,
+
+  /// for
+  For,
+
+  /// if
+  If,
+
+  /// impl
+  Impl,
+
+  /// let
+  Let,
+
+  /// match
+  Match,
+
+  /// pkg
+  Pkg,
+
+  /// protect
+  Protect,
+
+  /// return
+  Return,
+
+  /// struct
+  Struct,
+
+  /// true
+  True,
+
+  /// union
+  Union,
+
+  /// until
+  Until,
+
+  /// use
+  Use,
+
+  /// unknown keyword
+  Unknown
+} KeywordKind;
 
 /// A type definition kind.
-typedef enum TyKind {
+typedef enum TypeDefKind {
   /// A struct type.
   TY_STRUCT,
 
@@ -41,33 +122,33 @@ typedef enum TyKind {
 
   /// A union type.
   TY_UNION
-} TyKind;
+} TypeDefKind;
 
-/// A recognized smybol in a program.
+/// A recognized symbol in a program.
 struct Symbol {
   /// The symbol type.
-  SymbolType type;
+  SymbolKind kind;
 
   /// Associated metadata.
   struct Metadata meta;
 
   /// Possible keyword type.
-  KeywordType keyword;
+  KeywordKind keyword;
 
   /// Possible type kind.
-  TyKind type_kind;
+  TypeDefKind type_kind;
 
   // Compiler-defined constructor.
-  inline Symbol(SymbolType type) : type(type) {};
+  inline Symbol(SymbolKind  kind) : kind(kind) {};
 
   // Basic user-defined constructor.
-  inline Symbol(SymbolType type, const Metadata &meta) : type(type), meta(meta) {};
+  inline Symbol(SymbolKind kind, const Metadata &meta) : kind(kind), meta(meta) {};
 
   // Type symbol constructor.
-  inline Symbol(TyKind kind, const Metadata &meta) : type(SymbolType::Ty), meta(meta), type_kind(kind) {};
+  inline Symbol(TypeDefKind kind, const Metadata &meta) : kind(SymbolKind::TypeDef), meta(meta), type_kind(kind) {};
 
   // Keyword constructor.
-  inline Symbol(KeywordType keyword) : type(SymbolType::Keyword), keyword(keyword) {};
+  inline Symbol(KeywordKind keyword) : kind(SymbolKind::Keyword), keyword(keyword) {};
 };
 
 /// A table of symbols.

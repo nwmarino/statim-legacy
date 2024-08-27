@@ -21,15 +21,14 @@ std::unique_ptr<Statement> parse_stmt(std::shared_ptr<cctx> ctx) {
     return warn_stmt("unexpected token: " + ctx->prev().value, ctx->prev().meta);
   }
   
-  if (ctx->symb_is(ctx->prev().value, SymbolType::Keyword)) {
-    KeywordType kw = ctx->symb_get(ctx->prev().value).keyword;
-    switch (kw) {
-      case KeywordType::Fix: return parse_immut_decl(ctx);
-      case KeywordType::If: return parse_if_stmt(ctx);
-      case KeywordType::Let: return parse_mut_decl(ctx);
-      case KeywordType::Match: return parse_match_stmt(ctx);
-      case KeywordType::Return: return parse_return_stmt(ctx);
-      case KeywordType::Until: return parse_until_stmt(ctx);
+  if (ctx->symb_is(ctx->prev().value, SymbolKind::Keyword)) {
+    switch (ctx->kw_type()) {
+      case KeywordKind::Fix: return parse_immut_decl(ctx);
+      case KeywordKind::If: return parse_if_stmt(ctx);
+      case KeywordKind::Let: return parse_mut_decl(ctx);
+      case KeywordKind::Match: return parse_match_stmt(ctx);
+      case KeywordKind::Return: return parse_return_stmt(ctx);
+      case KeywordKind::Until: return parse_until_stmt(ctx);
       default: return warn_stmt("unknown keyword: " + ctx->prev().value, ctx->prev().meta);
     }
   }
@@ -91,7 +90,7 @@ std::unique_ptr<Statement> parse_if_stmt(std::shared_ptr<cctx> ctx) {
     }
 
     // check for else statement, and parse it accordingly
-    if (ctx->symb_is_kw(ctx->prev().value, KeywordType::Else)) {
+    if (ctx->kw_type() == KeywordKind::Else) {
       ctx->tk_next(); // eat the `else` identifier
 
       std::unique_ptr<Statement> else_body = parse_stmt(ctx);

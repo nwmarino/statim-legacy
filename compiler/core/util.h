@@ -1,15 +1,13 @@
-/// Copyright 2024 Nick Marino (github.com/nwmarino)
-
 #ifndef STATIMC_UTIL_H
 #define STATIMC_UTIL_H
 
+/// Utility functions for the compiler.
+/// Copyright 2024 Nick Marino (github.com/nwmarino)
+
 #include <filesystem>
 #include <fstream>
-#include <string>
 
-#include "ast.h"
-#include "cctx.h"
-#include "logger.h"
+#include "Logger.h"
 
 /// Read the contents of a file to a string.
 [[nodiscard]]
@@ -17,7 +15,7 @@ inline std::string read_to_str(const std::string &path) {
   std::ifstream file(path);
 
   if (!file.is_open()) {
-    panic("could not open file: ", path.c_str());
+    panic("could not open file: " + path);
   }
 
   std::string contents;
@@ -40,35 +38,15 @@ inline std::string parse_filename(const std::string &path) {
 
 /// Read in the current working directory.
 [[nodiscard]]
-inline std::string read_cwd() {
+inline std::string read_cwd(void) {
   return std::filesystem::current_path().string();
 }
 
 
-/// Dump all tokens currently in a lexer stream to a file.
-inline void dump_tkstream(std::shared_ptr<cctx> ctx) {
-  std::ofstream file("tokens.txt");
-
-  file << ctx->filename() << "\n\n";
-
-  while (1) {
-    struct Token token = ctx->tk_next();
-    if (token.kind == TokenKind::Eof) {
-      break;
-    }
-    file << token.to_str() << '\n';
-  }
-
-  file.close();
-}
-
-
 /// Write an ast to a file.
-inline void write_ast(std::unique_ptr<ProgAST> ast) {
+inline void write_ast(std::unique_ptr<CrateUnit> &crate) {
   std::ofstream file("ast.txt");
-
-  file << ast->to_str(1);
-
+  file << crate.get()->to_string(0);
   file.close();
 }
 

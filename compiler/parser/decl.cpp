@@ -139,7 +139,7 @@ std::unique_ptr<AbstractAST> parse_abstract(std::shared_ptr<cctx> ctx) {
 
   std::vector<std::unique_ptr<PrototypeAST>> methods;
   while (ctx->prev().kind != TokenKind::CloseBrace) {
-    if (ctx->symb_is_kw(ctx->prev().value, KeywordType::Fn)) {
+    if (ctx->kw_type() == KeywordKind::Fn) {
       ctx->tk_next(); // eat the `fn` identifier
 
       if (std::unique_ptr<PrototypeAST> method = parse_prototype(ctx)) {
@@ -174,7 +174,7 @@ std::unique_ptr<ImplAST> parse_impl(std::shared_ptr<cctx> ctx) {
   const std::string abs_name = ctx->prev().value;
   ctx->tk_next(); // eat the abstract name identifier
 
-  if (!ctx->symb_is_kw(ctx->prev().value, KeywordType::For)) {
+  if (ctx->kw_type() != KeywordKind::For) {
     tokexp_panic("'for'", ctx->prev().meta);
   }
   ctx->tk_next(); // eat the `for` identifier
@@ -187,7 +187,7 @@ std::unique_ptr<ImplAST> parse_impl(std::shared_ptr<cctx> ctx) {
 
   std::vector<std::unique_ptr<FunctionAST>> methods;
   while (ctx->prev().kind != TokenKind::CloseBrace) {
-    if (ctx->symb_is_kw(ctx->prev().value, KeywordType::Fn)) {
+    if (ctx->kw_type() == KeywordKind::Fn) {
       if (std::unique_ptr<FunctionAST> method = parse_definition(ctx)) {
         methods.push_back(std::move(method));
       }
@@ -243,12 +243,12 @@ std::unique_ptr<EnumAST> parse_enum(std::shared_ptr<cctx> ctx) {
 ///
 /// At this point, the declaration can be mutable or not.
 std::unique_ptr<Statement> parse_var_decl(std::shared_ptr<cctx> ctx) {
-  switch (ctx->symb_get(ctx->prev().value).keyword)
+  switch (ctx->kw_type())
   {
-    case KeywordType::Fix:
+    case KeywordKind::Fix:
       return parse_immut_decl(ctx);
 
-    case KeywordType::Let:
+    case KeywordKind::Let:
       return parse_mut_decl(ctx);
 
     default:
@@ -277,7 +277,7 @@ std::unique_ptr<Statement> parse_immut_decl(std::shared_ptr<cctx> ctx) {
   ctx->tk_expect(TokenKind::Eq, "'='");
 
   if (std::unique_ptr<Expr> expr = parse_expr(ctx)) {
-    return std::make_unique<AssignmentStatement>(name, type, std::move(expr));
+    return std::make_unique<AssignmentStatement>(name, type, false, std::move(expr));
   }
 
   return warn_const("expected expression after immutable declaration: " + name, ctx->prev().meta);
@@ -303,13 +303,13 @@ std::unique_ptr<Statement> parse_mut_decl(std::shared_ptr<cctx> ctx) {
 
   // if the declaration is only an initialization
   if (ctx->prev().kind == TokenKind::Semi) {
-    return std::make_unique<AssignmentStatement>(name, type, std::make_unique<NullExpr>());
+    return std::make_unique<AssignmentStatement>(name, type, true, std::make_unique<NullExpr>());
   }
 
   ctx->tk_expect(TokenKind::Eq, "'='");
 
   if (std::unique_ptr<Expr> expr = parse_expr(ctx)) {
-    return std::make_unique<AssignmentStatement>(name, type, std::move(expr));
+    return std::make_unique<AssignmentStatement>(name, type, true, std::move(expr));
   }
 
   return warn_stmt("expected expression after variable declaration: " + name, ctx->prev().meta);
