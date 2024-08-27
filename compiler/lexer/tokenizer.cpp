@@ -1,9 +1,9 @@
 #include <cstdio>
 #include <string>
 
-#include "../core/Logger.h"
-#include "../core/Token.h"
-#include "Tokenizer.h"
+#include "../include/core/Logger.h"
+#include "../include/token/Token.h"
+#include "../include/token/Tokenizer.h"
 
 Tokenizer::Tokenizer(const std::string src, const std::string filename, std::size_t len)
   : src(src), filename(filename), len(len), prev('\0'), iter(0), line(1), col(1) {};

@@ -6,7 +6,7 @@
 
 #include <string>
 
-#include "../core/Token.h"
+#include "../token/Token.h"
 
 /// Iterative token parser.
 class Tokenizer {

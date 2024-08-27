@@ -3,7 +3,7 @@
 #ifndef STATIMC_LOGGER_H
 #define STATIMC_LOGGER_H
 
-#include "Token.h"
+#include "../token/Token.h"
 #include "../ast/Decl.h"
 #include "../ast/Stmt.h"
 #include "../ast/Unit.h"

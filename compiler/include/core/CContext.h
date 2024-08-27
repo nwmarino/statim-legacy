@@ -4,8 +4,8 @@
 /// Context for the compiler.
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
-#include "../lexer/Tokenizer.h"
-#include "util.h"
+#include "../token/Tokenizer.h"
+#include "Utils.h"
 
 /// A list of flags during the compilation process.
 struct CFlags

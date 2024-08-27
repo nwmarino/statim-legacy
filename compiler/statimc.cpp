@@ -1,9 +1,9 @@
 #include <filesystem>
 #include <iostream>
 
-#include "core/CContext.h"
-#include "core/Token.h"
-#include "core/util.h"
+#include "include/token/Token.h"
+#include "include/core/CContext.h"
+#include "include/core/Utils.h"
 
 /// Consume and print out all tokens currently in a lexer stream.
 static void print_tkstream(std::unique_ptr<CContext> &Cctx) {

@@ -8,7 +8,7 @@
 #include <string>
 #include <utility>
 
-#include "token.h"
+#include "../token/Token.h"
 
 /// Recognized kinds of symbols.
 typedef enum SymbolKind {
