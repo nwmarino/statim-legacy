@@ -347,7 +347,7 @@ class ImplDecl : public Decl
 /// Structs hold a list of fields and methods.
 
 /// Class for struct fields.
-class StructField : public Decl
+class FieldDecl : public Decl
 {
   private:
     const std::string name;
@@ -356,7 +356,7 @@ class StructField : public Decl
 
   public:
     /// Basic constructor for struct fields.
-    StructField(const std::string &name, const std::string &type)
+    FieldDecl(const std::string &name, const std::string &type)
       : name(name), type(type), priv(false) {};
 
     /// Gets the name of this struct fields.
@@ -387,15 +387,14 @@ class StructDecl : public Decl
 {
   private:
     const std::string name;
-    std::vector<std::unique_ptr<StructField>> fields;
-    std::vector<std::unique_ptr<FunctionDecl>> methods;
+    std::vector<std::unique_ptr<FieldDecl>> fields;
     std::unique_ptr<Scope> scope;
     bool priv;
 
   public:
     /// Basic constructor for struct declarations.
-    StructDecl(const std::string &name, std::vector<std::unique_ptr<StructField>> fields, std::vector<std::unique_ptr<FunctionDecl>> methods, std::unique_ptr<Scope> scope)
-      : name(name), fields(std::move(fields)), methods(std::move(methods)), scope(std::move(scope)), priv(false) {};
+    StructDecl(const std::string &name, std::vector<std::unique_ptr<FieldDecl>> fields, std::unique_ptr<Scope> scope)
+      : name(name), fields(std::move(fields)), scope(std::move(scope)), priv(false) {};
 
     /// Gets the name of this struct declaration.
     [[nodiscard]]

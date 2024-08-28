@@ -31,7 +31,7 @@ const std::string PackageUnit::to_string(int n) {
 
 
 const std::string FunctionDecl::to_string(int n) {
-  std::string result = mk_piping(n) + "FunctionDecl " + name + '\n';
+  std::string result = is_priv() ? mk_piping(n) + "FunctionDecl " + name + " `private`\n" : mk_piping(n) + "FunctionDecl " + name + '\n';
   if (has_body()) {
     result += body->to_string(n + 2);
   }
@@ -39,14 +39,14 @@ const std::string FunctionDecl::to_string(int n) {
 }
 
 
-const std::string StructField::to_string(int n) {
-  return mk_piping(n) + "StructField " + name + '\n';
+const std::string FieldDecl::to_string(int n) {
+  return is_priv() ? mk_piping(n) + "FieldDecl " + name + " `private`\n" : mk_piping(n) + "FieldDecl " + name + '\n';
 }
 
 
 const std::string StructDecl::to_string(int n) {
-  std::string result = mk_piping(n) + "StructDecl " + name + '\n';
-  for (std::unique_ptr<StructField> const &field : fields) {
+  std::string result = is_priv() ? mk_piping(n) + "StructDecl " + name + " `private`\n" : mk_piping(n) + "StructDecl " + name + '\n';
+  for (std::unique_ptr<FieldDecl> const &field : fields) {
     result += field->to_string(n + 2);
   }
   return result;
@@ -68,7 +68,7 @@ const std::string EnumVariant::to_string(int n) {
 
 
 const std::string EnumDecl::to_string(int n) {
-  std::string result = mk_piping(n) + "EnumDecl " + name + '\n';
+  std::string result = is_priv() ? mk_piping(n) + "EnumDecl " + name + " `private`\n" : mk_piping(n) + "EnumDecl " + name + '\n';
   for (EnumVariant &variant : variants) {
     result += variant.to_string(n + 2);
   }
@@ -77,7 +77,7 @@ const std::string EnumDecl::to_string(int n) {
 
 
 const std::string TraitDecl::to_string(int n) {
-  std::string result = mk_piping(n) + "TraitDecl " + name + '\n';
+  std::string result = is_priv() ? mk_piping(n) + "TraitDecl " + name + " `private`\n" : mk_piping(n) + "TraitDecl " + name + '\n';
   for (std::unique_ptr<FunctionDecl> &decl : decls) {
     result += decl->to_string(n + 2);
   }
@@ -86,7 +86,7 @@ const std::string TraitDecl::to_string(int n) {
 
 
 const std::string VarDecl::to_string(int n) {
-  std::string result = mk_piping(n) + "VarDecl " + name + '\n';
+  std::string result = is_mut() ? mk_piping(n) + "VarDecl " + name + " `mut`\n" : mk_piping(n) + "VarDecl " + name + '\n';
   if (has_expr()) {
     result += expr->to_string(n + 2);
   }

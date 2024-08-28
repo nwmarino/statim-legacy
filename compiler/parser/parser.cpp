@@ -693,8 +693,7 @@ static std::unique_ptr<StructDecl> parse_struct_decl(std::unique_ptr<CContext> &
   //ctx->set_parent_scope(scope);
 
   // parse fields and methods
-  std::vector<std::unique_ptr<StructField>> fields;
-  std::vector<std::unique_ptr<FunctionDecl>> methods;
+  std::vector<std::unique_ptr<FieldDecl>> fields;
   while (!ctx->last().is_close_brace()) {
     if (!ctx->last().is_ident()) {
       return warn_struct("expected identifier", ctx->last().meta);
@@ -704,21 +703,6 @@ static std::unique_ptr<StructDecl> parse_struct_decl(std::unique_ptr<CContext> &
     if (ctx->last().is_kw("priv")) {
       is_private = true;
       ctx->next();  // eat priv keyword
-    }
-
-    if (ctx->last().is_kw("fn")) {
-      if (std::unique_ptr<FunctionDecl> method = parse_fn_decl(ctx)) {
-        if (is_private) {
-          method->set_priv();
-        }
-        // add method to struct scope
-        ctx->parent_scope()->add_decl(std::move(method));
-
-        methods.push_back(std::move(method));
-      } else {
-        return warn_struct("expected method in struct declaration", ctx->last().meta);
-      }
-      continue;
     }
 
     const std::string field_name = ctx->last().value;
@@ -737,13 +721,13 @@ static std::unique_ptr<StructDecl> parse_struct_decl(std::unique_ptr<CContext> &
     ctx->next();  // eat field type
 
     // verify that the field does not already exist
-    for (const std::unique_ptr<StructField> &f : fields) {
+    for (const std::unique_ptr<FieldDecl> &f : fields) {
       if (f->get_name() == field_name) {
         return warn_struct("field already exists: " + field_name + " in " + name, ctx->last().meta);
       }
     }
 
-    std::unique_ptr<StructField> field = std::make_unique<StructField>(field_name, field_type);
+    std::unique_ptr<FieldDecl> field = std::make_unique<FieldDecl>(field_name, field_type);
     if (is_private) {
       field->set_priv();
     }
@@ -760,7 +744,7 @@ static std::unique_ptr<StructDecl> parse_struct_decl(std::unique_ptr<CContext> &
   }
   ctx->next();  // eat close brace
 
-  std::unique_ptr<StructDecl> structure = std::make_unique<StructDecl>(name, std::move(fields), std::move(methods), std::move(scope));
+  std::unique_ptr<StructDecl> structure = std::make_unique<StructDecl>(name, std::move(fields), std::move(scope));
 
   // move back to parent scope
   //ctx->set_parent_scope(scope->get_parent());
@@ -792,6 +776,9 @@ static std::unique_ptr<TraitDecl> parse_trait_decl(std::unique_ptr<CContext> &ct
   std::vector<std::unique_ptr<FunctionDecl>> methods;
   while (!ctx->last().is_close_brace()) {
     if (std::unique_ptr<FunctionDecl> method = parse_fn_decl(ctx)) {
+      if (method->has_body()) {
+        return warn_trait("method '" + method->get_name() + "' cannot have a body in trait declaration", ctx->last().meta);
+      }
       methods.push_back(std::move(method));
     } else {
       return warn_trait("expected method in trait declaration", ctx->last().meta);
@@ -839,6 +826,12 @@ static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<CContext> &ctx)
 
   std::vector<std::unique_ptr<FunctionDecl>> methods;
   while (!ctx->last().is_close_brace()) {
+    bool is_private = false;
+    if (ctx->last().is_kw("priv")) {
+      is_private = true;
+      ctx->next();  // eat priv keyword
+    }
+
     std::unique_ptr<FunctionDecl> method = parse_fn_decl(ctx);
     if (!method) {
       return warn_impl("expected method in impl declaration", ctx->last().meta);
@@ -848,6 +841,10 @@ static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<CContext> &ctx)
       if (m->get_name() == method->get_name()) {
         return warn_impl("method already exists: " + method->get_name() + " in " + struct_name, ctx->last().meta);
       }
+    }
+
+    if (is_private) {
+      method->set_priv();
     }
     methods.push_back(std::move(method));
   }

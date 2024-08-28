@@ -1,4 +1,4 @@
-fn main() {
+priv fn main() {
   let x: i32 = 5 + 5;
 
   return;
@@ -11,15 +11,16 @@ priv struct MyStruct {
 
 priv trait MyTrait {
   fn read() -> i32;
+  fn write() -> u32;
 }
 
 impl MyTrait to MyStruct {
-  fn read() -> i32 {
+  priv fn read() -> i32 {
     return 1;
   }
 }
 
-enum MyEnum {
+priv enum MyEnum {
   Plus,
   Minus,
 }
