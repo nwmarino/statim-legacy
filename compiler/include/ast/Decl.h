@@ -4,6 +4,13 @@
 /// Declaration AST nodes.
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
+#include <algorithm>
+#include <iostream>
+#include <memory>
+#include <vector>
+
+struct Scope; // Forward declaration of Scope struct
+
 #include "Stmt.h"
 
 /// Base class for all AST declarations.
@@ -11,7 +18,101 @@ class Decl
 {
   public:
     virtual ~Decl() = default;
-    const virtual std::string to_string(int n) = 0;
+    virtual const std::string to_string(int n) = 0;
+};
+
+
+/// Context about a scope.
+struct ScopeContext
+{
+  /// If this scope is nested in a package.
+  bool is_pkg_scope;
+
+  /// If this scope is nested in a declaration.
+  bool is_decl_scope;
+
+  /// If this scope is nested in a function.
+  bool is_func_scope;
+
+  /// If this scope is nested in a struct.
+  bool is_struct_scope;
+
+  /// If this scope is nested in a loop.
+  bool is_loop_scope;
+
+  /// If this scope is nested in a conditional statement.
+  bool is_cond_scope;
+
+  /// If this scope is nested in a compound statement.
+  bool is_compound_scope;
+};
+
+
+/// A temporary scope used when parsing the AST.
+class Scope
+{
+  private:
+    std::unique_ptr<Scope> parent;
+    struct ScopeContext ctx;
+    std::vector<std::unique_ptr<Decl>> decls;
+
+  public:
+    /// Constructor for a scope.
+    Scope(std::unique_ptr<Scope> parent, struct ScopeContext ctx)
+      : parent(std::move(parent)), ctx(ctx), decls() {};
+
+    /// Add a declaration to this scope.
+    inline void add_decl(std::unique_ptr<Decl> decl) { decls.push_back(std::move(decl)); }
+
+    /// Delete a declaration from this scope.
+    inline void del_decl(std::unique_ptr<Decl> decl) { decls.erase(std::remove(decls.begin(), decls.end(), decl), decls.end()); }
+
+    /// Get the direct parent scope, if it exists.
+    [[nodiscard]]
+    inline std::unique_ptr<Scope> get_parent() { 
+      if (parent) {
+        return std::move(parent);
+      }
+      return nullptr;
+    }
+
+    /// Get the closest function scope, if it exists.
+    [[nodiscard]]
+    inline std::unique_ptr<Scope> get_fn_scope() {
+      std::unique_ptr<Scope> scope = std::move(parent);
+      while (scope != nullptr && !scope->is_func_scope()) {
+        scope = scope->get_parent();
+      }
+      return scope;
+    }
+
+    /// Determine if this scope belongs to a package.
+    [[nodiscard]]
+    inline bool is_pkg_scope() const { return ctx.is_pkg_scope; }
+
+    /// Determine if this scope belongs to a declaration.
+    [[nodiscard]]
+    inline bool is_decl_scope() const { return ctx.is_decl_scope; }
+
+    /// Determine if this scope belongs to a function.
+    [[nodiscard]]
+    inline bool is_func_scope() const { return ctx.is_func_scope; }
+
+    /// Determine if this scope belongs to a struct.
+    [[nodiscard]]
+    inline bool is_struct_scope() const { return ctx.is_struct_scope; }
+
+    /// Determine if this scope belongs to a loop.
+    [[nodiscard]]
+    inline bool is_loop_scope() const { return ctx.is_loop_scope; }
+
+    /// Determine if this scope belongs to a conditional statement.
+    [[nodiscard]]
+    inline bool is_cond_scope() const { return ctx.is_cond_scope; }
+
+    /// Determine if this scope belongs to a compound statement.
+    [[nodiscard]]
+    inline bool is_compound_scope() const { return ctx.is_compound_scope; }
 };
 
 
@@ -48,23 +149,17 @@ class FunctionDecl : public Decl
     const std::string ret_type;
     std::vector<FunctionParam> params;
     std::unique_ptr<Stmt> body;
+    std::unique_ptr<Scope> scope;
+    bool priv;
 
   public:
-    /// Constructor for function declarations with no parameters and no body.
-    FunctionDecl(const std::string &name, const std::string &ret_type)
-      : name(name), ret_type(ret_type), params(), body(nullptr) {};
-
-    /// Constructor for function declarations with parameters and no body.
+    /// Constructor for function declarations with no body.
     FunctionDecl(const std::string &name, const std::string &ret_type, std::vector<FunctionParam> params)
-      : name(name), ret_type(ret_type), params(std::move(params)), body(nullptr) {};
+      : name(name), ret_type(ret_type), params(std::move(params)), body(nullptr), priv(false) {};
 
-    /// Constructor for function declarations with no parameters a body.
-    FunctionDecl(const std::string &name, const std::string &ret_type, std::unique_ptr<Stmt> body)
-      : name(name), ret_type(ret_type), params(), body(std::move(body)) {};
-
-    /// Constructor for function declarations with parameters and a body.
-    FunctionDecl(const std::string &name, const std::string &ret_type, std::vector<FunctionParam> params, std::unique_ptr<Stmt> body)
-      : name(name), ret_type(ret_type), params(std::move(params)), body(std::move(body)) {};
+    /// Constructor for function declarations with a body.
+    FunctionDecl(const std::string &name, const std::string &ret_type, std::vector<FunctionParam> params, std::unique_ptr<Stmt> body, std::unique_ptr<Scope> scope)
+      : name(name), ret_type(ret_type), params(std::move(params)), body(std::move(body)), scope(std::move(scope)), priv(false) {};
     
     /// Returns true if this function declaration has a body.
     [[nodiscard]]
@@ -86,41 +181,62 @@ class FunctionDecl : public Decl
     [[nodiscard]]
     inline const std::vector<FunctionParam> get_params() const { return params; }
 
+    /// Gets the scope of this function declaration.
+    [[nodiscard]]
+    inline std::unique_ptr<Scope> &get_scope() { return scope; }
+
+    /// Returns true if this function declaration is private.
+    [[nodiscard]]
+    inline bool is_priv() const { return priv; }
+
+    /// Set this function declaration as private.
+    inline void set_priv() { priv = true; }
+
+    // Set this function declaration as public.
+    inline void set_pub() { priv = false; }
+
     /// Returns a string representation of this function declaration.
     [[nodiscard]]
     const std::string to_string(int n);
 };
 
 
-/// Abstract declaration related classes.
+/// Trait declaration related classes.
 ///
-/// Abstract declarations hold a list of function prototypes.
+/// Trait declarations hold a list of function prototypes.
 
-/// Class for abstract declarations.
-class AbstractDecl : public Decl
+/// Class for trait declarations.
+class TraitDecl : public Decl
 {
   private:
     const std::string name;
     std::vector<std::unique_ptr<FunctionDecl>> decls;
+    bool priv;
 
   public:
-    /// Constructor for abstract declarations with no function declarations.
-    AbstractDecl(const std::string &name)
-      : name(name), decls() {};
+    /// Constructor for trait declarations with no function declarations.
+    TraitDecl(const std::string &name)
+      : name(name), decls(), priv(false) {};
 
-    /// Constructor for abstract declarations with function declarations.
-    AbstractDecl(const std::string &name, std::vector<std::unique_ptr<FunctionDecl>> decls)
-      : name(name), decls(std::move(decls)) {};
+    /// Constructor for trait declarations with function declarations.
+    TraitDecl(const std::string &name, std::vector<std::unique_ptr<FunctionDecl>> decls)
+      : name(name), decls(std::move(decls)), priv(false) {};
 
-    /// Gets the name of this abstract declaration.
+    /// Gets the name of this trait declaration.
     [[nodiscard]]
     inline const std::string get_name() const { return name; }
 
-    /// Gets the function declarations of this abstract declaration.
+    /// Returns true if this function declaration is private.
     [[nodiscard]]
-    inline const std::vector<std::unique_ptr<FunctionDecl>> get_decls() const { return decls; }
+    inline bool is_priv() const { return priv; }
 
-    /// Returns a string representation of this abstract declaration.
+    /// Set this function declaration as private.
+    inline void set_priv() { priv = true; }
+
+    // Set this function declaration as public.
+    inline void set_pub() { priv = false; }
+
+    /// Returns a string representation of this trait declaration.
     [[nodiscard]]
     const std::string to_string(int n);
 };
@@ -156,15 +272,16 @@ class EnumDecl : public Decl
   private:
     const std::string name;
     std::vector<EnumVariant> variants;
+    bool priv;
 
   public:
     /// Constructor for enum declarations with no variants.
     EnumDecl(const std::string &name)
-      : name(name), variants() {};
+      : name(name), variants(), priv(false) {};
 
     /// Constructor for enum declarations with variants.
     EnumDecl(const std::string &name, std::vector<EnumVariant> variants)
-      : name(name), variants(std::move(variants)) {};
+      : name(name), variants(std::move(variants)), priv(false) {};
 
     /// Gets the name of this enum declaration.
     [[nodiscard]]
@@ -173,6 +290,16 @@ class EnumDecl : public Decl
     /// Gets the variants of this enum declaration.
     [[nodiscard]]
     inline const std::vector<EnumVariant> get_variants() const { return variants; }
+
+    /// Returns true if this function declaration is private.
+    [[nodiscard]]
+    inline bool is_priv() const { return priv; }
+
+    /// Set this function declaration as private.
+    inline void set_priv() { priv = true; }
+
+    // Set this function declaration as public.
+    inline void set_pub() { priv = false; }
 
     /// Returns a string representation of this enum declaration.
     [[nodiscard]]
@@ -203,15 +330,11 @@ class ImplDecl : public Decl
 
     /// Gets the name of the abstract declaration of this implementation declaration.
     [[nodiscard]]
-    inline const std::string get_abstract_name() const { return abstract_name; }
+    inline const std::string get_name() const { return abstract_name; }
 
     /// Gets the name of the struct of this implementation declaration.
     [[nodiscard]]
     inline const std::string get_struct_name() const { return struct_name; }
-
-    /// Gets the methods of this implementation declaration.
-    [[nodiscard]]
-    inline const std::vector<std::unique_ptr<FunctionDecl>> get_methods() const { return methods; }
 
     /// Returns a string representation of this implementation declaration.
     [[nodiscard]]
@@ -221,29 +344,40 @@ class ImplDecl : public Decl
 
 /// Struct declaration related classes.
 ///
-/// Structs hold a list of members and methods.
+/// Structs hold a list of fields and methods.
 
-/// Class for struct members.
-class StructMember
+/// Class for struct fields.
+class StructField : public Decl
 {
   private:
     const std::string name;
     const std::string type;
+    bool priv;
 
   public:
-    /// Basic constructor for struct members.
-    StructMember(const std::string &name, const std::string &type)
-      : name(name), type(type) {};
+    /// Basic constructor for struct fields.
+    StructField(const std::string &name, const std::string &type)
+      : name(name), type(type), priv(false) {};
 
-    /// Gets the name of this struct member.
+    /// Gets the name of this struct fields.
     [[nodiscard]]
     inline const std::string get_name() const { return name; }
 
-    /// Gets the type of this struct member.
+    /// Gets the type of this struct fields.
     [[nodiscard]]
     inline const std::string get_type() const { return type; }
 
-    /// Returns a string representation of this struct member.
+    /// Returns true if this function declaration is private.
+    [[nodiscard]]
+    inline bool is_priv() const { return priv; }
+
+    /// Set this function declaration as private.
+    inline void set_priv() { priv = true; }
+
+    // Set this function declaration as public.
+    inline void set_pub() { priv = false; }
+
+    /// Returns a string representation of this struct fields.
     [[nodiscard]]
     const std::string to_string(int n);
 };
@@ -253,37 +387,33 @@ class StructDecl : public Decl
 {
   private:
     const std::string name;
-    std::vector<StructMember> members;
-    std::vector<FunctionDecl> methods;
+    std::vector<std::unique_ptr<StructField>> fields;
+    std::vector<std::unique_ptr<FunctionDecl>> methods;
+    std::unique_ptr<Scope> scope;
+    bool priv;
 
   public:
-    /// Constructor for struct declarations with no methods and no members.
-    StructDecl(const std::string &name)
-      : name(name), members(), methods() {};
-
-    /// Constructor for struct declarations with methods and no members.
-    StructDecl(const std::string &name, std::vector<FunctionDecl> methods)
-      : name(name), members(), methods(std::move(methods)) {};
-
-    /// Constructor for struct declarations with members and no methods.
-    StructDecl(const std::string &name, std::vector<StructMember> members)
-      : name(name), members(std::move(members)), methods() {};
-
-    /// Constructor for struct declarations with members.and methods.
-    StructDecl(const std::string &name, std::vector<StructMember> members, std::vector<FunctionDecl> methods)
-      : name(name), members(std::move(members)), methods(std::move(methods)) {};
+    /// Basic constructor for struct declarations.
+    StructDecl(const std::string &name, std::vector<std::unique_ptr<StructField>> fields, std::vector<std::unique_ptr<FunctionDecl>> methods, std::unique_ptr<Scope> scope)
+      : name(name), fields(std::move(fields)), methods(std::move(methods)), scope(std::move(scope)), priv(false) {};
 
     /// Gets the name of this struct declaration.
     [[nodiscard]]
     inline const std::string get_name() const { return name; }
 
-    /// Gets the members of this struct declaration.
+    /// Gets the scope of this struct declaration.
     [[nodiscard]]
-    inline const std::vector<StructMember> get_members() const { return members; }
+    inline std::unique_ptr<Scope> &get_scope() { return scope; }
 
-    /// Gets the methods of this struct declaration.
+    /// Returns true if this function declaration is private.
     [[nodiscard]]
-    inline const std::vector<FunctionDecl> get_methods() const { return methods; }
+    inline bool is_priv() const { return priv; }
+
+    /// Set this function declaration as private.
+    inline void set_priv() { priv = true; }
+
+    // Set this function declaration as public.
+    inline void set_pub() { priv = false; }
 
     /// Returns a string representation of this struct declaration.
     [[nodiscard]]

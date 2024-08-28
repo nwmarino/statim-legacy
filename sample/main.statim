@@ -1,24 +1,31 @@
-pkg sec;
-
 fn main() {
+  match 5 {
+    1 => return 1,
+    2 => {
+      return 2;
+    },
+    _ => return 0,
+  }
+
   return;
 }
 
-struct MyStruct {
+priv struct MyStruct {
   A: i64,
   B: i64,
+}
 
-  fn bar() -> i32 {
+priv trait MyTrait {
+  fn read() -> i32;
+}
+
+impl MyTrait to MyStruct {
+  fn read() -> i32 {
     return 1;
-  },
-}
-
-trait MyAbstract {
-  fn foo() -> i32;
-}
-
-impl MyAbstract for MyStruct {
-  fn foo() -> i32 {
-    return 2;
   }
+}
+
+enum MyEnum {
+  Plus,
+  Minus,
 }

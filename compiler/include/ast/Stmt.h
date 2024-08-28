@@ -9,12 +9,16 @@
 #include <utility>
 #include <vector>
 
+class Stmt; // Forward declaration of Stmt class
+
+#include "Decl.h"
+
 /// Base class for a statement representation.
 class Stmt
 {
   public:
-      virtual ~Stmt() = default;
-      const virtual std::string to_string(int n) = 0;
+    virtual ~Stmt() = default;
+    const virtual std::string to_string(int n) = 0;
 };
 
 
@@ -30,19 +34,17 @@ class Expr : public Stmt
 /// This class represents a list of statements.
 class CompoundStmt : public Stmt
 {
-  std::vector<std::unique_ptr<Stmt>> stmts;
+  private:
+    std::vector<std::unique_ptr<Stmt>> stmts;
+    std::unique_ptr<Scope> scope;
 
   public:
     /// Constructor for compound statements.
-    CompoundStmt(std::vector<std::unique_ptr<Stmt>> stmts) : stmts(std::move(stmts)) {};
+    CompoundStmt(std::vector<std::unique_ptr<Stmt>> stmts, std::unique_ptr<Scope> &scope) : stmts(std::move(stmts)), scope(std::move(scope)) {};
 
     /// Determine if the body of this compound statement is empty.
     [[nodiscard]]
     inline bool is_empty() const { return stmts.empty(); }
-
-    /// Gets the statements of this compound statement.
-    [[nodiscard]]
-    inline const std::vector<std::unique_ptr<Stmt>> get_stmts() const { return stmts; }
 
     /// Returns a string representation of this compound statement.
     [[nodiscard]]
@@ -71,18 +73,6 @@ class IfStmt : public Stmt
     [[nodiscard]]
     inline bool has_else() const { return else_body != nullptr; }
 
-    /// Gets the condition of this if statement.
-    [[nodiscard]]
-    inline std::unique_ptr<Expr> get_cond() { return std::move(cond); }
-
-    /// Gets the then body of this if statement.
-    [[nodiscard]]
-    inline std::unique_ptr<Stmt> get_then_body() { return std::move(then_body); }
-
-    /// Gets the else body of this if statement.
-    [[nodiscard]]
-    inline std::unique_ptr<Stmt> get_else_body() { return std::move(else_body); }
-
     /// Returns a string representation of this if statement.
     [[nodiscard]]
     const std::string to_string(int n);
@@ -101,7 +91,7 @@ class DefaultExpr : public Expr
 
     /// Returns a string representation of this expression.
     [[nodiscard]]
-    const std::string to_str(int n);
+    const std::string to_string(int n);
 };
 
 /// This class represents a possible pattern matching class.
@@ -120,14 +110,6 @@ class MatchCase : public Stmt
     [[nodiscard]]
     inline bool is_default() const { return typeid(expr) == typeid(DefaultExpr); }
 
-    /// Gets the expression of this match case.
-    [[nodiscard]]
-    inline std::unique_ptr<Expr> get_expr() { return std::move(expr); }
-
-    /// Gets the body of this match case.
-    [[nodiscard]]
-    inline std::unique_ptr<Stmt> get_body() { return std::move(body); }
-
     /// Returns a string representation of this match case.
     [[nodiscard]]
     const std::string to_string(int n);
@@ -144,14 +126,6 @@ class MatchStmt : public Stmt
     /// Constructor for match statements.
     MatchStmt(std::unique_ptr<Expr> expr, std::vector<std::unique_ptr<MatchCase>> cases)
       : expr(std::move(expr)), cases(std::move(cases)) {};
-
-    /// Gets the expression of this match statement.
-    [[nodiscard]]
-    inline std::unique_ptr<Expr> get_expr() { return std::move(expr); }
-
-    /// Gets the cases of this match statement.
-    [[nodiscard]]
-    inline std::vector<std::unique_ptr<MatchCase>> get_cases() { return std::move(cases); }
 
     /// Returns a string representation of this match statement.
     [[nodiscard]]
@@ -173,10 +147,6 @@ class ReturnStmt : public Stmt
     [[nodiscard]]
     inline bool has_expr() const { return expr != nullptr; }
 
-    /// Gets the expression of this return statement.
-    [[nodiscard]]
-    inline std::unique_ptr<Expr> get_expr() { return std::move(expr); }
-
     /// Returns a string representation of this return statement.
     [[nodiscard]]
     const std::string to_string(int n);
@@ -194,14 +164,6 @@ class UntilStmt : public Stmt
     /// Constructor for until statements.
     UntilStmt(std::unique_ptr<Expr> cond, std::unique_ptr<Stmt> body)
       : cond(std::move(cond)), body(std::move(body)) {};
-
-    /// Gets the condition of this until statement.
-    [[nodiscard]]
-    inline std::unique_ptr<Expr> get_cond() { return std::move(cond); }
-
-    /// Gets the body of this until statement.
-    [[nodiscard]]
-    inline std::unique_ptr<Stmt> get_body() { return std::move(body); }
 
     /// Returns a string representation of this until statement.
     [[nodiscard]]

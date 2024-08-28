@@ -1,12 +1,13 @@
-/// Copyright 2024 Nick Marino (github.com/nwmarino)
-
 #ifndef STATIMC_LOGGER_H
 #define STATIMC_LOGGER_H
 
-#include "../token/Token.h"
+/// Suite of logging functions for the compiler.
+/// Copyright 2024 Nick Marino (github.com/nwmarino)
+
 #include "../ast/Decl.h"
 #include "../ast/Stmt.h"
 #include "../ast/Unit.h"
+#include "../token/Token.h"
 
 /// Stop the compiler and print an error message.
 /// @param m    The error message.
@@ -68,7 +69,7 @@ inline void enum_variant_panic(const std::string &ident, const std::string &enum
 /// @param data Metadata about the bad input.
 /// @return     nullptr
 inline std::unique_ptr<Stmt> warn_stmt(std::string msg, const struct Metadata &data) {
-  fprintf(stderr, "statimc: warn: %s\nsee:%s:%zu:%zu", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
 
@@ -78,7 +79,7 @@ inline std::unique_ptr<Stmt> warn_stmt(std::string msg, const struct Metadata &d
 /// @param data Metadata about the bad input.
 /// @return     nullptr
 inline std::unique_ptr<Expr> warn_expr(std::string msg, const struct Metadata &data) {
-  fprintf(stderr, "statimc: warn: %s\nsee:%s:%zu:%zu", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
 
@@ -88,7 +89,57 @@ inline std::unique_ptr<Expr> warn_expr(std::string msg, const struct Metadata &d
 /// @param data Metadata about the bad input.
 /// @return     nullptr
 inline std::unique_ptr<Decl> warn_decl(std::string msg, const struct Metadata &data) {
-  fprintf(stderr, "statimc: warn: %s\nsee:%s:%zu:%zu", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  return nullptr;
+}
+
+
+/// Warn about a function parsing error.
+/// @param msg  The error message.
+/// @param data Metadata about the bad input.
+/// @return     nullptr
+inline std::unique_ptr<FunctionDecl> warn_fn(std::string msg, const struct Metadata &data) {
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  return nullptr;
+}
+
+
+/// Warn about an enum parsing error.
+/// @param msg  The error message.
+/// @param data Metadata about the bad input.
+/// @return     nullptr
+inline std::unique_ptr<EnumDecl> warn_enum(std::string msg, const struct Metadata &data) {
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  return nullptr;
+}
+
+
+/// Warn about a struct parsing error.
+/// @param msg  The error message.
+/// @param data Metadata about the bad input.
+/// @return     nullptr
+inline std::unique_ptr<StructDecl> warn_struct(std::string msg, const struct Metadata &data) {
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  return nullptr;
+}
+
+
+/// Warn about a trait parsing error.
+/// @param msg  The error message.
+/// @param data Metadata about the bad input.
+/// @return     nullptr
+inline std::unique_ptr<TraitDecl> warn_trait(std::string msg, const struct Metadata &data) {
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  return nullptr;
+}
+
+
+/// Warn about an impl parsing error.
+/// @param msg  The error message.
+/// @param data Metadata about the bad input.
+/// @return     nullptr
+inline std::unique_ptr<ImplDecl> warn_impl(std::string msg, const struct Metadata &data) {
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
 
@@ -98,7 +149,7 @@ inline std::unique_ptr<Decl> warn_decl(std::string msg, const struct Metadata &d
 /// @param data Metadata about the bad input.
 /// @return     nullptr
 inline std::unique_ptr<Unit> warn_unit(std::string msg, const struct Metadata &data) {
-  fprintf(stderr, "statimc: warn: %s\nsee:%s:%zu:%zu", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
 

@@ -213,10 +213,6 @@ class CallExpr : public Expr
     [[nodiscard]]
     inline const std::string get_callee() const { return callee; }
 
-    /// Gets the arguments of this function call expression.
-    [[nodiscard]]
-    inline const std::vector<std::unique_ptr<Expr>> get_args() const { return args; }
-
     /// Returns a string representation of this function call expression.
     [[nodiscard]]
     const std::string to_string(int n);
