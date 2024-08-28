@@ -86,5 +86,6 @@
         "execution": "cpp",
         "ios": "cpp",
         "locale": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

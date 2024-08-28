@@ -6,7 +6,6 @@
 
 #include "Utils.h"
 #include "../token/Tokenizer.h"
-#include <iostream>
 
 /// A list of flags during the compilation process.
 struct CFlags
@@ -34,7 +33,6 @@ struct CContext
     struct Token _last;
     struct Token _last_two;
     std::string _file;
-    std::unique_ptr<Scope> _parent_scope;
 
   public:
     /// Default constructor.
@@ -68,19 +66,6 @@ struct CContext
         input.pop_back();
       }
     }
-
-    /// Assign a new parent scope.
-    inline void set_parent_scope(std::unique_ptr<Scope> &scope) {
-      if (scope) { 
-        _parent_scope = std::move(scope);
-        return;
-      }
-      _parent_scope = nullptr;
-    }
-
-    /// Get the current parent scope.
-    [[nodiscard]]
-    inline std::unique_ptr<Scope> &parent_scope(void) { return _parent_scope; }
 };
 
 #endif  // CCONTEXT_STATIMC_H

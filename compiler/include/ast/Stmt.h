@@ -53,11 +53,11 @@ class CompoundStmt : public Stmt
 {
   private:
     std::vector<std::unique_ptr<Stmt>> stmts;
-    std::unique_ptr<Scope> scope;
+    std::shared_ptr<Scope> scope;
 
   public:
     /// Constructor for compound statements.
-    CompoundStmt(std::vector<std::unique_ptr<Stmt>> stmts, std::unique_ptr<Scope> &scope) : stmts(std::move(stmts)), scope(std::move(scope)) {};
+    CompoundStmt(std::vector<std::unique_ptr<Stmt>> stmts, std::shared_ptr<Scope> scope) : stmts(std::move(stmts)), scope(scope) {};
 
     /// Determine if the body of this compound statement is empty.
     [[nodiscard]]

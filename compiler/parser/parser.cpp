@@ -8,6 +8,8 @@
 #include "../include/ast/Stmt.h"
 #include "../include/core/Logger.h"
 
+static std::shared_ptr<Scope> curr_scope;
+
 static std::unique_ptr<Expr> parse_expr(std::unique_ptr<CContext> &ctx);
 static std::unique_ptr<Stmt> parse_stmt(std::unique_ptr<CContext> &ctx);
 static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<CContext> &ctx);
@@ -296,7 +298,9 @@ static std::unique_ptr<Stmt> parse_compound_stmt(std::unique_ptr<CContext> &ctx)
   ctx->next();  // eat open brace
 
   // declare new scope for the block
-  std::unique_ptr<Scope> scope = std::make_unique<Scope>(std::move(ctx->parent_scope()), ScopeContext{ .is_compound_scope = true });
+  std::shared_ptr<Scope> scope = std::make_shared<Scope>(curr_scope, ScopeContext{ .is_compound_scope = true });
+  curr_scope = scope;
+
   std::vector<std::unique_ptr<Stmt>> stmts;
   while (!ctx->last().is_close_brace()) {
     std::unique_ptr<Stmt> stmt = parse_stmt(ctx);
@@ -314,6 +318,9 @@ static std::unique_ptr<Stmt> parse_compound_stmt(std::unique_ptr<CContext> &ctx)
     }
   }
   ctx->next();  // eat close brace
+
+  // move back up to the parent scope
+  curr_scope = curr_scope->get_parent();
 
   return std::make_unique<CompoundStmt>(std::move(stmts), scope);
 }
@@ -645,7 +652,7 @@ static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<CContext> &ct
     std::unique_ptr<FunctionDecl> function = std::make_unique<FunctionDecl>(name, ret_type, std::move(params));
 
     // add function declaration to parent scope
-    //ctx->parent_scope()->add_decl(std::move(function));
+    curr_scope->add_decl(function.get());
     return function;
   }
 
@@ -653,19 +660,15 @@ static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<CContext> &ct
     return warn_fn("expected '{' or ';' in function declaration", ctx->last().meta);
   }
 
-  // assign this function as parent scope moving forward
-  std::unique_ptr<Scope> scope = std::make_unique<Scope>(std::move(ctx->parent_scope()), ScopeContext{ .is_func_scope = true });
-  //ctx->set_parent_scope(scope);
-
   std::unique_ptr<Stmt> body = parse_stmt(ctx);
   if (!body) {
     return warn_fn("expected function body", ctx->last().meta);
   }
 
-  std::unique_ptr<FunctionDecl> function = std::make_unique<FunctionDecl>(name, ret_type, std::move(params), std::move(body), std::move(scope));
+  std::unique_ptr<FunctionDecl> function = std::make_unique<FunctionDecl>(name, ret_type, std::move(params), std::move(body));
   
   // add function declaration to parent scope
-  //ctx->parent_scope()->add_decl(std::move(function));
+  curr_scope->add_decl(function.get());
   return function;
 }
 
@@ -688,9 +691,9 @@ static std::unique_ptr<StructDecl> parse_struct_decl(std::unique_ptr<CContext> &
   }
   ctx->next();  // eat open brace
 
-  // assign the struct as parent scope moving forward
-  std::unique_ptr<Scope> scope = std::make_unique<Scope>(std::move(ctx->parent_scope()), ScopeContext{ .is_struct_scope = true });
-  //ctx->set_parent_scope(scope);
+  // declare new scope for the struct block
+  std::shared_ptr<Scope> scope = std::make_shared<Scope>(curr_scope, ScopeContext{ .is_struct_scope = true });
+  curr_scope = scope;
 
   // parse fields and methods
   std::vector<std::unique_ptr<FieldDecl>> fields;
@@ -733,7 +736,7 @@ static std::unique_ptr<StructDecl> parse_struct_decl(std::unique_ptr<CContext> &
     }
 
     // add field to struct scope
-    //ctx->parent_scope()->add_decl(std::move(field));
+    curr_scope->add_decl(field.get());
 
     fields.push_back(std::move(field));
 
@@ -744,13 +747,13 @@ static std::unique_ptr<StructDecl> parse_struct_decl(std::unique_ptr<CContext> &
   }
   ctx->next();  // eat close brace
 
-  std::unique_ptr<StructDecl> structure = std::make_unique<StructDecl>(name, std::move(fields), std::move(scope));
+  std::unique_ptr<StructDecl> structure = std::make_unique<StructDecl>(name, std::move(fields), scope);
 
   // move back to parent scope
-  //ctx->set_parent_scope(scope->get_parent());
+  curr_scope = curr_scope->get_parent();
 
   // add struct declaration to parent scope
-  //ctx->parent_scope()->add_decl(std::move(structure));
+  curr_scope->add_decl(structure.get());
   return structure;
 }
 
@@ -920,10 +923,11 @@ static std::unique_ptr<PackageUnit> parse_pkg(std::unique_ptr<CContext> &ctx) {
   const std::string name = ctx->file();
   std::vector<std::string> imports;
   std::vector<std::unique_ptr<Decl>> decls;
-  std::unique_ptr<Scope> scope = std::make_unique<Scope>(nullptr, ScopeContext{ .is_pkg_scope = true });
 
   // assign this package as parent scope moving forward
-  //ctx->set_parent_scope(scope);
+  std::shared_ptr<Scope> scope = std::make_shared<Scope>(nullptr, ScopeContext{ .is_pkg_scope = true });
+  curr_scope = scope;
+
   while (!ctx->last().is_eof()) {
     if (ctx->last().is_kw("pkg")) {
       ctx->next();  // eat package keyword
@@ -950,7 +954,11 @@ static std::unique_ptr<PackageUnit> parse_pkg(std::unique_ptr<CContext> &ctx) {
     decls.push_back(std::move(decl));
 
   }
-  return std::make_unique<PackageUnit>(name, imports, std::move(decls), std::move(scope));
+
+  // clear scope
+  curr_scope = nullptr;
+
+  return std::make_unique<PackageUnit>(name, imports, std::move(decls), scope);
 }
 
 

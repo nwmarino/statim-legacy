@@ -25,20 +25,16 @@ class PackageUnit : public Unit
     const std::string name;
     std::vector<std::string> imports;
     std::vector<std::unique_ptr<Decl>> decls;
-    std::unique_ptr<Scope> scope;
+    std::shared_ptr<Scope> scope;
 
   public:
     /// Basic constructor for package units.
-    PackageUnit(const std::string &name, std::vector<std::string> imports, std::vector<std::unique_ptr<Decl>> decls, std::unique_ptr<Scope> scope)
-      : name(name), imports(imports), decls(std::move(decls)), scope(std::move(scope)) {};
+    PackageUnit(const std::string &name, std::vector<std::string> imports, std::vector<std::unique_ptr<Decl>> decls, std::shared_ptr<Scope> scope)
+      : name(name), imports(imports), decls(std::move(decls)), scope(scope) {};
 
     /// Gets the name of this package unit.
     [[nodiscard]]
     inline const std::string get_name() const { return name; }
-
-    /// Get the scope object of this package unit.
-    [[nodiscard]]
-    inline std::unique_ptr<Scope> &get_scope() { return scope; }
 
     /// Returns a string representation of this package unit.
     [[nodiscard]]

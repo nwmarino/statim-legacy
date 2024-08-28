@@ -211,3 +211,15 @@ const std::string ByteExpr::to_string(int n) {
 const std::string ByteStringExpr::to_string(int n) {
   return mk_piping(n) + "ByteStringExpr " + value + '\n';
 }
+
+
+const std::string Scope::to_string(int n) {
+  std::string result = mk_piping(n) + "Scope\n";
+  for (Decl *d : decls) {
+    result += d->to_string(n + 2);
+  }
+  if (parent) {
+    result += parent->to_string(n + 2);
+  }
+  return result;
+}

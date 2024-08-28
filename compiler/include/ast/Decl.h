@@ -8,10 +8,7 @@
 #include <memory>
 #include <vector>
 
-struct Scope;
 class Decl;
-
-#include "Stmt.h"
 
 /// Base class for all AST declarations.
 class Decl
@@ -52,38 +49,35 @@ struct ScopeContext
 class Scope
 {
   private:
-    std::unique_ptr<Scope> parent;
+    std::shared_ptr<Scope> parent;
     struct ScopeContext ctx;
-    std::vector<std::unique_ptr<Decl>> decls;
+    std::vector<Decl *> decls;
 
   public:
     /// Constructor for a scope.
-    Scope(std::unique_ptr<Scope> parent, struct ScopeContext ctx)
-      : parent(std::move(parent)), ctx(ctx), decls() {};
+    Scope(std::shared_ptr<Scope> parent, struct ScopeContext ctx)
+      : parent(parent), ctx(ctx), decls() {};
 
     /// Add a declaration to this scope.
-    inline void add_decl(std::unique_ptr<Decl> decl) { decls.push_back(std::move(decl)); }
+    inline void add_decl(Decl *d) { decls.push_back(d); }
 
     /// Delete a declaration from this scope.
-    inline void del_decl(std::unique_ptr<Decl> decl) { decls.erase(std::remove(decls.begin(), decls.end(), decl), decls.end()); }
+    inline void del_decl(Decl *d) { decls.erase(std::remove(decls.begin(), decls.end(), d), decls.end()); }
 
     /// Get the direct parent scope, if it exists.
     [[nodiscard]]
-    inline std::unique_ptr<Scope> get_parent() { 
-      if (parent) {
-        return std::move(parent);
-      }
-      return nullptr;
+    inline std::shared_ptr<Scope> get_parent() { 
+      return parent;
     }
 
     /// Get the closest function scope, if it exists.
     [[nodiscard]]
-    inline std::unique_ptr<Scope> get_fn_scope() {
-      std::unique_ptr<Scope> scope = std::move(parent);
-      while (scope != nullptr && !scope->is_func_scope()) {
-        scope = scope->get_parent();
+    inline std::shared_ptr<Scope> get_fn_scope() {
+      std::shared_ptr<Scope> p = parent;
+      while (p != nullptr && !p->is_func_scope()) {
+        p = p->parent;
       }
-      return scope;
+      return p;
     }
 
     /// Determine if this scope belongs to a package.
@@ -113,8 +107,14 @@ class Scope
     /// Determine if this scope belongs to a compound statement.
     [[nodiscard]]
     inline bool is_compound_scope() const { return ctx.is_compound_scope; }
+
+    /// Returns a string representation of this scope tree.
+    [[nodiscard]]
+    const std::string to_string(int n);
 };
 
+
+#include "Stmt.h"
 
 /// Function declaration related classes.
 ///
@@ -149,7 +149,6 @@ class FunctionDecl : public Decl
     const std::string ret_type;
     std::vector<FunctionParam> params;
     std::unique_ptr<Stmt> body;
-    std::unique_ptr<Scope> scope;
     bool priv;
 
   public:
@@ -158,8 +157,8 @@ class FunctionDecl : public Decl
       : name(name), ret_type(ret_type), params(std::move(params)), body(nullptr), priv(false) {};
 
     /// Constructor for function declarations with a body.
-    FunctionDecl(const std::string &name, const std::string &ret_type, std::vector<FunctionParam> params, std::unique_ptr<Stmt> body, std::unique_ptr<Scope> scope)
-      : name(name), ret_type(ret_type), params(std::move(params)), body(std::move(body)), scope(std::move(scope)), priv(false) {};
+    FunctionDecl(const std::string &name, const std::string &ret_type, std::vector<FunctionParam> params, std::unique_ptr<Stmt> body)
+      : name(name), ret_type(ret_type), params(std::move(params)), body(std::move(body)), priv(false) {};
     
     /// Returns true if this function declaration has a body.
     [[nodiscard]]
@@ -180,10 +179,6 @@ class FunctionDecl : public Decl
     /// Gets the parameters of this function declaration.
     [[nodiscard]]
     inline const std::vector<FunctionParam> get_params() const { return params; }
-
-    /// Gets the scope of this function declaration.
-    [[nodiscard]]
-    inline std::unique_ptr<Scope> &get_scope() { return scope; }
 
     /// Returns true if this function declaration is private.
     [[nodiscard]]
@@ -388,21 +383,17 @@ class StructDecl : public Decl
   private:
     const std::string name;
     std::vector<std::unique_ptr<FieldDecl>> fields;
-    std::unique_ptr<Scope> scope;
+    std::shared_ptr<Scope> scope;
     bool priv;
 
   public:
     /// Basic constructor for struct declarations.
-    StructDecl(const std::string &name, std::vector<std::unique_ptr<FieldDecl>> fields, std::unique_ptr<Scope> scope)
-      : name(name), fields(std::move(fields)), scope(std::move(scope)), priv(false) {};
+    StructDecl(const std::string &name, std::vector<std::unique_ptr<FieldDecl>> fields, std::shared_ptr<Scope> scope)
+      : name(name), fields(std::move(fields)), scope(scope), priv(false) {};
 
     /// Gets the name of this struct declaration.
     [[nodiscard]]
     inline const std::string get_name() const { return name; }
-
-    /// Gets the scope of this struct declaration.
-    [[nodiscard]]
-    inline std::unique_ptr<Scope> &get_scope() { return scope; }
 
     /// Returns true if this function declaration is private.
     [[nodiscard]]
