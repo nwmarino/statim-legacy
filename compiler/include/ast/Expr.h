@@ -6,6 +6,15 @@
 
 #include "Stmt.h"
 
+/// Base class for expressions; statements that may have a value and type.
+class Expr : public Stmt
+{
+  public:
+      virtual ~Expr() = default;
+      const virtual std::string to_string(int n) = 0;
+};
+
+
 /// This class represents the `null` literal expression.
 class NullExpr : public Expr
 {
@@ -14,6 +23,18 @@ class NullExpr : public Expr
     NullExpr() {};
 
     /// Returns a string representation of this null expression.
+    [[nodiscard]]
+    const std::string to_string(int n);
+};
+
+
+/// This class represents a default expression in some match statement.
+class DefaultExpr : public Expr
+{
+  public:
+    DefaultExpr() {};
+
+    /// Returns a string representation of this expression.
     [[nodiscard]]
     const std::string to_string(int n);
 };

@@ -5,9 +5,11 @@
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #include <memory>
+#include <string>
 #include <vector>
 
-#include "Decl.h"
+class Decl;
+class Scope;
 
 /// Base class for source units.
 class Unit

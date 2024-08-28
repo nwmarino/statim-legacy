@@ -54,7 +54,7 @@ const std::string StructDecl::to_string(int n) {
 
 
 const std::string ImplDecl::to_string(int n) {
-  std::string result = mk_piping(n) + "ImplDecl " + abstract_name + '\n';
+  std::string result = mk_piping(n) + "ImplDecl " + trait() + '\n';
   for (std::unique_ptr<FunctionDecl> const &method : methods) {
     result += method->to_string(n + 2);
   }

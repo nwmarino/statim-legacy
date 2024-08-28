@@ -6,9 +6,12 @@
 
 #include <algorithm>
 #include <memory>
+#include <string>
 #include <vector>
 
-class Decl;
+#include "Expr.h"
+
+class Stmt;
 
 /// Base class for all AST declarations.
 class Decl
@@ -113,8 +116,6 @@ class Scope
     const std::string to_string(int n);
 };
 
-
-#include "Stmt.h"
 
 /// Function declaration related classes.
 ///
@@ -311,26 +312,26 @@ class EnumDecl : public Decl
 class ImplDecl : public Decl
 {
   private:
-    const std::string abstract_name;
-    const std::string struct_name;
+    const std::string _trait;
+    const std::string _struct;
     std::vector<std::unique_ptr<FunctionDecl>> methods;
 
   public:
-    /// Constructor for implementation declarations with no methods.
-    ImplDecl(const std::string &abstract_name, const std::string &struct_name)
-      : abstract_name(abstract_name), struct_name(struct_name), methods() {};
+    /// Constructor for struct implementations.
+    ImplDecl(const std::string &_struct, std::vector<std::unique_ptr<FunctionDecl>> methods)
+      : _struct(_struct), methods() {};
 
-    /// Constructor for implementation declarations with methods.
-    ImplDecl(const std::string &abstract_name, const std::string &struct_name, std::vector<std::unique_ptr<FunctionDecl>> methods)
-      : abstract_name(abstract_name), struct_name(struct_name), methods(std::move(methods)) {};
+    /// Constructor for trait implementations.
+    ImplDecl(const std::string &_trait, const std::string &_struct, std::vector<std::unique_ptr<FunctionDecl>> methods)
+      : _trait(_trait), _struct(_struct), methods(std::move(methods)) {};
 
     /// Gets the name of the abstract declaration of this implementation declaration.
     [[nodiscard]]
-    inline const std::string get_name() const { return abstract_name; }
+    inline const std::string trait() const { return _trait; }
 
-    /// Gets the name of the struct of this implementation declaration.
+    /// Gets the name of the target struct of this implementation declaration.
     [[nodiscard]]
-    inline const std::string get_struct_name() const { return struct_name; }
+    inline const std::string target() const { return _struct; }
 
     /// Returns a string representation of this implementation declaration.
     [[nodiscard]]

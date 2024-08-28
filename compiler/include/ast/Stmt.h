@@ -9,10 +9,9 @@
 #include <utility>
 #include <vector>
 
-class Stmt;
+class Scope;
+class Decl;
 class Expr;
-
-#include "Decl.h"
 
 /// Base class for a statement representation.
 class Stmt
@@ -36,15 +35,6 @@ class DeclStmt : public Stmt
 
     [[nodiscard]]
     const std::string to_string(int n);
-};
-
-
-/// Base class for expressions; statements that may have a value and type.
-class Expr : public Stmt
-{
-  public:
-      virtual ~Expr() = default;
-      const virtual std::string to_string(int n) = 0;
 };
 
 
@@ -100,17 +90,6 @@ class IfStmt : public Stmt
 ///
 /// These classes are used to represent pattern matching constructs in the AST.
 
-/// This class represents a default expression in some match statement.
-class DefaultExpr : public Expr
-{
-  public:
-    DefaultExpr() {};
-
-    /// Returns a string representation of this expression.
-    [[nodiscard]]
-    const std::string to_string(int n);
-};
-
 /// This class represents a possible pattern matching class.
 class MatchCase : public Stmt
 {
@@ -122,10 +101,6 @@ class MatchCase : public Stmt
     /// Constructor for match cases.
     MatchCase(std::unique_ptr<Expr> expr, std::unique_ptr<Stmt> body)
       : expr(std::move(expr)), body(std::move(body)) {};
-
-    /// Determine if this is the default case.
-    [[nodiscard]]
-    inline bool is_default() const { return typeid(expr) == typeid(DefaultExpr); }
 
     /// Returns a string representation of this match case.
     [[nodiscard]]
