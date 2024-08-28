@@ -104,6 +104,7 @@ const std::string CompoundStmt::to_string(int n) {
   for (std::unique_ptr<Stmt> const &stmt : stmts) {
     result += stmt->to_string(n + 2);
   }
+  result += scope->to_string(n);
   return result;
 }
 
@@ -214,12 +215,30 @@ const std::string ByteStringExpr::to_string(int n) {
 
 
 const std::string Scope::to_string(int n) {
-  std::string result = mk_piping(n) + "Scope\n";
+  std::string result = mk_piping(n) + "Scope ";
+  if (is_struct_scope()) {
+    result += "`struct`";
+  } else if (is_compound_scope()) {
+    result += "`compound`";
+  } else if (is_cond_scope()) {
+    result += "`conditional`";
+  } else if (is_decl_scope()) {
+    result += "`declaration`";
+  } else if (is_func_scope()) {
+    result += "`function`";
+  } else if (is_loop_scope()) {
+    result += "`loop`";
+  } else if (is_pkg_scope()) {
+    result += "`package`";
+  }
+  result += '\n';
+  /*
   for (Decl *d : decls) {
     result += d->to_string(n + 2);
   }
+  */
   if (parent) {
-    result += parent->to_string(n + 2);
+    result += parent->to_string(n - 2);
   }
   return result;
 }

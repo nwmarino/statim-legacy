@@ -660,12 +660,19 @@ static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<CContext> &ct
     return warn_fn("expected '{' or ';' in function declaration", ctx->last().meta);
   }
 
+  // assign new scope for the function body
+  std::shared_ptr<Scope> scope = std::make_shared<Scope>(curr_scope, ScopeContext{ .is_func_scope = true });
+  curr_scope = scope;
+
   std::unique_ptr<Stmt> body = parse_stmt(ctx);
   if (!body) {
     return warn_fn("expected function body", ctx->last().meta);
   }
 
-  std::unique_ptr<FunctionDecl> function = std::make_unique<FunctionDecl>(name, ret_type, std::move(params), std::move(body));
+  std::unique_ptr<FunctionDecl> function = std::make_unique<FunctionDecl>(name, ret_type, std::move(params), std::move(body), scope);
+
+  // move back to parent scope
+  curr_scope = curr_scope->get_parent();
   
   // add function declaration to parent scope
   curr_scope->add_decl(function.get());
@@ -778,14 +785,20 @@ static std::unique_ptr<TraitDecl> parse_trait_decl(std::unique_ptr<CContext> &ct
 
   std::vector<std::unique_ptr<FunctionDecl>> methods;
   while (!ctx->last().is_close_brace()) {
-    if (std::unique_ptr<FunctionDecl> method = parse_fn_decl(ctx)) {
-      if (method->has_body()) {
-        return warn_trait("method '" + method->get_name() + "' cannot have a body in trait declaration", ctx->last().meta);
-      }
-      methods.push_back(std::move(method));
-    } else {
-      return warn_trait("expected method in trait declaration", ctx->last().meta);
+    if (ctx->last().is_kw("priv")) {
+      return warn_trait("method cannot be declared private in trait '" + name + "'", ctx->last().meta);
     }
+
+    std::unique_ptr<FunctionDecl> method = parse_fn_decl(ctx);
+    if (!method) {
+      return warn_trait("expected method in trait declaration", ctx->last().meta);
+    } 
+
+    if (method->has_body()) {
+      return warn_trait("method '" + method->get_name() + "' cannot have a body in trait declaration", ctx->last().meta);
+    }
+
+    methods.push_back(std::move(method));
   }
   ctx->next();  // eat close brace
 

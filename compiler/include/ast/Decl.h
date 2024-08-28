@@ -149,6 +149,7 @@ class FunctionDecl : public Decl
     const std::string ret_type;
     std::vector<FunctionParam> params;
     std::unique_ptr<Stmt> body;
+    std::shared_ptr<Scope> scope;
     bool priv;
 
   public:
@@ -157,8 +158,8 @@ class FunctionDecl : public Decl
       : name(name), ret_type(ret_type), params(std::move(params)), body(nullptr), priv(false) {};
 
     /// Constructor for function declarations with a body.
-    FunctionDecl(const std::string &name, const std::string &ret_type, std::vector<FunctionParam> params, std::unique_ptr<Stmt> body)
-      : name(name), ret_type(ret_type), params(std::move(params)), body(std::move(body)), priv(false) {};
+    FunctionDecl(const std::string &name, const std::string &ret_type, std::vector<FunctionParam> params, std::unique_ptr<Stmt> body, std::shared_ptr<Scope> scope)
+      : name(name), ret_type(ret_type), params(std::move(params)), body(std::move(body)), scope(scope), priv(false) {};
     
     /// Returns true if this function declaration has a body.
     [[nodiscard]]
