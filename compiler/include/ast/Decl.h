@@ -5,11 +5,11 @@
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #include <algorithm>
-#include <iostream>
 #include <memory>
 #include <vector>
 
-struct Scope; // Forward declaration of Scope struct
+struct Scope;
+class Decl;
 
 #include "Stmt.h"
 
@@ -416,6 +416,50 @@ class StructDecl : public Decl
     inline void set_pub() { priv = false; }
 
     /// Returns a string representation of this struct declaration.
+    [[nodiscard]]
+    const std::string to_string(int n);
+};
+
+
+/// Class for variable declarations.
+class VarDecl : public Decl
+{
+  private:
+    const std::string name;
+    const std::string type;
+    std::unique_ptr<Expr> expr;
+    bool mut;
+
+  public:
+    /// Constructor for variable declarations with an expression.
+    VarDecl(const std::string &name, const std::string &type, std::unique_ptr<Expr> expr, bool mut)
+      : name(name), type(type), expr(std::move(expr)), mut(mut) {};
+
+    /// Constructor for variable declarations without an expression.
+    VarDecl(const std::string &name, const std::string &type, bool mut)
+      : name(name), type(type), expr(nullptr), mut(mut) {};
+
+    /// Gets the name of this variable declaration.
+    [[nodiscard]]
+    inline const std::string get_name() const { return name; }
+
+    /// Gets the type of this variable declaration.
+    [[nodiscard]]
+    inline const std::string get_type() const { return type; }
+
+    /// Returns true if this variable declaration has an expression.
+    [[nodiscard]]
+    inline bool has_expr() const { return expr != nullptr; }
+
+    /// Gets the expression of this variable declaration.
+    [[nodiscard]]
+    inline std::unique_ptr<Expr> &get_expr() { return expr; }
+
+    /// Determine if this variable declaration is mutable.
+    [[nodiscard]]
+    inline bool is_mut() const { return mut; }
+
+    /// Returns a string representation of this variable declaration.
     [[nodiscard]]
     const std::string to_string(int n);
 };

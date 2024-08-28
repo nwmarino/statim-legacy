@@ -85,6 +85,20 @@ const std::string TraitDecl::to_string(int n) {
 }
 
 
+const std::string VarDecl::to_string(int n) {
+  std::string result = mk_piping(n) + "VarDecl " + name + '\n';
+  if (has_expr()) {
+    result += expr->to_string(n + 2);
+  }
+  return result;
+}
+
+
+const std::string DeclStmt::to_string(int n) {
+  return mk_piping(n) + "DeclStmt\n" + decl->to_string(n + 2);
+}
+
+
 const std::string CompoundStmt::to_string(int n) {
   std::string result = mk_piping(n) + "CompoundStmt\n";
   for (std::unique_ptr<Stmt> const &stmt : stmts) {

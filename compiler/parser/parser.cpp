@@ -8,8 +8,9 @@
 #include "../include/ast/Stmt.h"
 #include "../include/core/Logger.h"
 
-static std::unique_ptr<Stmt> parse_stmt(std::unique_ptr<CContext> &ctx);
 static std::unique_ptr<Expr> parse_expr(std::unique_ptr<CContext> &ctx);
+static std::unique_ptr<Stmt> parse_stmt(std::unique_ptr<CContext> &ctx);
+static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<CContext> &ctx);
 
 
 /// Get the precedence of an operator.
@@ -176,9 +177,11 @@ static std::unique_ptr<Expr> parse_call_expr(std::unique_ptr<CContext> &ctx, con
 
   std::vector<std::unique_ptr<Expr>> args;
   while (!ctx->last().is_close_paren()) {
-    if (std::unique_ptr<Expr> arg = parse_expr(ctx)) {
-      args.push_back(std::move(arg));
+    std::unique_ptr<Expr> arg = parse_expr(ctx);
+    if (!arg) {
+      return warn_expr("expected expression in function call", ctx->last().meta);
     }
+    args.push_back(std::move(arg));
 
     if (ctx->last().is_close_paren()) {
       break;
@@ -271,18 +274,18 @@ static std::unique_ptr<Expr> parse_binary_expr(std::unique_ptr<CContext> &ctx, s
       }
     }
 
-    rval = std::make_unique<BinaryExpr>(op_to_string(op_kind), std::move(base), std::move(rval));
+    base = std::make_unique<BinaryExpr>(op_to_string(op_kind), std::move(base), std::move(rval));
   }
 }
 
 
 /// Parses a generic expression from the given context.
 static std::unique_ptr<Expr> parse_expr(std::unique_ptr<CContext> &ctx) {
-  if (std::unique_ptr<Expr> base = parse_primary_expr(ctx)) {
-    return parse_binary_expr(ctx, std::move(base), 0);
+  std::unique_ptr<Expr> base = parse_primary_expr(ctx);
+  if (!base) {
+    return warn_expr("expected expression", ctx->last().meta);
   }
-
-  return warn_expr("expected expression", ctx->last().meta);
+  return parse_binary_expr(ctx, std::move(base), 0);
 }
 
 
@@ -296,9 +299,11 @@ static std::unique_ptr<Stmt> parse_compound_stmt(std::unique_ptr<CContext> &ctx)
   std::unique_ptr<Scope> scope = std::make_unique<Scope>(std::move(ctx->parent_scope()), ScopeContext{ .is_compound_scope = true });
   std::vector<std::unique_ptr<Stmt>> stmts;
   while (!ctx->last().is_close_brace()) {
-    if (std::unique_ptr<Stmt> stmt = parse_stmt(ctx)) {
-      stmts.push_back(std::move(stmt));
+    std::unique_ptr<Stmt> stmt = parse_stmt(ctx);
+    if (!stmt) {
+      return warn_stmt("expected statement in block", ctx->last().meta);
     }
+    stmts.push_back(std::move(stmt));
 
     if (!ctx->last().is_semi() && !ctx->last_two().is_close_brace()) {
       return warn_stmt("expected ';'", ctx->last().meta);
@@ -419,9 +424,11 @@ static std::unique_ptr<Stmt> parse_match_stmt(std::unique_ptr<CContext> &ctx) {
     }
     ctx->next();  // eat fat arrow
 
-    if (std::unique_ptr<Stmt> case_stmt = parse_stmt(ctx)) {
-      cases.push_back(std::make_unique<MatchCase>(std::move(case_expr), std::move(case_stmt)));
+    std::unique_ptr<Stmt> case_stmt = parse_stmt(ctx);
+    if (!case_stmt) {
+      return warn_stmt("expected statement after 'case' expression", ctx->last().meta);
     }
+    cases.push_back(std::make_unique<MatchCase>(std::move(case_expr), std::move(case_stmt)));
     
     if (ctx->last().is_close_brace()) {
       break;
@@ -453,6 +460,7 @@ static std::unique_ptr<Stmt> parse_stmt(std::unique_ptr<CContext> &ctx) {
   }
 
   if (ctx->last().is_kw("let")) {
+    return parse_var_decl(ctx);
   }
 
   if (ctx->last().is_kw("match")) {
@@ -468,6 +476,52 @@ static std::unique_ptr<Stmt> parse_stmt(std::unique_ptr<CContext> &ctx) {
   }
 
   return parse_expr(ctx);
+}
+
+
+/// Parses a variable declaration from the given context.
+///
+/// Variable declarations are in the form of `let 'mut' <identifier> = <expr>;`.
+static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<CContext> &ctx) {
+  ctx->next();  // eat let keyword
+
+  bool is_mutable = false;
+  if (ctx->last().is_kw("mut")) {
+    is_mutable = true;
+    ctx->next();  // eat mut keyword
+  }
+
+  if (!ctx->last().is_ident()) {
+    return warn_stmt("expected identifier after 'let'", ctx->last().meta);
+  }
+
+  const std::string name = ctx->last().value;
+  ctx->next();  // eat variable name
+
+  if (!ctx->last().is_colon()) {
+    return warn_stmt("expected ':'", ctx->last().meta);
+  }
+  ctx->next();  // eat separator
+
+  if (!ctx->last().is_ident()) {
+    return warn_stmt("expected type identifier", ctx->last().meta);
+  }
+  const std::string type = ctx->last().value;
+  ctx->next();  // eat type
+
+  if (ctx->last().is_semi()) {
+    return std::make_unique<DeclStmt>(std::make_unique<VarDecl>(name, type, is_mutable));
+  } else if (!ctx->last().is_eq()) {
+    return warn_stmt("expected ';'", ctx->last().meta);
+  }
+  ctx->next();  // eat eq
+
+  std::unique_ptr<Expr> value = parse_expr(ctx);
+  if (!value) {
+    return warn_stmt("expected expression after '='", ctx->last().meta);
+  }
+
+  return std::make_unique<DeclStmt>(std::make_unique<VarDecl>(name, type, std::move(value), is_mutable));
 }
 
 
@@ -602,15 +656,17 @@ static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<CContext> &ct
   // assign this function as parent scope moving forward
   std::unique_ptr<Scope> scope = std::make_unique<Scope>(std::move(ctx->parent_scope()), ScopeContext{ .is_func_scope = true });
   //ctx->set_parent_scope(scope);
-  if (std::unique_ptr<Stmt> body = parse_stmt(ctx)) {
-    std::unique_ptr<FunctionDecl> function = std::make_unique<FunctionDecl>(name, ret_type, std::move(params), std::move(body), std::move(scope));
-    
-    // add function declaration to parent scope
-    //ctx->parent_scope()->add_decl(std::move(function));
-    return function;
+
+  std::unique_ptr<Stmt> body = parse_stmt(ctx);
+  if (!body) {
+    return warn_fn("expected function body", ctx->last().meta);
   }
 
-  return warn_fn("expected function body", ctx->last().meta);
+  std::unique_ptr<FunctionDecl> function = std::make_unique<FunctionDecl>(name, ret_type, std::move(params), std::move(body), std::move(scope));
+  
+  // add function declaration to parent scope
+  //ctx->parent_scope()->add_decl(std::move(function));
+  return function;
 }
 
 
@@ -783,17 +839,17 @@ static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<CContext> &ctx)
 
   std::vector<std::unique_ptr<FunctionDecl>> methods;
   while (!ctx->last().is_close_brace()) {
-    if (std::unique_ptr<FunctionDecl> method = parse_fn_decl(ctx)) {
-      // check that method was not already implemented
-      for (const std::unique_ptr<FunctionDecl> &m : methods) {
-        if (m->get_name() == method->get_name()) {
-          return warn_impl("method already exists: " + method->get_name() + " in " + struct_name, ctx->last().meta);
-        }
-      }
-      methods.push_back(std::move(method));
-    } else {
+    std::unique_ptr<FunctionDecl> method = parse_fn_decl(ctx);
+    if (!method) {
       return warn_impl("expected method in impl declaration", ctx->last().meta);
     }
+    // check that method was not already implemented
+    for (const std::unique_ptr<FunctionDecl> &m : methods) {
+      if (m->get_name() == method->get_name()) {
+        return warn_impl("method already exists: " + method->get_name() + " in " + struct_name, ctx->last().meta);
+      }
+    }
+    methods.push_back(std::move(method));
   }
   ctx->next();  // eat close brace
 
@@ -889,11 +945,13 @@ static std::unique_ptr<PackageUnit> parse_pkg(std::unique_ptr<CContext> &ctx) {
       ctx->next();  // eat priv keyword
     }
 
-    if (std::unique_ptr<Decl> decl = parse_decl(ctx, is_private)) {
-      decls.push_back(std::move(decl));
-    } else { 
+    std::unique_ptr<Decl> decl = parse_decl(ctx, is_private);
+    if (!decl) {
       panic("expected declaration or import", ctx->last().meta);
     }
+
+    decls.push_back(std::move(decl));
+
   }
   return std::make_unique<PackageUnit>(name, imports, std::move(decls), std::move(scope));
 }
@@ -907,16 +965,15 @@ static std::unique_ptr<CrateUnit> parse_crate(std::unique_ptr<CContext> &ctx) {
 
   do {
     ctx->next_file();
-
     if (ctx->last().is_eof()) {
       break;
     }
 
-    if (std::unique_ptr<PackageUnit> pkg = parse_pkg(ctx)) {
-      packages.push_back(std::move(pkg));
-    } else {
+    std::unique_ptr<PackageUnit> pkg = parse_pkg(ctx);
+    if (!pkg) {
       panic("expected package", ctx->last().meta);
     }
+    packages.push_back(std::move(pkg));
   } while (!ctx->last().is_eof());
 
   return std::make_unique<CrateUnit>(std::move(packages));

@@ -275,6 +275,10 @@ struct Token {
   [[nodiscard]]
   inline bool is_comma() const { return kind == Comma; };
 
+  /// Determine if this token is an equal sign or not.
+  [[nodiscard]]
+  inline bool is_eq() const { return kind == Eq; };
+
   /// Determine if this token is an arrow or not.
   [[nodiscard]]
   inline bool is_arrow() const { return kind == Arrow; };

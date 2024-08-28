@@ -9,7 +9,8 @@
 #include <utility>
 #include <vector>
 
-class Stmt; // Forward declaration of Stmt class
+class Stmt;
+class Expr;
 
 #include "Decl.h"
 
@@ -19,6 +20,22 @@ class Stmt
   public:
     virtual ~Stmt() = default;
     const virtual std::string to_string(int n) = 0;
+};
+
+
+/// Declarative statements that mix expressions and declarations.
+///
+/// In particular, these statements are used to declare variables within a scope.
+class DeclStmt : public Stmt
+{
+  private:
+    std::unique_ptr<Decl> decl;
+
+  public:
+    DeclStmt(std::unique_ptr<Decl> decl) : decl(std::move(decl)) {};
+
+    [[nodiscard]]
+    const std::string to_string(int n);
 };
 
 
