@@ -18,13 +18,29 @@ class Decl
 {
   public:
     virtual ~Decl() = default;
+    virtual const std::string get_name() const = 0;
     virtual const std::string to_string(int n) = 0;
+};
+
+
+/// ScopedDecl - Base class for declarations with that contain a scope.
+class ScopedDecl : public Decl
+{
+  private:
+    std::shared_ptr<Scope> scope;
+
+  public:
+    virtual ~ScopedDecl() = default;
+    virtual std::shared_ptr<Scope> get_scope() const = 0;
 };
 
 
 /// Context about a scope.
 struct ScopeContext
 {
+  /// If this scope is nested in a crate.
+  bool is_crate_scope;
+
   /// If this scope is nested in a package.
   bool is_pkg_scope;
 
@@ -82,6 +98,21 @@ class Scope
       }
       return p;
     }
+
+    /// Get a declaration by its name, if it exists.
+    [[nodiscard]]
+    inline Decl *get_decl(const std::string &name) {
+      for (Decl *d : decls) {
+        if (d->get_name() == name) {
+          return d;
+        }
+      }
+      return nullptr;
+    }
+    
+    /// Determine if this scope belongs to a crate.
+    [[nodiscard]]
+    inline bool is_crate_scope() const { return ctx.is_crate_scope; }
 
     /// Determine if this scope belongs to a package.
     [[nodiscard]]
@@ -143,7 +174,7 @@ class FunctionParam
 };
 
 /// Class for function definitions and declarations.
-class FunctionDecl : public Decl
+class FunctionDecl : public ScopedDecl
 {
   private:
     const std::string name;
@@ -181,6 +212,10 @@ class FunctionDecl : public Decl
     /// Gets the parameters of this function declaration.
     [[nodiscard]]
     inline const std::vector<FunctionParam> get_params() const { return params; }
+
+    /// Get the scope of this function declaration.
+    [[nodiscard]]
+    inline std::shared_ptr<Scope> get_scope() const { return scope; }
 
     /// Returns true if this function declaration is private.
     [[nodiscard]]
@@ -331,7 +366,7 @@ class ImplDecl : public Decl
 
     /// Gets the name of the target struct of this implementation declaration.
     [[nodiscard]]
-    inline const std::string target() const { return _struct; }
+    inline const std::string get_name() const { return _struct; }
 
     /// Returns a string representation of this implementation declaration.
     [[nodiscard]]
@@ -380,7 +415,7 @@ class FieldDecl : public Decl
 };
 
 /// Class for struct declarations.
-class StructDecl : public Decl
+class StructDecl : public ScopedDecl
 {
   private:
     const std::string name;
@@ -406,6 +441,10 @@ class StructDecl : public Decl
 
     // Set this function declaration as public.
     inline void set_pub() { priv = false; }
+
+    /// Get the scope of this struct declaration.
+    [[nodiscard]]
+    inline std::shared_ptr<Scope> get_scope() const { return scope; }
 
     /// Returns a string representation of this struct declaration.
     [[nodiscard]]

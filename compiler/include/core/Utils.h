@@ -36,6 +36,14 @@ inline std::string parse_filename(const std::string &path) {
 }
 
 
+/// Remove the file extension from a file name.
+[[nodiscard]]
+inline std::string remove_extension(const std::string &filename) {
+  std::size_t pos = filename.find_last_of(".");
+  return filename.substr(0, pos);
+}
+
+
 /// Read in the current working directory.
 [[nodiscard]]
 inline std::string read_cwd(void) {

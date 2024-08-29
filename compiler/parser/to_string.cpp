@@ -100,11 +100,12 @@ const std::string DeclStmt::to_string(int n) {
 
 
 const std::string CompoundStmt::to_string(int n) {
-  std::string result = mk_piping(n) + "CompoundStmt\n";
+  std::string result;
+  //result += get_scope()->to_string(n);
+  result += mk_piping(n) + "CompoundStmt\n";
   for (std::unique_ptr<Stmt> const &stmt : stmts) {
     result += stmt->to_string(n + 2);
   }
-  result += scope->to_string(n);
   return result;
 }
 
@@ -232,13 +233,13 @@ const std::string Scope::to_string(int n) {
     result += "`package`";
   }
   result += '\n';
-  /*
+  
   for (Decl *d : decls) {
+    // if the declaration is a scopeddecl, stringify its scope
+    if (ScopedDecl *sd = dynamic_cast<ScopedDecl *>(d)) {
+      result += sd->get_scope()->to_string(n + 2);
+    }
     result += d->to_string(n + 2);
-  }
-  */
-  if (parent) {
-    result += parent->to_string(n - 2);
   }
   return result;
 }

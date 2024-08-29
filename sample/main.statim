@@ -14,7 +14,7 @@ priv trait MyTrait {
   fn write() -> u32;
 }
 
-impl MyTrait to MyStruct {
+impl MyTrait for MyStruct {
   priv fn read() -> i32 {
     return 1;
   }

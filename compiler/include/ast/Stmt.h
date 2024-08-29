@@ -53,6 +53,10 @@ class CompoundStmt : public Stmt
     [[nodiscard]]
     inline bool is_empty() const { return stmts.empty(); }
 
+    /// Returns the scope of this compound statement.
+    [[nodiscard]]
+    inline std::shared_ptr<Scope> get_scope() const { return scope; }
+
     /// Returns a string representation of this compound statement.
     [[nodiscard]]
     const std::string to_string(int n);

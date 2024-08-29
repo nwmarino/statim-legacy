@@ -7,6 +7,7 @@
 #include "../include/ast/Expr.h"
 #include "../include/ast/Stmt.h"
 #include "../include/core/Logger.h"
+#include "../include/core/Utils.h"
 
 static std::shared_ptr<Scope> curr_scope;
 
@@ -321,7 +322,6 @@ static std::unique_ptr<Stmt> parse_compound_stmt(std::unique_ptr<CContext> &ctx)
 
   // move back up to the parent scope
   curr_scope = curr_scope->get_parent();
-
   return std::make_unique<CompoundStmt>(std::move(stmts), scope);
 }
 
@@ -517,7 +517,11 @@ static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<CContext> &ctx) {
   ctx->next();  // eat type
 
   if (ctx->last().is_semi()) {
-    return std::make_unique<DeclStmt>(std::make_unique<VarDecl>(name, type, is_mutable));
+    std::unique_ptr<VarDecl> decl = std::make_unique<VarDecl>(name, type, is_mutable);
+
+    // add declaration to parent scope
+    curr_scope->add_decl(decl.get());
+    return std::make_unique<DeclStmt>(std::move(decl));
   } else if (!ctx->last().is_eq()) {
     return warn_stmt("expected ';'", ctx->last().meta);
   }
@@ -528,7 +532,11 @@ static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<CContext> &ctx) {
     return warn_stmt("expected expression after '='", ctx->last().meta);
   }
 
-  return std::make_unique<DeclStmt>(std::make_unique<VarDecl>(name, type, std::move(value), is_mutable));
+  std::unique_ptr<VarDecl> decl = std::make_unique<VarDecl>(name, type, std::move(value), is_mutable);
+
+  // add declaration to parent scope
+  curr_scope->add_decl(decl.get());
+  return std::make_unique<DeclStmt>(std::move(decl));
 }
 
 
@@ -581,7 +589,7 @@ static std::unique_ptr<EnumDecl> parse_enum_decl(std::unique_ptr<CContext> &ctx)
   std::unique_ptr<EnumDecl> enumeration = std::make_unique<EnumDecl>(name, std::move(variants));
 
   // add declaration to parent scope
-  //ctx->parent_scope()->add_decl(std::move(enumeration));
+  curr_scope->add_decl(enumeration.get());
   return enumeration;
 }
 
@@ -648,12 +656,7 @@ static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<CContext> &ct
 
   if (ctx->last().is_semi()) {
     ctx->next();  // eat semi
-
-    std::unique_ptr<FunctionDecl> function = std::make_unique<FunctionDecl>(name, ret_type, std::move(params));
-
-    // add function declaration to parent scope
-    curr_scope->add_decl(function.get());
-    return function;
+    return std::make_unique<FunctionDecl>(name, ret_type, std::move(params));
   }
 
   if (!ctx->last().is_open_brace() ) {
@@ -744,7 +747,6 @@ static std::unique_ptr<StructDecl> parse_struct_decl(std::unique_ptr<CContext> &
 
     // add field to struct scope
     curr_scope->add_decl(field.get());
-
     fields.push_back(std::move(field));
 
     if (!ctx->last().is_comma()) {
@@ -805,14 +807,14 @@ static std::unique_ptr<TraitDecl> parse_trait_decl(std::unique_ptr<CContext> &ct
   std::unique_ptr<TraitDecl> trait = std::make_unique<TraitDecl>(name, std::move(methods));
 
   // add trait declaration to parent scope
-  //ctx->parent_scope()->add_decl(std::move(trait));
+  curr_scope->add_decl(trait.get());
   return trait;
 }
 
 
 /// Parses an impl declaration from the given context.
 ///
-/// Impl declarations are in the form of `impl <trait> to <struct> { <methods> }`.
+/// Impl declarations are in the form of `impl <struct> { <methods> }` or `impl <trait> for <struct> { <methods> }`.
 static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<CContext> &ctx) {
   ctx->next();  // eat impl keyword
 
@@ -820,26 +822,29 @@ static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<CContext> &ctx)
     return warn_impl("expected identifier after 'impl'", ctx->last().meta);
   }
 
-  const std::string trait_name = ctx->last().value;
-  ctx->next();  // eat trait name
+  std::string target = ctx->last().value;
+  std::string trait;
+  ctx->next();  // eat first name
+  if (ctx->last().is_kw("for")) {
+    ctx->next();  // eat for keyword
 
-  if (!ctx->last().is_kw("to")) {
-    return warn_impl("expected 'to' after trait name in impl declaration", ctx->last().meta);
+    if (!ctx->last().is_ident()) {
+      return warn_impl("expected identifier after 'for'", ctx->last().meta);
+    }
+
+    trait = target;
+    target = ctx->last().value;
+    ctx->next();  // eat second name
   }
-  ctx->next();  // eat to keyword
-
-  if (!ctx->last().is_ident()) {
-    return warn_impl("expected identifier after 'to' in impl declaration", ctx->last().meta);
-  }
-
-  const std::string struct_name = ctx->last().value;
-  ctx->next();  // eat struct name
 
   if (!ctx->last().is_open_brace()) {
-    return warn_impl("expected '{' after struct name in impl declaration", ctx->last().meta);
+    return warn_impl("expected '{'", ctx->last().meta);
   }
   ctx->next();  // eat open brace
 
+  // resolve and enter the top-level struct scope
+  StructDecl *struct_decl = dynamic_cast<StructDecl *>(curr_scope->get_decl(target));
+  curr_scope = struct_decl->get_scope();
   std::vector<std::unique_ptr<FunctionDecl>> methods;
   while (!ctx->last().is_close_brace()) {
     bool is_private = false;
@@ -855,7 +860,7 @@ static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<CContext> &ctx)
     // check that method was not already implemented
     for (const std::unique_ptr<FunctionDecl> &m : methods) {
       if (m->get_name() == method->get_name()) {
-        return warn_impl("method already exists: " + method->get_name() + " in " + struct_name, ctx->last().meta);
+        return warn_impl("method already exists: " + method->get_name() + " in " + target, ctx->last().meta);
       }
     }
 
@@ -866,7 +871,10 @@ static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<CContext> &ctx)
   }
   ctx->next();  // eat close brace
 
-  return std::make_unique<ImplDecl>(trait_name, struct_name, std::move(methods));
+  // move back to parent scope
+  curr_scope = curr_scope->get_parent();
+
+  return std::make_unique<ImplDecl>(trait, target, std::move(methods));
 }
 
 
@@ -933,7 +941,7 @@ static std::unique_ptr<Decl> parse_decl(std::unique_ptr<CContext> &ctx, bool is_
 ///
 /// A package is a collection of definitions and imports.
 static std::unique_ptr<PackageUnit> parse_pkg(std::unique_ptr<CContext> &ctx) {
-  const std::string name = ctx->file();
+  const std::string name = remove_extension(ctx->file());
   std::vector<std::string> imports;
   std::vector<std::unique_ptr<Decl>> decls;
 
@@ -999,6 +1007,6 @@ static std::unique_ptr<CrateUnit> parse_crate(std::unique_ptr<CContext> &ctx) {
 
 
 /// Builds an abstract syntax tree from the given context.
-std::unique_ptr<Unit> build_ast(std::unique_ptr<CContext> &Cctx) {
+std::unique_ptr<CrateUnit> build_ast(std::unique_ptr<CContext> &Cctx) {
   return parse_crate(Cctx);
 }

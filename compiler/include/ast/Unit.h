@@ -8,8 +8,7 @@
 #include <string>
 #include <vector>
 
-class Decl;
-class Scope;
+#include "Decl.h"
 
 /// Base class for source units.
 class Unit
@@ -38,6 +37,10 @@ class PackageUnit : public Unit
     [[nodiscard]]
     inline const std::string get_name() const { return name; }
 
+    /// Returns the scope of this package unit.
+    [[nodiscard]]
+    inline std::shared_ptr<Scope> get_scope() const { return scope; }
+
     /// Returns a string representation of this package unit.
     [[nodiscard]]
     const std::string to_string(int n);
@@ -52,8 +55,18 @@ class CrateUnit : public Unit
 
   public:
     /// Basic constructor for crate units.
-    CrateUnit(std::vector<std::unique_ptr<PackageUnit>> packages)
-      : packages(std::move(packages)) {};
+    CrateUnit(std::vector<std::unique_ptr<PackageUnit>> packages) : packages(std::move(packages)) {};
+
+    /// Returns the packages of this crate unit.
+    [[nodiscard]]
+    inline const std::string pkg_scope_to_string(const std::string &name) const { 
+      for (std::unique_ptr<PackageUnit> const &package : packages) {
+        if (package->get_name() == name) {
+          return package->get_scope()->to_string(0);
+        }
+      }
+      return "";
+    }
 
     /// Returns a string representation of this crate unit.
     [[nodiscard]]
