@@ -13,38 +13,46 @@ static const std::string mk_piping(int n ) {
 }
 
 
-/// Returns the string representation of an operator.
-static std::string op_to_string(TokenKind op) {
+/// Returns the string representation of a unary operator.
+static std::string unary_to_string(UnaryOp op) {
   switch (op) {
-    case TokenKind::Dot:           return ".";
-    case TokenKind::Not:           return "!";
-    case TokenKind::Hash:          return "#";
-    case TokenKind::At:            return "@";
-    case TokenKind::Range:         return "...";
-    case TokenKind::Star:          return "*";
-    case TokenKind::Slash:         return "/";
-    case TokenKind::Add:           return "+";
-    case TokenKind::Sub:           return "-";
-    case TokenKind::LeftShift:     return "<<";
-    case TokenKind::RightShift:    return ">>";
-    case TokenKind::LessThan:      return "<";
-    case TokenKind::LessThanEq:    return "<=";
-    case TokenKind::GreaterThan:   return ">";
-    case TokenKind::GreaterThanEq: return ">=";
-    case TokenKind::EqEq:          return "==";
-    case TokenKind::NotEq:         return "!=";
-    case TokenKind::And:           return "&";
-    case TokenKind::Or:            return "|";
-    case TokenKind::Xor:           return "^";
-    case TokenKind::AndAnd:        return "&&";
-    case TokenKind::OrOr:          return "||";
-    case TokenKind::XorXor:        return "^^";
-    case TokenKind::Eq:            return "=";
-    case TokenKind::AddEq:         return "+=";
-    case TokenKind::SubEq:         return "-=";
-    case TokenKind::StarEq:        return "*=";
-    case TokenKind::SlashEq:       return "/=";
-    default:                       return "";
+    case UnaryOp::Bang:    return "!";
+    case UnaryOp::Rune:    return "#";
+    case UnaryOp::Ref:     return "@";
+    case UnaryOp::Ellipse: return "...";
+    case UnaryOp::Access:  return ".";
+    default:               return "";
+  }
+  return "";
+}
+
+
+/// Returns the string representation of a binary operator.
+static std::string binary_to_string(BinaryOp op) {
+  switch (op) {
+    case BinaryOp::Assign:       return "=";
+    case BinaryOp::AddAssign:    return "+=";
+    case BinaryOp::SubAssign:    return "-=";
+    case BinaryOp::StarAssign:   return "*=";
+    case BinaryOp::SlashAssign:  return "/=";
+    case BinaryOp::IsEq:         return "==";
+    case BinaryOp::IsNotEq:      return "!=";
+    case BinaryOp::LogicAnd:     return "&&";
+    case BinaryOp::LogicOr:      return "||";
+    case BinaryOp::LogicXor:     return "^^";
+    case BinaryOp::BitAnd:       return "&";
+    case BinaryOp::BitOr:        return "|";
+    case BinaryOp::BitXor:       return "^";
+    case BinaryOp::Lt:           return "<";
+    case BinaryOp::LtEquals:     return "<=";
+    case BinaryOp::Gt:           return ">";
+    case BinaryOp::GtEquals:     return ">=";
+    case BinaryOp::BitLeftShift: return "<<";
+    case BinaryOp::BitRightShift:return ">>";
+    case BinaryOp::Plus:         return "+";
+    case BinaryOp::Minus:        return "-";
+    case BinaryOp::Mult:         return "*";
+    case BinaryOp::Div:          return "/";
   }
   return "";
 }
@@ -69,7 +77,7 @@ const std::string PackageUnit::to_string(int n) {
 
 
 const std::string FunctionDecl::to_string(int n) {
-  std::string result = is_priv() ? mk_piping(n) + "FunctionDecl " + name + " `private`\n" : mk_piping(n) + "FunctionDecl " + name + '\n';
+  std::string result = is_priv() ? mk_piping(n) + "FunctionDecl " + name + " 'private'\n" : mk_piping(n) + "FunctionDecl " + name + '\n';
   for (std::unique_ptr<ParamVarDecl> &param : params) {
     result += param->to_string(n + 2);
   }
@@ -86,12 +94,12 @@ const std::string ParamVarDecl::to_string(int n) {
 
 
 const std::string FieldDecl::to_string(int n) {
-  return is_priv() ? mk_piping(n) + "FieldDecl " + name + " `private`\n" : mk_piping(n) + "FieldDecl " + name + '\n';
+  return is_priv() ? mk_piping(n) + "FieldDecl " + name + " 'private'\n" : mk_piping(n) + "FieldDecl " + name + '\n';
 }
 
 
 const std::string StructDecl::to_string(int n) {
-  std::string result = is_priv() ? mk_piping(n) + "StructDecl " + name + " `private`\n" : mk_piping(n) + "StructDecl " + name + '\n';
+  std::string result = is_priv() ? mk_piping(n) + "StructDecl " + name + " 'private'\n" : mk_piping(n) + "StructDecl " + name + '\n';
   for (std::unique_ptr<FieldDecl> const &field : fields) {
     result += field->to_string(n + 2);
   }
@@ -100,7 +108,11 @@ const std::string StructDecl::to_string(int n) {
 
 
 const std::string ImplDecl::to_string(int n) {
-  std::string result = mk_piping(n) + "ImplDecl " + trait() + '\n';
+  std::string result = mk_piping(n) + "ImplDecl " + get_name();
+  if (trait() != "") {
+    result += " '" + trait() + "'";
+  }
+  result += '\n';
   for (std::unique_ptr<FunctionDecl> const &method : methods) {
     result += method->to_string(n + 2);
   }
@@ -114,7 +126,7 @@ const std::string EnumVariant::to_string(int n) {
 
 
 const std::string EnumDecl::to_string(int n) {
-  std::string result = is_priv() ? mk_piping(n) + "EnumDecl " + name + " `private`\n" : mk_piping(n) + "EnumDecl " + name + '\n';
+  std::string result = is_priv() ? mk_piping(n) + "EnumDecl " + name + " 'private'\n" : mk_piping(n) + "EnumDecl " + name + '\n';
   for (EnumVariant &variant : variants) {
     result += variant.to_string(n + 2);
   }
@@ -123,7 +135,7 @@ const std::string EnumDecl::to_string(int n) {
 
 
 const std::string TraitDecl::to_string(int n) {
-  std::string result = is_priv() ? mk_piping(n) + "TraitDecl " + name + " `private`\n" : mk_piping(n) + "TraitDecl " + name + '\n';
+  std::string result = is_priv() ? mk_piping(n) + "TraitDecl " + name + " 'private'\n" : mk_piping(n) + "TraitDecl " + name + '\n';
   for (std::unique_ptr<FunctionDecl> &decl : decls) {
     result += decl->to_string(n + 2);
   }
@@ -132,7 +144,14 @@ const std::string TraitDecl::to_string(int n) {
 
 
 const std::string VarDecl::to_string(int n) {
-  std::string result = is_mut() ? mk_piping(n) + "VarDecl " + name + " `mut`\n" : mk_piping(n) + "VarDecl " + name + '\n';
+  std::string result = mk_piping(n) + "VarDecl " + name;
+  if (is_mut()) {
+    result += " 'mut'";
+  }
+  if (is_rune()) {
+    result += " 'rune'";
+  }
+  result += '\n';
   if (has_expr()) {
     result += expr->to_string(n + 2);
   }
@@ -147,7 +166,6 @@ const std::string DeclStmt::to_string(int n) {
 
 const std::string CompoundStmt::to_string(int n) {
   std::string result;
-  //result += get_scope()->to_string(n);
   result += mk_piping(n) + "CompoundStmt\n";
   for (std::unique_ptr<Stmt> const &stmt : stmts) {
     result += stmt->to_string(n + 2);
@@ -234,7 +252,7 @@ const std::string StringExpr::to_string(int n) {
 
 
 const std::string BinaryExpr::to_string(int n) {
-  std::string result = mk_piping(n) + "BinaryExpr " + op_to_string(op) + '\n';
+  std::string result = mk_piping(n) + "BinaryExpr " + binary_to_string(op) + '\n';
   result += lhs->to_string(n + 2);
   result += rhs->to_string(n + 2);
   return result;
@@ -242,7 +260,7 @@ const std::string BinaryExpr::to_string(int n) {
 
 
 const std::string UnaryExpr::to_string(int n) {
-  std::string result = mk_piping(n) + "UnaryExpr " + op_to_string(op) + '\n';
+  std::string result = mk_piping(n) + "UnaryExpr " + unary_to_string(op) + '\n';
   result += expr->to_string(n + 2);
   return result;
 }

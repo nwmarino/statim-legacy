@@ -435,12 +435,13 @@ class StructDecl : public ScopedDecl
     const std::string name;
     std::vector<std::unique_ptr<FieldDecl>> fields;
     std::shared_ptr<Scope> scope;
+    std::vector<std::string> _impls;
     bool priv;
 
   public:
     /// Basic constructor for struct declarations.
     StructDecl(const std::string &name, std::vector<std::unique_ptr<FieldDecl>> fields, std::shared_ptr<Scope> scope)
-      : name(name), fields(std::move(fields)), scope(scope), priv(false) {};
+      : name(name), fields(std::move(fields)), scope(scope), priv(false), _impls() {};
 
     /// Gets the name of this struct declaration.
     [[nodiscard]]
@@ -460,6 +461,12 @@ class StructDecl : public ScopedDecl
     [[nodiscard]]
     inline std::shared_ptr<Scope> get_scope() const { return scope; }
 
+    /// Determine if this struct implements a trait.
+    [[nodiscard]]
+    inline bool impls(const std::string &trait) const {
+      return std::find(_impls.begin(), _impls.end(), trait) != _impls.end();
+    }
+
     /// Returns a string representation of this struct declaration.
     [[nodiscard]]
     const std::string to_string(int n);
@@ -474,15 +481,16 @@ class VarDecl : public Decl
     const std::string type;
     std::unique_ptr<Expr> expr;
     bool mut;
+    bool rune;
 
   public:
     /// Constructor for variable declarations with an expression.
-    VarDecl(const std::string &name, const std::string &type, std::unique_ptr<Expr> expr, bool mut)
-      : name(name), type(type), expr(std::move(expr)), mut(mut) {};
+    VarDecl(const std::string &name, const std::string &type, std::unique_ptr<Expr> expr, bool mut, bool rune)
+      : name(name), type(type), expr(std::move(expr)), mut(mut), rune(rune) {};
 
     /// Constructor for variable declarations without an expression.
-    VarDecl(const std::string &name, const std::string &type, bool mut)
-      : name(name), type(type), expr(nullptr), mut(mut) {};
+    VarDecl(const std::string &name, const std::string &type, bool mut, bool rune)
+      : name(name), type(type), expr(nullptr), mut(mut), rune(rune) {};
 
     /// Gets the name of this variable declaration.
     [[nodiscard]]
@@ -503,6 +511,10 @@ class VarDecl : public Decl
     /// Determine if this variable declaration is mutable.
     [[nodiscard]]
     inline bool is_mut() const { return mut; }
+
+    /// Determine if this variable declaration is a rune.
+    [[nodiscard]]
+    inline bool is_rune() const { return rune; }
 
     /// Returns a string representation of this variable declaration.
     [[nodiscard]]

@@ -5,7 +5,94 @@
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #include "Stmt.h"
-#include "../token/Token.h"
+
+typedef enum {
+  /// `!`
+  Bang,
+
+  /// `#`
+  Rune,
+
+  /// `@`
+  Ref,
+
+  /// `...`
+  Ellipse,
+
+  /// `.`
+  Access,
+} UnaryOp;
+
+typedef enum {
+  /// `=`
+  Assign,
+
+  /// `+=`
+  AddAssign,
+
+  /// `-=`
+  SubAssign,
+
+  /// `*=`
+  SlashAssign,
+
+  /// `/=`
+  StarAssign,
+
+  /// `==`
+  IsEq,
+
+  /// `!=`
+  IsNotEq,
+
+  /// `&&`
+  LogicAnd,
+
+  /// `||`
+  LogicOr,
+
+  /// `^^`
+  LogicXor,
+
+  /// `&`
+  BitAnd,
+
+  /// `|`
+  BitOr,
+
+  /// `^`
+  BitXor,
+
+  /// `<`
+  Lt,
+
+  /// `<=`
+  LtEquals,
+
+  /// `>`
+  Gt,
+
+  /// `>=`
+  GtEquals,
+
+  /// `<<`
+  BitLeftShift,
+
+  /// `>>`
+  BitRightShift,
+
+  /// `+`
+  Plus,
+
+  /// `-`
+  Minus,
+
+  /// `*`
+  Mult,
+
+  /// `/`
+  Div,
+} BinaryOp;
 
 /// Base class for expressions; statements that may have a value and type.
 class Expr : public Stmt
@@ -247,18 +334,18 @@ class CallExpr : public Expr
 class BinaryExpr : public Expr
 {
   private:
-    const TokenKind op;
+    const BinaryOp op;
     std::unique_ptr<Expr> lhs;
     std::unique_ptr<Expr> rhs;
 
   public:
     /// Constructor for binary expressions.
-    BinaryExpr(const TokenKind op, std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs)
+    BinaryExpr(const BinaryOp op, std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs)
       : op(op), lhs(std::move(lhs)), rhs(std::move(rhs)) {};
 
     /// Gets the operator of this binary expression.
     [[nodiscard]]
-    inline const TokenKind get_op() const { return op; }
+    inline const BinaryOp get_op() const { return op; }
 
     /// Gets the left-hand side of this binary expression.
     [[nodiscard]]
@@ -280,16 +367,16 @@ class BinaryExpr : public Expr
 class UnaryExpr : public Expr
 {
   private:
-    const TokenKind op;
+    const UnaryOp op;
     std::unique_ptr<Expr> expr;
 
   public:
     /// Constructor for unary expressions.
-    UnaryExpr(const TokenKind op, std::unique_ptr<Expr> expr) : op(op), expr(std::move(expr)) {};
+    UnaryExpr(const UnaryOp op, std::unique_ptr<Expr> expr) : op(op), expr(std::move(expr)) {};
 
     /// Gets the operator of this unary expression.
     [[nodiscard]]
-    inline const TokenKind get_op() const { return op; }
+    inline const UnaryOp get_op() const { return op; }
 
     /// Gets the expr of this unary expression.
     [[nodiscard]]

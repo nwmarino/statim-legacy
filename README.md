@@ -19,8 +19,6 @@
 
 `unsigned` 64-bit unsigned integer.
 
-`u8` 
-
 `i32` 32-bit signed integer.
 
 `i64` 64-bit signed integer.
@@ -50,18 +48,6 @@ let y: i32 = 5;
 ```
 
 - [x] Parsing
-- [ ] Passed
-- [ ] Lowering
-- [ ] Codegen
-
-Binding statements with `bind`:
-> Binds a new variable to an existing one for its lifetime.
-```rs
-let y: i32 = 5;
-bind x, y;
-```
-
-- [ ] Parsing
 - [ ] Passed
 - [ ] Lowering
 - [ ] Codegen
@@ -133,6 +119,19 @@ struct Dog {
 - [ ] Lowering
 - [ ] Codegen
 
+Construct defined types using initializer expressions:
+```rs
+let mut pet: Dog = Dog {
+  name: "Max",
+  breed: "Golden Retriever",
+}
+```
+
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
+
 Define common behaviours using `trait`:
 ```rs
 trait MakeNoise {
@@ -145,7 +144,16 @@ trait MakeNoise {
 - [ ] Lowering
 - [ ] Codegen
 
-Implement all interface methods to a struct using `impl`:
+Implement methods to a struct using `impl`:
+```rs
+impl Dog {
+  fn walk() {
+    ...
+  }
+}
+```
+
+Also, implement traits to a struct using `impl`:
 ```rs
 impl MakeNoise for Dog {
   fn woof() -> str { 
@@ -159,15 +167,6 @@ impl MakeNoise for Dog {
 - [ ] Lowering
 - [ ] Codegen
 
-Check that a `struct` type implements an interface using `impls`:
-```rs
-Dog impls MakeNoise == true
-```
-
-- [ ] Parsing
-- [ ] Lowering
-- [ ] Codegen
-
 Declare an enumerated type using `enum`:
 ```rs
 enum Token {
@@ -178,6 +177,7 @@ enum Token {
 ```
 
 - [x] Parsing
+- [ ] Passed
 - [ ] Lowering
 - [ ] Codegen
 
@@ -185,9 +185,19 @@ enum Token {
 
 Import another source file using `pkg NAME`.
 
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
+
 Keep top-level declarations private to their package using the `priv` keyword:
 ```rs
 priv fn secret_function() -> void {
   ...
 }
 ```
+
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen

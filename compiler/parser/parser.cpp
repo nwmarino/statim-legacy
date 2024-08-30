@@ -17,6 +17,78 @@ static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<CContext> &ctx);
 static std::unique_ptr<Expr> parse_primary_expr(std::unique_ptr<CContext> &ctx);
 
 
+static UnaryOp get_unary_op(TokenKind op) {
+  switch (op) {
+    case TokenKind::Not:
+      return UnaryOp::Bang;
+    case TokenKind::Hash:
+      return UnaryOp::Rune;
+    case TokenKind::At:
+      return UnaryOp::Ref;
+    case TokenKind::Range:
+      return UnaryOp::Ellipse;
+    case TokenKind::Dot:
+      return UnaryOp::Access;
+    default:
+      panic("unknown unary operator: " + std::to_string(op));
+  }
+}
+
+
+static BinaryOp get_binary_op(TokenKind op) {
+  switch (op) {
+    case TokenKind::Eq:
+      return BinaryOp::Assign;
+    case TokenKind::AddEq:
+      return BinaryOp::AddAssign;
+    case TokenKind::SubEq:
+      return BinaryOp::SubAssign;
+    case TokenKind::StarEq:
+      return BinaryOp::StarAssign;
+    case TokenKind::SlashEq:
+      return BinaryOp::SlashAssign;
+    case TokenKind::EqEq:
+      return BinaryOp::IsEq;
+    case TokenKind::NotEq:
+      return BinaryOp::IsNotEq;
+    case TokenKind::AndAnd:
+      return BinaryOp::LogicAnd;
+    case TokenKind::OrOr:
+      return BinaryOp::LogicOr;
+    case TokenKind::XorXor:
+      return BinaryOp::LogicXor;
+    case TokenKind::And:
+      return BinaryOp::BitAnd;
+    case TokenKind::Or:
+      return BinaryOp::BitOr;
+    case TokenKind::Xor:
+      return BinaryOp::BitXor;
+    case TokenKind::LessThan:
+      return BinaryOp::Lt;
+    case TokenKind::LessThanEq:
+      return BinaryOp::LtEquals;
+    case TokenKind::GreaterThan:
+      return BinaryOp::Gt;
+    case TokenKind::GreaterThanEq:
+      return BinaryOp::GtEquals;
+    case TokenKind::LeftShift:
+      return BinaryOp::BitLeftShift;
+    case TokenKind::RightShift:
+      return BinaryOp::BitRightShift;
+    case TokenKind::Add:
+      return BinaryOp::Plus;
+    case TokenKind::Sub:
+      return BinaryOp::Minus;
+    case TokenKind::Star:
+      return BinaryOp::Mult;
+    case TokenKind::Slash:
+      return BinaryOp::Div;
+    default:
+      panic("unknown binary operator: " + std::to_string(op));
+  }
+}
+
+
 /// Get the precedence of an operator.
 static int get_precedence(TokenKind op) {
   switch (op) {
@@ -232,7 +304,7 @@ static std::unique_ptr<Expr> parse_unary_expr(std::unique_ptr<CContext> &ctx) {
     return warn_expr("expected expression after unary operator", ctx->last().meta);
   }
 
-  return std::make_unique<UnaryExpr>(op_kind, std::move(base));
+  return std::make_unique<UnaryExpr>(get_unary_op(op_kind), std::move(base));
 }
 
 
@@ -298,7 +370,7 @@ static std::unique_ptr<Expr> parse_binary_expr(std::unique_ptr<CContext> &ctx, s
       }
     }
 
-    base = std::make_unique<BinaryExpr>(op_kind, std::move(base), std::move(rval));
+    base = std::make_unique<BinaryExpr>(get_binary_op(op_kind), std::move(base), std::move(rval));
   }
 }
 
@@ -531,6 +603,12 @@ static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<CContext> &ctx) {
   }
   ctx->next();  // eat separator
 
+  bool is_rune = false;
+  if (ctx->last().is_hash()) {
+    is_rune = true;
+    ctx->next();  // eat hash
+  }
+
   if (!ctx->last().is_ident()) {
     return warn_stmt("expected type identifier", ctx->last().meta);
   }
@@ -538,7 +616,7 @@ static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<CContext> &ctx) {
   ctx->next();  // eat type
 
   if (ctx->last().is_semi()) {
-    std::unique_ptr<VarDecl> decl = std::make_unique<VarDecl>(name, type, is_mutable);
+    std::unique_ptr<VarDecl> decl = std::make_unique<VarDecl>(name, type, is_mutable, is_rune);
 
     // add declaration to parent scope
     curr_scope->add_decl(decl.get());
@@ -553,7 +631,7 @@ static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<CContext> &ctx) {
     return warn_stmt("expected expression after '='", ctx->last().meta);
   }
 
-  std::unique_ptr<VarDecl> decl = std::make_unique<VarDecl>(name, type, std::move(value), is_mutable);
+  std::unique_ptr<VarDecl> decl = std::make_unique<VarDecl>(name, type, std::move(value), is_mutable, is_rune);
 
   // add declaration to parent scope
   curr_scope->add_decl(decl.get());

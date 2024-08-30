@@ -283,6 +283,10 @@ struct Token {
   [[nodiscard]]
   inline bool is_fat_arrow() const { return kind == FatArrow; };
 
+  /// Determine if this token is a hash or not.
+  [[nodiscard]]
+  inline bool is_hash() const { return kind == Hash; };
+
   /// Returns a string representation of this token.
   [[nodiscard]]
   std::string to_str();

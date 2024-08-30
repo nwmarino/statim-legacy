@@ -16,7 +16,7 @@ priv struct MyStruct {
 }
 
 fn main() {
-  let mut a: MyStruct = MyStruct {
+  let mut a: #MyStruct = MyStruct {
     A: 1,
     B: 2,
   };
