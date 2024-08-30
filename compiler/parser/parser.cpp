@@ -145,9 +145,9 @@ static std::unique_ptr<Expr> parse_numerical_expr(std::unique_ptr<CContext> &ctx
   ctx->next();  // eat the literal
 
   if (token.is_int()) {
-    return std::make_unique<IntegerExpr>(std::stoll(token.value));
+    return std::make_unique<IntegerLiteral>(std::stoll(token.value));
   } else if (token.is_float()) {
-    return std::make_unique<FloatingPointExpr>(std::stod(token.value));
+    return std::make_unique<FPLiteral>(std::stod(token.value));
   }
 
   return warn_expr("unknown literal kind: " + std::to_string(token.kind), token.meta);
@@ -162,9 +162,7 @@ static std::unique_ptr<Expr> parse_character_expr(std::unique_ptr<CContext> &ctx
   ctx->next();  // eat the character or byte token
 
   if (token.is_char()) {
-    return std::make_unique<CharExpr>(token.value[0]);
-  } else if (token.is_byte()) {
-    return std::make_unique<ByteExpr>(token.value[0]);
+    return std::make_unique<CharLiteral>(token.value[0]);
   }
 
   return warn_expr("unknown character or byte kind: " + std::to_string(token.kind), ctx->last().meta);
@@ -179,9 +177,7 @@ static std::unique_ptr<Expr> parse_string_expr(std::unique_ptr<CContext> &ctx) {
   ctx->next();  // eat the string or byte string token
 
   if (token.is_str()) {
-    return std::make_unique<StringExpr>(token.value);
-  } else if (token.is_byte_str()) {
-    return std::make_unique<ByteStringExpr>(token.value);
+    return std::make_unique<StringLiteral>(token.value);
   }
 
   return warn_expr("unknown string or byte string kind: " + std::to_string(token.kind), ctx->last().meta);
@@ -199,7 +195,7 @@ static std::unique_ptr<Expr> parse_boolean_expr(std::unique_ptr<CContext> &ctx) 
     return warn_expr("invalid boolean token: " + value, ctx->last().meta);
   }
 
-  return std::make_unique<BooleanExpr>(value == "true");
+  return std::make_unique<BooleanLiteral>(value == "true");
 }
 
 
@@ -273,6 +269,78 @@ static std::unique_ptr<Expr> parse_init_expr(std::unique_ptr<CContext> &ctx, con
 }
 
 
+/// Parses a struct function call expression from the given context.
+static std::unique_ptr<Expr> parse_member_call_expr(std::unique_ptr<CContext> &ctx, const std::string &base, const std::string &callee) {
+  ctx->next();  // eat the dot operator
+
+  std::vector<std::unique_ptr<Expr>> args;
+  while (!ctx->last().is_close_paren()) {
+    std::unique_ptr<Expr> arg = parse_expr(ctx);
+    if (!arg) {
+      warn_expr("expected expression in function call", ctx->last().meta);
+      return nullptr;
+    }
+    args.push_back(std::move(arg));
+
+    if (ctx->last().is_close_paren()) {
+      break;
+    }
+
+    if (!ctx->last().is_comma()) {
+      warn_expr("expected ','", ctx->last().meta);
+      return nullptr;
+    }
+
+    ctx->next();  // eat comma
+  }
+  ctx->next();  // eat the close parenthesis
+
+  return std::make_unique<MemberCallExpr>(std::make_unique<VarExpr>(base), callee, std::move(args));
+}
+
+
+/// Parses an access expression from the given context.
+///
+/// Access expressions are used to access fields of a struct.
+static std::unique_ptr<Expr> parse_access_expr(std::unique_ptr<CContext> &ctx, const std::string &base) {
+  ctx->next();  // eat the dot operator
+
+  // verify that the base exists in this scope
+  Decl *d = curr_scope->get_decl(base);
+  if (!d) {
+    return warn_expr("unresolved identifier: " + base, ctx->last().meta);
+  }
+
+  /*
+  // verify that the base is a struct
+  VarDecl *str_decl = dynamic_cast<VarDecl *>(d);
+  if (!str_decl) {
+    return warn_expr("expected struct type", ctx->last().meta);
+  }
+  */
+
+  if (!ctx->last().is_ident()) {
+    return warn_expr("expected identifier after '.'", ctx->last().meta);
+  }
+
+  const std::string field = ctx->last().value;
+  ctx->next();  // eat field name
+
+  if (ctx->last().is_open_paren()) {
+    return parse_member_call_expr(ctx, base, field);
+  }
+
+  /*
+  // verify that the field exists in the struct
+  if (!str_decl->has_field(field)) {
+    return warn_expr("unresolved field: " + field, ctx->last().meta);
+  }
+  */
+
+  return std::make_unique<MemberExpr>(std::make_unique<VarExpr>(base), field);
+}
+
+
 /// Parses an identifier expression from the given context.
 ///
 /// Identifiers are used to reference variables, function calls, etc.
@@ -282,10 +350,12 @@ static std::unique_ptr<Expr> parse_identifier_expr(std::unique_ptr<CContext> &ct
 
   if (ctx->last().is_open_paren()) {
     return parse_call_expr(ctx, ident);
+  } else if (ctx->last().is_dot()) {
+    return parse_access_expr(ctx, ident);
   } else if (dynamic_cast<VarDecl *>(curr_scope->get_decl(ident))) {
-    return std::make_unique<VariableExpr>(ident);
+    return std::make_unique<VarExpr>(ident);
   } else if (dynamic_cast<ParamVarDecl *>(curr_scope->get_decl(ident))) {
-    return std::make_unique<VariableExpr>(ident);
+    return std::make_unique<VarExpr>(ident);
   }
 
   return parse_init_expr(ctx, ident);
@@ -316,11 +386,11 @@ static std::unique_ptr<Expr> parse_primary_expr(std::unique_ptr<CContext> &ctx) 
     return parse_numerical_expr(ctx);
   }
 
-  if (ctx->last().is_char() || ctx->last().is_byte()) {
+  if (ctx->last().is_char()) {
     return parse_character_expr(ctx);
   }
 
-  if (ctx->last().is_str() || ctx->last().is_byte_str()) {
+  if (ctx->last().is_str()) {
     return parse_string_expr(ctx);
   }
 

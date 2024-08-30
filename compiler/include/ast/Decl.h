@@ -65,7 +65,7 @@ struct ScopeContext
 
 
 /// A temporary scope used when parsing the AST.
-class Scope
+class Scope final 
 {
   private:
     std::shared_ptr<Scope> parent;
@@ -156,7 +156,7 @@ class Scope
 /// Functions hold a list of parameters and a body.
 
 /// Class for function parameters.
-class ParamVarDecl : public Decl
+class ParamVarDecl final : public Decl
 {
   private:
     const std::string name;
@@ -181,7 +181,7 @@ class ParamVarDecl : public Decl
 };
 
 /// Class for function definitions and declarations.
-class FunctionDecl : public ScopedDecl
+class FunctionDecl final : public ScopedDecl
 {
   private:
     const std::string name;
@@ -241,7 +241,7 @@ class FunctionDecl : public ScopedDecl
 /// Trait declarations hold a list of function prototypes.
 
 /// Class for trait declarations.
-class TraitDecl : public Decl
+class TraitDecl final : public Decl
 {
   private:
     const std::string name;
@@ -312,7 +312,7 @@ class EnumVariant
 };
 
 /// Class for enum declarations.
-class EnumDecl : public Decl
+class EnumDecl final : public Decl
 {
   private:
     const std::string name;
@@ -357,7 +357,7 @@ class EnumDecl : public Decl
 /// Impls apply abstract declarations to structs.
 
 /// Class for implementation declarations.
-class ImplDecl : public Decl
+class ImplDecl final : public Decl
 {
   private:
     const std::string _trait;
@@ -393,7 +393,7 @@ class ImplDecl : public Decl
 /// Structs hold a list of fields and methods.
 
 /// Class for struct fields.
-class FieldDecl : public Decl
+class FieldDecl final : public Decl
 {
   private:
     const std::string name;
@@ -429,7 +429,7 @@ class FieldDecl : public Decl
 };
 
 /// Class for struct declarations.
-class StructDecl : public ScopedDecl
+class StructDecl final : public ScopedDecl
 {
   private:
     const std::string name;
@@ -461,6 +461,12 @@ class StructDecl : public ScopedDecl
     [[nodiscard]]
     inline std::shared_ptr<Scope> get_scope() const { return scope; }
 
+    /// Determine if this struct type has a field by name.
+    [[nodiscard]]
+    inline bool has_field(const std::string &name) const {
+      return std::find_if(fields.begin(), fields.end(), [&name](const std::unique_ptr<FieldDecl> &f) { return f->get_name() == name; }) != fields.end();
+    }
+
     /// Determine if this struct implements a trait.
     [[nodiscard]]
     inline bool impls(const std::string &trait) const {
@@ -474,7 +480,7 @@ class StructDecl : public ScopedDecl
 
 
 /// Class for variable declarations.
-class VarDecl : public Decl
+class VarDecl final : public Decl
 {
   private:
     const std::string name;

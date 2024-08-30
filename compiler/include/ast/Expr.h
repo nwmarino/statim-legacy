@@ -104,7 +104,7 @@ class Expr : public Stmt
 
 
 /// This class represents the `null` literal expression.
-class NullExpr : public Expr
+class NullExpr final : public Expr
 {
   public:
     /// Constructor for null expressions.
@@ -117,7 +117,7 @@ class NullExpr : public Expr
 
 
 /// This class represents a default expression in some match statement.
-class DefaultExpr : public Expr
+class DefaultExpr final : public Expr
 {
   public:
     DefaultExpr() {};
@@ -128,17 +128,17 @@ class DefaultExpr : public Expr
 };
 
 
-/// This class represents a boolean literla expression.
+/// This class represents a boolean literal expression.
 ///
 /// @example `true`, `false`
-class BooleanExpr : public Expr
+class BooleanLiteral final : public Expr
 {
   private:
     bool value;
 
   public:
     /// Constructor for boolean expressions.
-    BooleanExpr(bool value) : value(value) {};
+    BooleanLiteral(bool value) : value(value) {};
 
     /// Gets the value of this boolean expression.
     [[nodiscard]]
@@ -153,14 +153,14 @@ class BooleanExpr : public Expr
 /// This class represents an integer literal expression.
 ///
 /// @example `0`, `512`, `1024`
-class IntegerExpr : public Expr
+class IntegerLiteral final : public Expr
 {
   private:
     const int value;
 
   public:
     /// Constructor for integer expressions.
-    IntegerExpr(int value) : value(value) {};
+    IntegerLiteral(int value) : value(value) {};
 
     /// Gets the value of this integer expression.
     [[nodiscard]]
@@ -175,14 +175,14 @@ class IntegerExpr : public Expr
 /// This class represents a floating point literal expression.
 ///
 /// @example `0.0`, `3.14`, `6.28`
-class FloatingPointExpr : public Expr
+class FPLiteral final : public Expr
 {
   private:
     const double value;
 
   public:
     /// Constructor for floating point expressions.
-    FloatingPointExpr(double value) : value(value) {};
+    FPLiteral(double value) : value(value) {};
 
     /// Gets the value of this floating point expression.
     [[nodiscard]]
@@ -197,14 +197,14 @@ class FloatingPointExpr : public Expr
 /// This class represents a character literal expression.
 ///
 /// @example `'a'`, `'b'`, `'c'`
-class CharExpr : public Expr
+class CharLiteral final : public Expr
 {
   private:
     const char value;
 
   public:
     /// Constructor for character expressions.
-    CharExpr(char value) : value(value) {};
+    CharLiteral(char value) : value(value) {};
 
     /// Gets the value of this character expression.
     [[nodiscard]]
@@ -219,14 +219,14 @@ class CharExpr : public Expr
 /// This class represents a string literal expression.
 ///
 /// @example `"hello, world"`, `"foo"`, `"bar"`
-class StringExpr : public Expr
+class StringLiteral final : public Expr
 {
   private:
     const std::string value;
 
   public:
     /// Constructor for string expressions.
-    StringExpr(const std::string &value) : value(value) {};
+    StringLiteral(const std::string &value) : value(value) {};
 
     /// Gets the value of this string expression.
     [[nodiscard]]
@@ -238,61 +238,17 @@ class StringExpr : public Expr
 };
 
 
-/// This class represents a byte literal expression.
-///
-/// @example `b'a'`, `b'b'`, `b'c'`
-class ByteExpr : public Expr
-{
-  private:
-    const char value;
-
-  public:
-    /// Constructor for byte expressions.
-    ByteExpr(char value) : value(value) {};
-
-    /// Gets the value of this byte expression.
-    [[nodiscard]]
-    inline char get_value() const { return value; }
-
-    /// Returns a string representation of this byte expression.
-    [[nodiscard]]
-    const std::string to_string(int n);
-};
-
-
-/// This class represents a byte string literal expression.
-///
-/// @example `b"hello, world"`, `b"foo"`, `b"bar"`
-class ByteStringExpr : public Expr
-{
-  private:
-    const std::string value;
-
-  public:
-    /// Constructor for byte string expressions.
-    ByteStringExpr(const std::string &value) : value(value) {};
-
-    /// Gets the value of this byte string expression.
-    [[nodiscard]]
-    inline const std::string get_value() const { return value; }
-
-    /// Returns a string representation of this byte string expression.
-    [[nodiscard]]
-    const std::string to_string(int n);
-};
-
-
 /// This class represents a variable expression.
 ///
 /// @example `x`, `y`, `z`
-class VariableExpr : public Expr
+class VarExpr final : public Expr
 {
   private:
     const std::string ident;
 
   public:
     /// Constructor for variable expressions.
-    VariableExpr(const std::string &ident) : ident(ident) {};
+    VarExpr(const std::string &ident) : ident(ident) {};
 
     /// Gets the identifier of this variable expression.
     [[nodiscard]]
@@ -304,34 +260,10 @@ class VariableExpr : public Expr
 };
 
 
-/// This class represents a function call expression.
-///
-/// @example `foo()`, `bar(x, y, 3)`
-class CallExpr : public Expr
-{
-  private:
-    std::string callee;
-    std::vector<std::unique_ptr<Expr>> args;
-
-  public:
-    /// Constructor for function call expressions.
-    CallExpr(const std::string &callee, std::vector<std::unique_ptr<Expr>> args)
-      : callee(callee), args(std::move(args)) {};
-
-    /// Gets the callee of this function call expression.
-    [[nodiscard]]
-    inline const std::string get_callee() const { return callee; }
-
-    /// Returns a string representation of this function call expression.
-    [[nodiscard]]
-    const std::string to_string(int n);
-};
-
-
 /// This class represents a binary expression.
 ///
 /// @example `x + y`, `x - y`, `x * y`
-class BinaryExpr : public Expr
+class BinaryExpr final : public Expr
 {
   private:
     const BinaryOp op;
@@ -364,7 +296,7 @@ class BinaryExpr : public Expr
 /// This class represents a unary expression.
 ///
 /// @example `!x`, `y++`, `#z`
-class UnaryExpr : public Expr
+class UnaryExpr final : public Expr
 {
   private:
     const UnaryOp op;
@@ -391,7 +323,7 @@ class UnaryExpr : public Expr
 /// This class represents an initialization expression.
 ///
 /// @example `Foo { x: 1, y: 2 }`, `Bar { z: 3, w: 4 }`
-class InitExpr : public Expr
+class InitExpr final : public Expr
 {
   private:
     const std::string ident;
@@ -411,6 +343,85 @@ class InitExpr : public Expr
     inline std::vector<std::pair<std::string, std::unique_ptr<Expr>>>& get_fields() { return fields; }
 
     /// Returns a string representation of this initialization expression.
+    [[nodiscard]]
+    const std::string to_string(int n);
+};
+
+
+/// This class represents a function call expression.
+///
+/// @example `foo()`, `bar(x, y, 3)`
+class CallExpr : public Expr
+{
+  protected:
+    const std::string callee;
+    std::vector<std::unique_ptr<Expr>> args;
+
+  public:
+    /// Constructor for function call expressions.
+    CallExpr(const std::string &callee, std::vector<std::unique_ptr<Expr>> args)
+      : callee(callee), args(std::move(args)) {};
+
+    /// Gets the callee of this function call expression.
+    [[nodiscard]]
+    inline const std::string get_callee() const { return callee; }
+
+    /// Returns a string representation of this function call expression.
+    [[nodiscard]]
+    const std::string to_string(int n);
+};
+
+
+/// This class represents member access expressions.
+///
+/// @example `foo.bar`, `baz.qux`
+class MemberExpr final : public Expr
+{
+  private:
+    std::unique_ptr<Expr> base;
+    const std::string member;
+
+  public:
+    /// Constructor for member access expressions.
+    MemberExpr(std::unique_ptr<Expr> base, const std::string &member)
+      : base(std::move(base)), member(member) {};
+
+    /// Gets the base of this member access expression.
+    [[nodiscard]]
+    inline std::unique_ptr<Expr> get_base() { return std::move(base); }
+
+    /// Gets the member of this member access expression.
+    [[nodiscard]]
+    inline const std::string get_member() const { return member; }
+
+    /// Returns a string representation of this member access expression.
+    [[nodiscard]]
+    const std::string to_string(int n);
+};
+
+
+/// This class represents member call expressions.
+///
+/// @example `foo.bar()`, `baz.qux()`
+class MemberCallExpr : public CallExpr
+{
+  private:
+    std::unique_ptr<Expr> base;
+
+  public:
+    /// Constructor for member call expressions.
+    MemberCallExpr(std::unique_ptr<Expr> base, const std::string &callee, std::vector<std::unique_ptr<Expr>> args)
+      : base(std::move(base)), CallExpr(callee, std::move(args)) {};
+
+    /// Gets the base of this member call expression.
+    [[nodiscard]]
+    inline std::unique_ptr<Expr> get_base() { return std::move(base); }
+
+    /// Gets the callee of this member call expression.
+    [[nodiscard]]
+    inline const std::string get_callee() const { return callee; }
+
+    /// Returns a string representation of this member call expression.
     [[nodiscard]]
     const std::string to_string(int n);
 };

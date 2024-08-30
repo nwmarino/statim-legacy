@@ -192,36 +192,6 @@ const struct Token Tokenizer::advance_token() {
     case '|': kind = Or; break;
     case '^': kind = Xor; break;
 
-    /// Byte literals.
-    case 'b':
-      if (peek() == '\'') {
-        kind = Literal;
-        lit_kind = Byte;
-
-        iter++;
-        col++;
-        value = src[iter];
-
-        if (peek() != '\'') {
-          panic("bad byte char literal", meta);
-        }
-
-        iter++;
-        col++;
-        break;
-
-      } else if (peek() == '"') {
-        kind = Literal;
-        lit_kind = ByteString;
-
-        while (peek() != '"') {
-          value.push_back(src[iter]);
-          iter++;
-          col++;
-        }
-        break;
-      }
-
     /// Identifiers, numerics, unknowns.
     default:
       if (isalpha(chr) || chr == '_') {

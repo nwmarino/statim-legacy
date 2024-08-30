@@ -129,14 +129,8 @@ typedef enum {
   /// 'a', ';', '\\'
   Char,
 
-  /// b'a', b';', b'\\'
-  Byte,
-
   /// "hello", "world"
   String,
-
-  /// b"hello", b"world"
-  ByteString
 } LiteralKind;
 
 /// Metadata about a token.
@@ -223,17 +217,9 @@ struct Token {
   [[nodiscard]]
   inline bool is_char() const { return is_lit() && lit_kind && lit_kind == Char; };
 
-  /// Determine if this token is a byte literal or not.
-  [[nodiscard]]
-  inline bool is_byte() const { return is_lit() && lit_kind && lit_kind == Byte; };
-
   /// Determine if this token is a string literal or not.
   [[nodiscard]]
   inline bool is_str() const { return is_lit() && lit_kind && lit_kind == String; };
-
-  /// Determine if this token is a byte string literal or not.
-  [[nodiscard]]
-  inline bool is_byte_str() const { return is_lit() && lit_kind && lit_kind == ByteString; };
 
   /// Determine if this token signifies the end of a file.
   [[nodiscard]]
@@ -286,6 +272,10 @@ struct Token {
   /// Determine if this token is a hash or not.
   [[nodiscard]]
   inline bool is_hash() const { return kind == Hash; };
+
+  /// Determine if this token is a dot or not.
+  [[nodiscard]]
+  inline bool is_dot() const { return kind == Dot; };
 
   /// Returns a string representation of this token.
   [[nodiscard]]

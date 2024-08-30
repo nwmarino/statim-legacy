@@ -226,27 +226,27 @@ const std::string NullExpr::to_string(int n) {
 }
 
 
-const std::string BooleanExpr::to_string(int n) {
+const std::string BooleanLiteral::to_string(int n) {
   return mk_piping(n) + "BooleanExpr " + std::to_string(value) + '\n';
 }
 
 
-const std::string IntegerExpr::to_string(int n) {
+const std::string IntegerLiteral::to_string(int n) {
   return mk_piping(n) + "IntegerExpr " + std::to_string(value) + '\n';
 }
 
 
-const std::string FloatingPointExpr::to_string(int n) {
+const std::string FPLiteral::to_string(int n) {
   return mk_piping(n) + "FloatingPointExpr " + std::to_string(value) + '\n';
 }
 
 
-const std::string CharExpr::to_string(int n) {
+const std::string CharLiteral::to_string(int n) {
   return mk_piping(n) + "CharExpr " + std::to_string(value) + '\n';
 }
 
 
-const std::string StringExpr::to_string(int n) {
+const std::string StringLiteral::to_string(int n) {
   return mk_piping(n) + "StringExpr " + value + '\n';
 }
 
@@ -267,22 +267,16 @@ const std::string UnaryExpr::to_string(int n) {
 
 
 const std::string CallExpr::to_string(int n) {
-  return mk_piping(n) + "CallExpr " + callee + '\n';
+  std::string result = mk_piping(n) + "CallExpr " + callee + '\n';
+  for (std::unique_ptr<Expr> const &arg : args) {
+    result += arg->to_string(n + 2);
+  }
+  return result;
 }
 
 
-const std::string VariableExpr::to_string(int n) {
+const std::string VarExpr::to_string(int n) {
   return mk_piping(n) + "VariableExpr " + ident + '\n';
-}
-
-
-const std::string ByteExpr::to_string(int n) {
-  return mk_piping(n) + "ByteExpr " + std::to_string(value) + '\n';
-}
-
-
-const std::string ByteStringExpr::to_string(int n) {
-  return mk_piping(n) + "ByteStringExpr " + value + '\n';
 }
 
 
@@ -295,6 +289,22 @@ const std::string InitExpr::to_string(int n) {
   return result;
 }
 
+
+const std::string MemberExpr::to_string(int n) {
+  std::string result = mk_piping(n) + "MemberExpr " + member + '\n';
+  result += base->to_string(n + 2);
+  return result;
+}
+
+
+const std::string MemberCallExpr::to_string(int n) {
+  std::string result = mk_piping(n) + "MemberCallExpr " + callee + '\n';
+  result += base->to_string(n + 2);
+  for (std::unique_ptr<Expr> const &arg : args) {
+    result += arg->to_string(n + 2);
+  }
+  return result;
+}
 
 const std::string Scope::to_string(int n) {
   std::string result = mk_piping(n) + "Scope ";

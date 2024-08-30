@@ -16,12 +16,15 @@ priv struct MyStruct {
 }
 
 fn main() {
-  let mut a: #MyStruct = MyStruct {
+  let mut a: MyStruct = MyStruct {
     A: 1,
     B: 2,
   };
 
   foo(32, false);
+
+  a.A = 5;
+  a.foo(5, 6);
 
   let b: i32 = foo(1, true);
 
