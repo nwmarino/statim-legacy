@@ -5,6 +5,7 @@
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #include "Stmt.h"
+#include "../token/Token.h"
 
 /// Base class for expressions; statements that may have a value and type.
 class Expr : public Stmt
@@ -246,18 +247,18 @@ class CallExpr : public Expr
 class BinaryExpr : public Expr
 {
   private:
-    const std::string op;
+    const TokenKind op;
     std::unique_ptr<Expr> lhs;
     std::unique_ptr<Expr> rhs;
 
   public:
     /// Constructor for binary expressions.
-    BinaryExpr(const std::string &op, std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs)
+    BinaryExpr(const TokenKind op, std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs)
       : op(op), lhs(std::move(lhs)), rhs(std::move(rhs)) {};
 
     /// Gets the operator of this binary expression.
     [[nodiscard]]
-    inline const std::string get_op() const { return op; }
+    inline const TokenKind get_op() const { return op; }
 
     /// Gets the left-hand side of this binary expression.
     [[nodiscard]]
@@ -268,6 +269,61 @@ class BinaryExpr : public Expr
     inline std::unique_ptr<Expr> get_rhs() { return std::move(rhs); }
 
     /// Returns a string representation of this binary expression.
+    [[nodiscard]]
+    const std::string to_string(int n);
+};
+
+
+/// This class represents a unary expression.
+///
+/// @example `!x`, `y++`, `#z`
+class UnaryExpr : public Expr
+{
+  private:
+    const TokenKind op;
+    std::unique_ptr<Expr> expr;
+
+  public:
+    /// Constructor for unary expressions.
+    UnaryExpr(const TokenKind op, std::unique_ptr<Expr> expr) : op(op), expr(std::move(expr)) {};
+
+    /// Gets the operator of this unary expression.
+    [[nodiscard]]
+    inline const TokenKind get_op() const { return op; }
+
+    /// Gets the expr of this unary expression.
+    [[nodiscard]]
+    inline std::unique_ptr<Expr> get_expr() { return std::move(expr); }
+
+    /// Returns a string representation of this unary expression.
+    [[nodiscard]]
+    const std::string to_string(int n);
+};
+
+
+/// This class represents an initialization expression.
+///
+/// @example `Foo { x: 1, y: 2 }`, `Bar { z: 3, w: 4 }`
+class InitExpr : public Expr
+{
+  private:
+    const std::string ident;
+    std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields;
+
+  public:
+    /// Constructor for initialization expressions.
+    InitExpr(const std::string &ident, std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields)
+      : ident(ident), fields(std::move(fields)) {};
+
+    /// Gets the identifier of this initialization expression.
+    [[nodiscard]]
+    inline const std::string get_ident() const { return ident; }
+
+    /// Gets the fields of this initialization expression.
+    [[nodiscard]]
+    inline std::vector<std::pair<std::string, std::unique_ptr<Expr>>>& get_fields() { return fields; }
+
+    /// Returns a string representation of this initialization expression.
     [[nodiscard]]
     const std::string to_string(int n);
 };

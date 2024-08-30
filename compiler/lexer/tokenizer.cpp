@@ -33,7 +33,7 @@ const struct Token Tokenizer::advance_token() {
       }
       return advance_token();
 
-    /// Slash or comment. Currently discard comments until doc support.
+    /// Slash, division assignment, or comment. Currently discard comments until doc support.
     case '/':
       if (peek() == '/') {
         while (src[iter] != '\n') {
@@ -47,15 +47,44 @@ const struct Token Tokenizer::advance_token() {
           col++;
         }
         return advance_token();
+      } else if (peek() == '=') {
+        kind = SlashEq;
+        iter++;
+        col++;
+        break;
       }
       kind = Slash;
       break;
 
-    /// Subtraction or thin arrow.
+    /// Multiplication or multiplicative assignment.
+    case '*':
+      kind = Star;
+      if (peek() == '=') {
+        kind = StarEq;
+        iter++;
+        col++;
+      }
+      break;
+
+    /// Addition or additive assignment.
+    case '+':
+      kind = Add;
+      if (peek() == '=') {
+        kind = AddEq;
+        iter++;
+        col++;
+      }
+      break;
+
+    /// Subtraction, subtraction assignment or thin arrow.
     case '-':
       kind = Sub;
       if (peek() == '>') {
         kind = Arrow;
+        iter++;
+        col++;
+      } else if (peek() == '=') {
+        kind = SubEq;
         iter++;
         col++;
       }
@@ -156,8 +185,6 @@ const struct Token Tokenizer::advance_token() {
     case ',': kind = Comma; break;
     case ';': kind = Semi; break;
     case ':': kind = Colon; break;
-    case '+': kind = Add; break;
-    case '*': kind = Star; break;
     case '@': kind = At; break;
     case '#': kind = Hash; break;
     case '!': kind = Not; break;
@@ -313,8 +340,6 @@ std::string Token::to_str() {
     case Or: return "Or";
     case OrOr: return "OrOr";
     case Xor: return "Xor";
-    case Increment: return "Increment";
-    case Decrement: return "Decrement";
     case AddEq: return "AddEq";
     case SubEq: return "SubEq";
     case StarEq: return "StarEq";

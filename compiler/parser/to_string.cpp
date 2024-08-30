@@ -3,12 +3,50 @@
 #include "../include/ast/Stmt.h"
 #include "../include/ast/Unit.h"
 
+/// Returns a string representation of piping dependent on an indentation `n`.
 static const std::string mk_piping(int n ) {
   std::string result;
   for (int i = 0; i < n; i += 2) {
     result += '|' + std::string(2, ' ');
   }
   return result;
+}
+
+
+/// Returns the string representation of an operator.
+static std::string op_to_string(TokenKind op) {
+  switch (op) {
+    case TokenKind::Dot:           return ".";
+    case TokenKind::Not:           return "!";
+    case TokenKind::Hash:          return "#";
+    case TokenKind::At:            return "@";
+    case TokenKind::Range:         return "...";
+    case TokenKind::Star:          return "*";
+    case TokenKind::Slash:         return "/";
+    case TokenKind::Add:           return "+";
+    case TokenKind::Sub:           return "-";
+    case TokenKind::LeftShift:     return "<<";
+    case TokenKind::RightShift:    return ">>";
+    case TokenKind::LessThan:      return "<";
+    case TokenKind::LessThanEq:    return "<=";
+    case TokenKind::GreaterThan:   return ">";
+    case TokenKind::GreaterThanEq: return ">=";
+    case TokenKind::EqEq:          return "==";
+    case TokenKind::NotEq:         return "!=";
+    case TokenKind::And:           return "&";
+    case TokenKind::Or:            return "|";
+    case TokenKind::Xor:           return "^";
+    case TokenKind::AndAnd:        return "&&";
+    case TokenKind::OrOr:          return "||";
+    case TokenKind::XorXor:        return "^^";
+    case TokenKind::Eq:            return "=";
+    case TokenKind::AddEq:         return "+=";
+    case TokenKind::SubEq:         return "-=";
+    case TokenKind::StarEq:        return "*=";
+    case TokenKind::SlashEq:       return "/=";
+    default:                       return "";
+  }
+  return "";
 }
 
 
@@ -188,9 +226,16 @@ const std::string StringExpr::to_string(int n) {
 
 
 const std::string BinaryExpr::to_string(int n) {
-  std::string result = mk_piping(n) + "BinaryExpr " + op + '\n';
+  std::string result = mk_piping(n) + "BinaryExpr " + op_to_string(op) + '\n';
   result += lhs->to_string(n + 2);
   result += rhs->to_string(n + 2);
+  return result;
+}
+
+
+const std::string UnaryExpr::to_string(int n) {
+  std::string result = mk_piping(n) + "UnaryExpr " + op_to_string(op) + '\n';
+  result += expr->to_string(n + 2);
   return result;
 }
 
@@ -212,6 +257,16 @@ const std::string ByteExpr::to_string(int n) {
 
 const std::string ByteStringExpr::to_string(int n) {
   return mk_piping(n) + "ByteStringExpr " + value + '\n';
+}
+
+
+const std::string InitExpr::to_string(int n) {
+  std::string result = mk_piping(n) + "InitExpr " + ident + '\n';
+  for (std::pair<std::string, std::unique_ptr<Expr>> const &field : fields) {
+    result += mk_piping(n + 2) + "Field " + field.first + '\n';
+    result += field.second->to_string(n + 4);
+  }
+  return result;
 }
 
 

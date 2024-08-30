@@ -14,14 +14,12 @@ static std::shared_ptr<Scope> curr_scope;
 static std::unique_ptr<Expr> parse_expr(std::unique_ptr<CContext> &ctx);
 static std::unique_ptr<Stmt> parse_stmt(std::unique_ptr<CContext> &ctx);
 static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<CContext> &ctx);
+static std::unique_ptr<Expr> parse_primary_expr(std::unique_ptr<CContext> &ctx);
 
 
 /// Get the precedence of an operator.
 static int get_precedence(TokenKind op) {
   switch (op) {
-    case TokenKind::Increment:
-    case TokenKind::Decrement:
-      return 11;
     case TokenKind::Dot:
       return 10;
     case TokenKind::Not:
@@ -64,45 +62,6 @@ static int get_precedence(TokenKind op) {
       return -1;
   }
   return -1;
-}
-
-
-/// Returns the string representation of an operator.
-static std::string op_to_string(TokenKind op) {
-  switch (op) {
-    case TokenKind::Increment:     return "++";
-    case TokenKind::Decrement:     return "++";
-    case TokenKind::Dot:           return ".";
-    case TokenKind::Not:           return "!";
-    case TokenKind::Hash:          return "#";
-    case TokenKind::At:            return "@";
-    case TokenKind::Range:         return "...";
-    case TokenKind::Star:          return "*";
-    case TokenKind::Slash:         return "/";
-    case TokenKind::Add:           return "+";
-    case TokenKind::Sub:           return "-";
-    case TokenKind::LeftShift:     return "<<";
-    case TokenKind::RightShift:    return ">>";
-    case TokenKind::LessThan:      return "<";
-    case TokenKind::LessThanEq:    return "<=";
-    case TokenKind::GreaterThan:   return ">";
-    case TokenKind::GreaterThanEq: return ">=";
-    case TokenKind::EqEq:          return "==";
-    case TokenKind::NotEq:         return "!=";
-    case TokenKind::And:           return "&";
-    case TokenKind::Or:            return "|";
-    case TokenKind::Xor:           return "^";
-    case TokenKind::AndAnd:        return "&&";
-    case TokenKind::OrOr:          return "||";
-    case TokenKind::XorXor:        return "^^";
-    case TokenKind::Eq:            return "=";
-    case TokenKind::AddEq:         return "+=";
-    case TokenKind::SubEq:         return "-=";
-    case TokenKind::StarEq:        return "*=";
-    case TokenKind::SlashEq:       return "/=";
-    default:                       return "";
-  }
-  return "";
 }
 
 
@@ -201,6 +160,46 @@ static std::unique_ptr<Expr> parse_call_expr(std::unique_ptr<CContext> &ctx, con
   return std::make_unique<CallExpr>(callee, std::move(args));
 }
 
+/// Parses a struct construction expression from the given context.
+static std::unique_ptr<Expr> parse_init_expr(std::unique_ptr<CContext> &ctx, const std::string &ident) {
+  ctx->next();  // eat open brace
+
+  std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields;
+  while (!ctx->last().is_close_brace()) {
+    if (!ctx->last().is_ident()) {
+      return warn_expr("expected identifier in struct expression", ctx->last().meta);
+    }
+
+    const std::string field_name = ctx->last().value;
+    ctx->next();  // eat field name
+
+    if (!ctx->last().is_colon()) {
+      return warn_expr("expected ':'", ctx->last().meta);
+    }
+    ctx->next();  // eat colon
+
+    std::unique_ptr<Expr> field_expr = parse_expr(ctx);
+    if (!field_expr) {
+      return warn_expr("expected expression after ':'", ctx->last().meta);
+    }
+
+    fields.push_back(std::make_pair(field_name, std::move(field_expr)));
+
+    if (ctx->last().is_close_brace()) {
+      break;
+    }
+
+    if (!ctx->last().is_comma()) {
+      return warn_expr("expected ','", ctx->last().meta);
+    }
+
+    ctx->next();  // eat comma
+  }
+  ctx->next();  // eat close brace
+
+  return std::make_unique<InitExpr>(ident, std::move(fields));
+}
+
 
 /// Parses an identifier expression from the given context.
 ///
@@ -211,9 +210,27 @@ static std::unique_ptr<Expr> parse_identifier_expr(std::unique_ptr<CContext> &ct
 
   if (ctx->last().is_open_paren()) {
     return parse_call_expr(ctx, ident);
+  } else if (ctx->last().is_open_brace()) {
+    return parse_init_expr(ctx, ident);
   }
 
   return std::make_unique<VariableExpr>(ident);
+}
+
+
+/// Parses a unary expression from the given context.
+///
+/// Unary expressions are expressions that involve a single operand.
+static std::unique_ptr<Expr> parse_unary_expr(std::unique_ptr<CContext> &ctx) {
+  TokenKind op_kind = ctx->last().kind;
+  ctx->next();  // eat operator
+
+  std::unique_ptr<Expr> base = parse_primary_expr(ctx);
+  if (!base) {
+    return warn_expr("expected expression after unary operator", ctx->last().meta);
+  }
+
+  return std::make_unique<UnaryExpr>(op_kind, std::move(base));
 }
 
 
@@ -246,6 +263,8 @@ static std::unique_ptr<Expr> parse_primary_expr(std::unique_ptr<CContext> &ctx) 
     return parse_identifier_expr(ctx);
   }
 
+  return parse_unary_expr(ctx);
+
   return warn_expr("unknown primary expression kind: " + std::to_string(ctx->last().lit_kind), ctx->last().meta);
 }
 
@@ -277,7 +296,7 @@ static std::unique_ptr<Expr> parse_binary_expr(std::unique_ptr<CContext> &ctx, s
       }
     }
 
-    base = std::make_unique<BinaryExpr>(op_to_string(op_kind), std::move(base), std::move(rval));
+    base = std::make_unique<BinaryExpr>(op_kind, std::move(base), std::move(rval));
   }
 }
 
@@ -823,7 +842,7 @@ static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<CContext> &ctx)
   }
 
   std::string target = ctx->last().value;
-  std::string trait;
+  std::string trait = "";
   ctx->next();  // eat first name
   if (ctx->last().is_kw("for")) {
     ctx->next();  // eat for keyword
@@ -835,6 +854,13 @@ static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<CContext> &ctx)
     trait = target;
     target = ctx->last().value;
     ctx->next();  // eat second name
+
+    /*
+    // verify that the trait exists in this scope
+    if (!curr_scope->get_decl(trait)) {
+      return warn_impl("trait not found: " + trait, ctx->last().meta);
+    }
+    */
   }
 
   if (!ctx->last().is_open_brace()) {
@@ -842,9 +868,15 @@ static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<CContext> &ctx)
   }
   ctx->next();  // eat open brace
 
+  /*
   // resolve and enter the top-level struct scope
-  StructDecl *struct_decl = dynamic_cast<StructDecl *>(curr_scope->get_decl(target));
+  Decl *str_d = curr_scope->get_decl(target);
+  if (!str_d) {
+    return warn_impl("struct not found: " + target, ctx->last().meta);
+  }
+  StructDecl *struct_decl = dynamic_cast<StructDecl *>(str_d);
   curr_scope = struct_decl->get_scope();
+  */
   std::vector<std::unique_ptr<FunctionDecl>> methods;
   while (!ctx->last().is_close_brace()) {
     bool is_private = false;
@@ -870,9 +902,34 @@ static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<CContext> &ctx)
     methods.push_back(std::move(method));
   }
   ctx->next();  // eat close brace
-
+  /*
   // move back to parent scope
   curr_scope = curr_scope->get_parent();
+
+  if (is_trait_impl) {
+    // verify that the struct implements the trait
+    TraitDecl *trait_decl = dynamic_cast<TraitDecl *>(curr_scope->get_decl(trait));
+    if (!trait_decl) {
+      return warn_impl("trait not found: " + trait, ctx->last().meta);
+    }
+
+    for (std::unique_ptr<FunctionDecl> &m : methods) {
+      bool found = false;
+      for (const std::pair<std::string, std::string> &t : trait_decl->get_methods()) {
+        if (m->get_name() == t.first) {
+          if (m->get_ret_type() != t.second) {
+            return warn_impl("method return type mismatch: " + m->get_name(), ctx->last().meta);
+          }
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        return warn_impl("method not found in trait: " + m->get_name(), ctx->last().meta);
+      }
+    }
+  }
+  */
 
   return std::make_unique<ImplDecl>(trait, target, std::move(methods));
 }

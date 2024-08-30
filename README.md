@@ -12,23 +12,20 @@
 | `*`, `/` | 8 | Multiplicative Ops
 | `!`, `#`, `@`, `...` | 9 | Unary (not, hash, ref, range)
 | `f()`, `.` | 10 | Calls, Member Access
-| `a++`, `a--` | 11 | Increment, Decrement
 
 ### Primitive Types
 
-`bool` boolean value (0, 1)
+`bool` boolean value (false, true)
+
+`unsigned` 64-bit unsigned integer.
+
+`u8` 
 
 `i32` 32-bit signed integer.
 
-`u32` 32-bit unsigned integer.
-
 `i64` 64-bit signed integer.
 
-`u64` 64-bit unsigned integer.
-
 `float` floating point value.
-
-`float64` 64-bit floating point value.
 
 `char` singular character.
 
@@ -38,31 +35,18 @@
 
 `bstr` byte sequence.
 
-> `#Type` rune type.
+`#Type` rune type.
+> For example, a rune `A` struct: `let a: #A = A { ... };`
 
 ### Variables
 
-Mutable local assignments using `let`:
+Variable assignments using `let`, and mutable with `mut`:
 ```rs
-// initialization
-let x: i32;
-
-// declaration
+let mut x: i32;
 x = 5;
 
-// initialization and declaration
-let x: i32 = 5;
-```
-
-- [x] Parsing
-- [ ] Passed
-- [ ] Lowering
-- [ ] Codegen
-
-Immutable local assignments using `fix`:
-> Must be declared the same line it is initialized.
-```rs
-fix y: i32 = 6;
+// immutable declaration
+let y: i32 = 5;
 ```
 
 - [x] Parsing
@@ -108,9 +92,9 @@ Pattern matching using `match`:
 ```rs
 match expression {
   x => ...,
-  y => ...,
+  y => { ... },
   z => ...,
-  _ => ...
+  _ => { ... }
 }
 ```
 
@@ -139,7 +123,8 @@ until expression {
 Define a type using `struct`:
 ```rs
 struct Dog {
-  name: str;
+  name: str,
+  breed: str,
 }
 ```
 
@@ -148,9 +133,9 @@ struct Dog {
 - [ ] Lowering
 - [ ] Codegen
 
-Define an abstract interface using `abstract`:
+Define common behaviours using `trait`:
 ```rs
-abstract MakeNoise {
+trait MakeNoise {
   fn woof() -> str;
 }
 ```
@@ -198,11 +183,11 @@ enum Token {
 
 ### Packages
 
-Import another source file using `pkg FILENAME`.
+Import another source file using `pkg NAME`.
 
-Keep definitions private to their package using the `protect` keyword:
+Keep top-level declarations private to their package using the `priv` keyword:
 ```rs
-protect fn secret_function() -> void {
+priv fn secret_function() -> void {
   ...
 }
 ```

@@ -89,10 +89,6 @@ typedef enum {
   Arrow,
   /// "=>"
   FatArrow,
-  /// "++"
-  Increment,
-  /// "--"
-  Decrement,
   /// "+="
   AddEq,
   /// "-="

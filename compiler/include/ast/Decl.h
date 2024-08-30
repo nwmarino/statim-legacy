@@ -258,6 +258,16 @@ class TraitDecl : public Decl
     [[nodiscard]]
     inline const std::string get_name() const { return name; }
 
+    // Returns the expected method behaviour of this trait declaration.
+    [[nodiscard]]
+    inline const std::vector<std::pair<std::string, std::string>> get_methods() const { 
+      std::vector<std::pair<std::string, std::string>> methods;
+      for (const std::unique_ptr<FunctionDecl> &m : decls) {
+        methods.push_back(std::make_pair(m->get_name(), m->get_ret_type()));
+      }
+      return std::move(methods);
+    }
+
     /// Returns true if this function declaration is private.
     [[nodiscard]]
     inline bool is_priv() const { return priv; }
@@ -350,23 +360,24 @@ class ImplDecl : public Decl
     const std::string _trait;
     const std::string _struct;
     std::vector<std::unique_ptr<FunctionDecl>> methods;
+    bool is_trait_impl;
 
   public:
-    /// Constructor for struct implementations.
-    ImplDecl(const std::string &_struct, std::vector<std::unique_ptr<FunctionDecl>> methods)
-      : _struct(_struct), methods() {};
-
     /// Constructor for trait implementations.
     ImplDecl(const std::string &_trait, const std::string &_struct, std::vector<std::unique_ptr<FunctionDecl>> methods)
-      : _trait(_trait), _struct(_struct), methods(std::move(methods)) {};
+      : _trait(_trait), _struct(_struct), methods(std::move(methods)), is_trait_impl(_trait == "" ? false : true) {};
 
     /// Gets the name of the abstract declaration of this implementation declaration.
     [[nodiscard]]
-    inline const std::string trait() const { return _trait; }
+    inline const std::string trait() const { return is_trait() ? _trait : ""; }
 
     /// Gets the name of the target struct of this implementation declaration.
     [[nodiscard]]
     inline const std::string get_name() const { return _struct; }
+
+    /// Returns true if this is a trait implementation.
+    [[nodiscard]]
+    inline bool is_trait() const { return is_trait_impl; }
 
     /// Returns a string representation of this implementation declaration.
     [[nodiscard]]
