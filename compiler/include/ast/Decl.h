@@ -107,6 +107,9 @@ class Scope
           return d;
         }
       }
+      if (parent) {
+        return parent->get_decl(name);
+      }
       return nullptr;
     }
     
@@ -153,7 +156,7 @@ class Scope
 /// Functions hold a list of parameters and a body.
 
 /// Class for function parameters.
-class FunctionParam
+class ParamVarDecl : public Decl
 {
   private:
     const std::string name;
@@ -161,7 +164,7 @@ class FunctionParam
 
   public:
     /// Basic constructor for parameters.
-    FunctionParam(const std::string &name, const std::string &type)
+    ParamVarDecl(const std::string &name, const std::string &type)
       : name(name), type(type) {};
 
     /// Gets the name of this parameter.
@@ -171,6 +174,10 @@ class FunctionParam
     /// Gets the type of this parameter.
     [[nodiscard]]
     inline const std::string get_type() const { return type; }
+
+    /// Returns a string representation of this parameter.
+    [[nodiscard]]
+    const std::string to_string(int n);
 };
 
 /// Class for function definitions and declarations.
@@ -179,18 +186,18 @@ class FunctionDecl : public ScopedDecl
   private:
     const std::string name;
     const std::string ret_type;
-    std::vector<FunctionParam> params;
+    std::vector<std::unique_ptr<ParamVarDecl>> params;
     std::unique_ptr<Stmt> body;
     std::shared_ptr<Scope> scope;
     bool priv;
 
   public:
     /// Constructor for function declarations with no body.
-    FunctionDecl(const std::string &name, const std::string &ret_type, std::vector<FunctionParam> params)
+    FunctionDecl(const std::string &name, const std::string &ret_type, std::vector<std::unique_ptr<ParamVarDecl>> params)
       : name(name), ret_type(ret_type), params(std::move(params)), body(nullptr), priv(false) {};
 
     /// Constructor for function declarations with a body.
-    FunctionDecl(const std::string &name, const std::string &ret_type, std::vector<FunctionParam> params, std::unique_ptr<Stmt> body, std::shared_ptr<Scope> scope)
+    FunctionDecl(const std::string &name, const std::string &ret_type, std::vector<std::unique_ptr<ParamVarDecl>> params, std::unique_ptr<Stmt> body, std::shared_ptr<Scope> scope)
       : name(name), ret_type(ret_type), params(std::move(params)), body(std::move(body)), scope(scope), priv(false) {};
     
     /// Returns true if this function declaration has a body.
@@ -208,10 +215,6 @@ class FunctionDecl : public ScopedDecl
     /// Gets the return type of this function declaration.
     [[nodiscard]]
     inline const std::string get_ret_type() const { return ret_type; }
-
-    /// Gets the parameters of this function declaration.
-    [[nodiscard]]
-    inline const std::vector<FunctionParam> get_params() const { return params; }
 
     /// Get the scope of this function declaration.
     [[nodiscard]]

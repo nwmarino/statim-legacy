@@ -210,11 +210,13 @@ static std::unique_ptr<Expr> parse_identifier_expr(std::unique_ptr<CContext> &ct
 
   if (ctx->last().is_open_paren()) {
     return parse_call_expr(ctx, ident);
-  } else if (ctx->last().is_open_brace()) {
-    return parse_init_expr(ctx, ident);
+  } else if (dynamic_cast<VarDecl *>(curr_scope->get_decl(ident))) {
+    return std::make_unique<VariableExpr>(ident);
+  } else if (dynamic_cast<ParamVarDecl *>(curr_scope->get_decl(ident))) {
+    return std::make_unique<VariableExpr>(ident);
   }
 
-  return std::make_unique<VariableExpr>(ident);
+  return parse_init_expr(ctx, ident);
 }
 
 
@@ -631,7 +633,7 @@ static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<CContext> &ct
   }
   ctx->next();  // eat open paren
 
-  std::vector<FunctionParam> params;
+  std::vector<std::unique_ptr<ParamVarDecl>> params;
   while (!ctx->last().is_close_paren()) {
     if (!ctx->last().is_ident()) {
       return warn_fn("expected identifier in function parameter list", ctx->last().meta);
@@ -653,7 +655,11 @@ static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<CContext> &ct
     const std::string param_type = ctx->last().value;
     ctx->next();  // eat param type
 
-    params.push_back(FunctionParam(param_name, param_type));
+    std::unique_ptr<ParamVarDecl> param = std::make_unique<ParamVarDecl>(param_name, param_type);
+
+    // add param to function scope
+    curr_scope->add_decl(param.get());
+    params.push_back(std::move(param));
 
     if (ctx->last().is_comma()) {
       ctx->next();  // eat comma

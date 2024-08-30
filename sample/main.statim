@@ -2,18 +2,30 @@ trait MyTrait {
   fn read() -> i32;
 }
 
+fn foo(x: i32, y: bool) -> i32 {
+  if y {
+    return x;
+  } else {
+    return 1;
+  }
+}
+
+priv struct MyStruct {
+  A: i64,
+  B: i64,
+}
+
 fn main() {
   let mut a: MyStruct = MyStruct {
     A: 1,
     B: 2,
   };
 
-  return;
-}
+  foo(32, false);
 
-priv struct MyStruct {
-  A: i64,
-  B: i64,
+  let b: i32 = foo(1, true);
+
+  return;
 }
 
 impl MyTrait for MyStruct {

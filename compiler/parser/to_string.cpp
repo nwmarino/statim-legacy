@@ -70,10 +70,18 @@ const std::string PackageUnit::to_string(int n) {
 
 const std::string FunctionDecl::to_string(int n) {
   std::string result = is_priv() ? mk_piping(n) + "FunctionDecl " + name + " `private`\n" : mk_piping(n) + "FunctionDecl " + name + '\n';
+  for (std::unique_ptr<ParamVarDecl> &param : params) {
+    result += param->to_string(n + 2);
+  }
   if (has_body()) {
     result += body->to_string(n + 2);
   }
   return result;
+}
+
+
+const std::string ParamVarDecl::to_string(int n) {
+  return mk_piping(n) + "ParamVarDecl " + name + '\n';
 }
 
 
