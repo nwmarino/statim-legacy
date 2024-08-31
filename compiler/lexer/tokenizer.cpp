@@ -130,10 +130,12 @@ const struct Token Tokenizer::advance_token() {
       lit_kind = String;
 
       while (peek() != '"') {
-        value.push_back(src[iter]);
         iter++;
         col++;
+        value.push_back(src[iter]);
       }
+      iter++;
+      col++;
       break;
 
     /// Dots.

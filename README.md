@@ -4,18 +4,18 @@
 |----------|------------|------
 | `=` `+=`, `-=`, `*=`, `/=` | 1 | Assignment
 | `&&`, `\|\|` | 2 | Logical Comparison
-| `==`, `!=` | 4 | Equality Comparison
-| `<`, `<=`, `>`, `>=` | 5 | Inequalities
-| `+`, `-` | 7 | Additive Ops
-| `*`, `/` | 8 | Multiplicative Ops
-| `!`, `#`, `@` | 9 | Unary (not, hash, ref)
-| `f()`, `.` | 10 | Calls, Member Access
+| `==`, `!=` | 3 | Equality Comparison
+| `<`, `<=`, `>`, `>=` | 4 | Inequalities
+| `+`, `-` | 5 | Additive Ops
+| `*`, `/` | 6 | Multiplicative Ops
+| `!`, `#`, `@` | 7 | Unary (not, hash, ref)
+| `f()`, `.` | 8 | Calls, Member Access
 
 ### Primitive Types
 
 `bool` boolean value (false, true)
 
-`unsigned` 64-bit unsigned integer.
+`uint` 64-bit unsigned integer.
 
 `i32` 32-bit signed integer.
 
@@ -184,7 +184,7 @@ Import another source file using `pkg NAME`.
 - [ ] Lowering
 - [ ] Codegen
 
-Keep top-level declarations private to their package using the `priv` keyword:
+Keep declarations private to their parent scope using the `priv` keyword:
 ```rs
 priv fn secret_function() -> void {
   ...

@@ -8,7 +8,7 @@ fn main() {
     f1: 1,
     f2: 0,
   }
-  //let c: str = "hello";
+  let c: str = "hello";
 }
 
 fn foo(x: i32, y: bool) -> i32 {
