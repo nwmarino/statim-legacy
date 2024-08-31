@@ -3,14 +3,12 @@
 | Operator | Precedence | Usage 
 |----------|------------|------
 | `=` `+=`, `-=`, `*=`, `/=` | 1 | Assignment
-| `&&`, `\|\|`, `^^` | 2 | Logical Comparison
-| `&`, `\|`, `^` | 3 | Bitwise Comparison
+| `&&`, `\|\|` | 2 | Logical Comparison
 | `==`, `!=` | 4 | Equality Comparison
 | `<`, `<=`, `>`, `>=` | 5 | Inequalities
-| `<<`, `>>` | 6 | Bitwise Shift
 | `+`, `-` | 7 | Additive Ops
 | `*`, `/` | 8 | Multiplicative Ops
-| `!`, `#`, `@`, `...` | 9 | Unary (not, hash, ref, range)
+| `!`, `#`, `@` | 9 | Unary (not, hash, ref)
 | `f()`, `.` | 10 | Calls, Member Access
 
 ### Primitive Types
@@ -27,11 +25,7 @@
 
 `char` singular character.
 
-`byte` singular byte.
-
 `str` character sequence.
-
-`bstr` byte sequence.
 
 `#Type` rune type.
 > For example, a rune `A` struct: `let a: #A = A { ... };`

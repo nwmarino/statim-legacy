@@ -1,5 +1,14 @@
-trait MyTrait {
-  fn read() -> i32;
+priv enum MyEnum {
+  Plus,
+  Minus,
+}
+
+fn main() {
+  let mut A: MyStruct = MyStruct {
+    f1: 1,
+    f2: 0,
+  }
+  //let c: str = "hello";
 }
 
 fn foo(x: i32, y: bool) -> i32 {
@@ -11,33 +20,16 @@ fn foo(x: i32, y: bool) -> i32 {
 }
 
 priv struct MyStruct {
-  A: i64,
-  B: i64,
+  priv f1: i64,
+  f2: i64,
 }
 
-fn main() {
-  let mut a: MyStruct = MyStruct {
-    A: 1,
-    B: 2,
-  };
-
-  foo(32, false);
-
-  a.A = 5;
-  a.foo(5, 6);
-
-  let b: i32 = foo(1, true);
-
-  return;
+trait MyTrait {
+  fn read() -> i32;
 }
 
 impl MyTrait for MyStruct {
   priv fn read() -> i32 {
     return 1;
   }
-}
-
-priv enum MyEnum {
-  Plus,
-  Minus,
 }

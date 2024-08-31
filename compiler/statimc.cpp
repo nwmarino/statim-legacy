@@ -61,6 +61,6 @@ int main(int argc, char *argv[]) {
 
   std::unique_ptr<CContext> ctx = std::make_unique<CContext>(flags, std::move(files));
   std::unique_ptr<CrateUnit> crate = build_ast(ctx);
-  std::cout << crate->to_string(0);
+  std::cout << crate->to_string();
   //std::cout << crate->pkg_scope_to_string("main.statim");
 }

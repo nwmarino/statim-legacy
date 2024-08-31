@@ -64,27 +64,19 @@ typedef enum {
   LessThan,
   /// ">"
   GreaterThan,
-  /// "&"
-  And,
-  /// "|"
-  Or,
-  /// "^"
-  Xor,
   
   /// Compound tokens:
   ///
+  /// "::"
+  Path,
   /// "=="
   EqEq,
   /// "!="
   NotEq,
-  /// "..."
-  Range,
   /// "&&"
   AndAnd,
   /// "||"
   OrOr,
-  /// "^^"
-  XorXor,
   /// "->"
   Arrow,
   /// "=>"
@@ -101,10 +93,6 @@ typedef enum {
   LessThanEq,
   /// ">="
   GreaterThanEq,
-  /// "<<"
-  LeftShift,
-  /// ">>"
-  RightShift,
 
   /// End of file.
   Eof
@@ -252,6 +240,10 @@ struct Token {
   /// Determine if this token is a colon or not.
   [[nodiscard]]
   inline bool is_colon() const { return kind == Colon; };
+
+  /// Determine if this token is a path or not.
+  [[nodiscard]]
+  inline bool is_path() const { return kind == Path; };
 
   /// Determine if this token is a comma or not.
   [[nodiscard]]

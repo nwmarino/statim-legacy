@@ -54,7 +54,7 @@ inline std::string read_cwd(void) {
 /// Write an ast to a file.
 inline void write_ast(std::unique_ptr<CrateUnit> &crate) {
   std::ofstream file("ast.txt");
-  file << crate.get()->to_string(0);
+  file << crate.get()->to_string();
   file.close();
 }
 

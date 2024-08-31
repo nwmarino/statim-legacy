@@ -6,6 +6,7 @@
 
 #include "Stmt.h"
 
+/// UnaryOp - Enumeration of recognized unary operators.
 typedef enum {
   /// `!`
   Bang,
@@ -16,13 +17,14 @@ typedef enum {
   /// `@`
   Ref,
 
-  /// `...`
-  Ellipse,
-
   /// `.`
   Access,
+
+  UnknownUnaryOp,
 } UnaryOp;
 
+
+/// BinaryOp - Enumeration of recognized binary operators.
 typedef enum {
   /// `=`
   Assign,
@@ -51,18 +53,6 @@ typedef enum {
   /// `||`
   LogicOr,
 
-  /// `^^`
-  LogicXor,
-
-  /// `&`
-  BitAnd,
-
-  /// `|`
-  BitOr,
-
-  /// `^`
-  BitXor,
-
   /// `<`
   Lt,
 
@@ -75,12 +65,6 @@ typedef enum {
   /// `>=`
   GtEquals,
 
-  /// `<<`
-  BitLeftShift,
-
-  /// `>>`
-  BitRightShift,
-
   /// `+`
   Plus,
 
@@ -92,39 +76,55 @@ typedef enum {
 
   /// `/`
   Div,
+
+  UnknownBinaryOp,
 } BinaryOp;
+
 
 /// Base class for expressions; statements that may have a value and type.
 class Expr : public Stmt
 {
   public:
       virtual ~Expr() = default;
-      const virtual std::string to_string(int n) = 0;
+      const virtual std::string get_type() const = 0;
+      const virtual std::string to_string() = 0;
 };
 
 
 /// This class represents the `null` literal expression.
 class NullExpr final : public Expr
 {
+  private:
+    const std::string type;
+
   public:
     /// Constructor for null expressions.
-    NullExpr() {};
+    NullExpr() : type("null") {};
+
+    /// Gets the type of this null expression.
+    inline const std::string get_type() const { return type; }
 
     /// Returns a string representation of this null expression.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
 /// This class represents a default expression in some match statement.
 class DefaultExpr final : public Expr
 {
+  private:
+    const std::string type;
+
   public:
-    DefaultExpr() {};
+    DefaultExpr() : type("default") {};
+
+    /// Gets the type of this default expression.
+    inline const std::string get_type() const { return type; }
 
     /// Returns a string representation of this expression.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -135,18 +135,21 @@ class BooleanLiteral final : public Expr
 {
   private:
     bool value;
+    const std::string type;
 
   public:
     /// Constructor for boolean expressions.
-    BooleanLiteral(bool value) : value(value) {};
+    BooleanLiteral(bool value) : value(value), type("bool") {};
 
     /// Gets the value of this boolean expression.
-    [[nodiscard]]
     inline bool get_value() const { return value; }
+
+    /// Gets the type of this boolean expression.
+    inline const std::string get_type() const { return type; }
 
     /// Returns a string representation of this boolean expression.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -157,18 +160,25 @@ class IntegerLiteral final : public Expr
 {
   private:
     const int value;
+    const bool signedness;
+    const std::string type;
 
   public:
     /// Constructor for integer expressions.
-    IntegerLiteral(int value) : value(value) {};
+    IntegerLiteral(int value) : value(value), signedness(value < 0), type("int") {};
 
     /// Gets the value of this integer expression.
-    [[nodiscard]]
     inline int get_value() const { return value; }
+
+    /// Gets the signedness of this integer expression.
+    inline bool is_signed() const { return signedness; }
+
+    /// Gets the type of this integer expression.
+    inline const std::string get_type() const { return type; }
 
     /// Returns a string representation of this integer expression.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -179,18 +189,21 @@ class FPLiteral final : public Expr
 {
   private:
     const double value;
+    const std::string type;
 
   public:
     /// Constructor for floating point expressions.
-    FPLiteral(double value) : value(value) {};
+    FPLiteral(double value) : value(value), type("float") {};
 
     /// Gets the value of this floating point expression.
-    [[nodiscard]]
     inline double get_value() const { return value; }
+
+    /// Gets the type of this floating point expression.
+    inline const std::string get_type() const { return type; }
 
     /// Returns a string representation of this floating point expression.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -201,18 +214,21 @@ class CharLiteral final : public Expr
 {
   private:
     const char value;
+    const std::string type;
 
   public:
     /// Constructor for character expressions.
-    CharLiteral(char value) : value(value) {};
+    CharLiteral(char value) : value(value), type("char") {};
 
     /// Gets the value of this character expression.
-    [[nodiscard]]
     inline char get_value() const { return value; }
+
+    /// Gets the type of this character expression.
+    inline const std::string get_type() const { return type; }
 
     /// Returns a string representation of this character expression.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -223,40 +239,46 @@ class StringLiteral final : public Expr
 {
   private:
     const std::string value;
+    const std::string type;
 
   public:
     /// Constructor for string expressions.
-    StringLiteral(const std::string &value) : value(value) {};
+    StringLiteral(const std::string &value) : value(value), type("str") {};
 
     /// Gets the value of this string expression.
-    [[nodiscard]]
     inline const std::string get_value() const { return value; }
+
+    /// Gets the type of this string expression.
+    inline const std::string get_type() const { return type; }
 
     /// Returns a string representation of this string expression.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
-/// This class represents a variable expression.
+/// This class represents a declaration reference expression.
 ///
 /// @example `x`, `y`, `z`
-class VarExpr final : public Expr
+class DeclRefExpr final : public Expr
 {
   private:
     const std::string ident;
+    const std::string type;
 
   public:
-    /// Constructor for variable expressions.
-    VarExpr(const std::string &ident) : ident(ident) {};
+    /// Constructor for declaration reference expressions.
+    DeclRefExpr(const std::string &ident, const std::string &type) : ident(ident), type(type) {};
 
-    /// Gets the identifier of this variable expression.
-    [[nodiscard]]
+    /// Gets the identifier of this reference expression.
     inline const std::string get_ident() const { return ident; }
 
-    /// Returns a string representation of this variable expression.
+    /// Gets the type of this reference expression.
+    inline const std::string get_type() const { return type; }
+
+    /// Returns a string representation of this reference expression.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -269,27 +291,39 @@ class BinaryExpr final : public Expr
     const BinaryOp op;
     std::unique_ptr<Expr> lhs;
     std::unique_ptr<Expr> rhs;
+    std::string type;
 
   public:
     /// Constructor for binary expressions.
-    BinaryExpr(const BinaryOp op, std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs)
-      : op(op), lhs(std::move(lhs)), rhs(std::move(rhs)) {};
+    BinaryExpr(const BinaryOp op, std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs) : op(op), lhs(std::move(lhs)), rhs(std::move(rhs)) {
+      if (this->lhs && this->rhs) {
+        const std::string lhs_type = this->lhs->get_type();
+        const std::string rhs_type = this->rhs->get_type();
+        if (lhs_type == rhs_type) {
+          type = lhs_type;
+        } else {
+          type = "mismatch";
+        }
+      } else {
+        type = this->lhs->get_type();
+      }
+    };
 
     /// Gets the operator of this binary expression.
-    [[nodiscard]]
     inline const BinaryOp get_op() const { return op; }
 
     /// Gets the left-hand side of this binary expression.
-    [[nodiscard]]
     inline std::unique_ptr<Expr> get_lhs() { return std::move(lhs); }
 
     /// Gets the right-hand side of this binary expression.
-    [[nodiscard]]
     inline std::unique_ptr<Expr> get_rhs() { return std::move(rhs); }
+
+    /// Gets the type of this binary expression.
+    inline const std::string get_type() const { return type; }
 
     /// Returns a string representation of this binary expression.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -301,22 +335,24 @@ class UnaryExpr final : public Expr
   private:
     const UnaryOp op;
     std::unique_ptr<Expr> expr;
+    const std::string type;
 
   public:
     /// Constructor for unary expressions.
-    UnaryExpr(const UnaryOp op, std::unique_ptr<Expr> expr) : op(op), expr(std::move(expr)) {};
+    UnaryExpr(const UnaryOp op, std::unique_ptr<Expr> expr) : op(op), expr(std::move(expr)), type(this->expr->get_type()) {};
 
     /// Gets the operator of this unary expression.
-    [[nodiscard]]
     inline const UnaryOp get_op() const { return op; }
 
+    /// Gets the type of this unary expression.
+    inline const std::string get_type() const { return type; }
+
     /// Gets the expr of this unary expression.
-    [[nodiscard]]
     inline std::unique_ptr<Expr> get_expr() { return std::move(expr); }
 
     /// Returns a string representation of this unary expression.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -326,17 +362,17 @@ class UnaryExpr final : public Expr
 class InitExpr final : public Expr
 {
   private:
-    const std::string ident;
+    const std::string type;
     std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields;
 
   public:
     /// Constructor for initialization expressions.
-    InitExpr(const std::string &ident, std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields)
-      : ident(ident), fields(std::move(fields)) {};
+    InitExpr(const std::string &type, std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields)
+      : type(type), fields(std::move(fields)) {};
 
     /// Gets the identifier of this initialization expression.
     [[nodiscard]]
-    inline const std::string get_ident() const { return ident; }
+    inline const std::string get_type() const { return type; }
 
     /// Gets the fields of this initialization expression.
     [[nodiscard]]
@@ -344,7 +380,7 @@ class InitExpr final : public Expr
 
     /// Returns a string representation of this initialization expression.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -356,19 +392,25 @@ class CallExpr : public Expr
   protected:
     const std::string callee;
     std::vector<std::unique_ptr<Expr>> args;
+    std::string type;
 
   public:
     /// Constructor for function call expressions.
     CallExpr(const std::string &callee, std::vector<std::unique_ptr<Expr>> args)
-      : callee(callee), args(std::move(args)) {};
+      : callee(callee), args(std::move(args)), type("unknown") {};
 
     /// Gets the callee of this function call expression.
-    [[nodiscard]]
     inline const std::string get_callee() const { return callee; }
+
+    /// Gets the type of this function call expression.
+    inline const std::string get_type() const { return type; }
+
+    /// Sets the type of this function call expression.
+    inline void set_type(const std::string &type) { this->type = type; }
 
     /// Returns a string representation of this function call expression.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -380,23 +422,28 @@ class MemberExpr final : public Expr
   private:
     std::unique_ptr<Expr> base;
     const std::string member;
+    std::string type;
 
   public:
     /// Constructor for member access expressions.
     MemberExpr(std::unique_ptr<Expr> base, const std::string &member)
-      : base(std::move(base)), member(member) {};
+      : base(std::move(base)), member(member), type("unknown") {};
 
     /// Gets the base of this member access expression.
-    [[nodiscard]]
     inline std::unique_ptr<Expr> get_base() { return std::move(base); }
 
+    /// Gets the type of this member access expression.
+    inline const std::string get_type() const { return type; }
+
+    /// Sets the type of this member access expression.
+    inline void set_type(const std::string &type) { this->type = type; }
+
     /// Gets the member of this member access expression.
-    [[nodiscard]]
     inline const std::string get_member() const { return member; }
 
     /// Returns a string representation of this member access expression.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -423,7 +470,7 @@ class MemberCallExpr : public CallExpr
 
     /// Returns a string representation of this member call expression.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 #endif  // EXPR_STATIMC_H

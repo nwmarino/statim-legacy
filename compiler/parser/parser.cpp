@@ -25,12 +25,10 @@ static UnaryOp get_unary_op(TokenKind op) {
       return UnaryOp::Rune;
     case TokenKind::At:
       return UnaryOp::Ref;
-    case TokenKind::Range:
-      return UnaryOp::Ellipse;
     case TokenKind::Dot:
       return UnaryOp::Access;
     default:
-      panic("unknown unary operator: " + std::to_string(op));
+      return UnaryOp::UnknownUnaryOp;
   }
 }
 
@@ -55,14 +53,6 @@ static BinaryOp get_binary_op(TokenKind op) {
       return BinaryOp::LogicAnd;
     case TokenKind::OrOr:
       return BinaryOp::LogicOr;
-    case TokenKind::XorXor:
-      return BinaryOp::LogicXor;
-    case TokenKind::And:
-      return BinaryOp::BitAnd;
-    case TokenKind::Or:
-      return BinaryOp::BitOr;
-    case TokenKind::Xor:
-      return BinaryOp::BitXor;
     case TokenKind::LessThan:
       return BinaryOp::Lt;
     case TokenKind::LessThanEq:
@@ -71,10 +61,6 @@ static BinaryOp get_binary_op(TokenKind op) {
       return BinaryOp::Gt;
     case TokenKind::GreaterThanEq:
       return BinaryOp::GtEquals;
-    case TokenKind::LeftShift:
-      return BinaryOp::BitLeftShift;
-    case TokenKind::RightShift:
-      return BinaryOp::BitRightShift;
     case TokenKind::Add:
       return BinaryOp::Plus;
     case TokenKind::Sub:
@@ -84,7 +70,7 @@ static BinaryOp get_binary_op(TokenKind op) {
     case TokenKind::Slash:
       return BinaryOp::Div;
     default:
-      panic("unknown binary operator: " + std::to_string(op));
+      return BinaryOp::UnknownBinaryOp;
   }
 }
 
@@ -93,36 +79,27 @@ static BinaryOp get_binary_op(TokenKind op) {
 static int get_precedence(TokenKind op) {
   switch (op) {
     case TokenKind::Dot:
-      return 10;
+      return 8;
     case TokenKind::Not:
     case TokenKind::Hash:
     case TokenKind::At:
-    case TokenKind::Range:
-      return 9;
+      return 7;
     case TokenKind::Star:
     case TokenKind::Slash:
-      return 8;
+      return 6;
     case TokenKind::Add:
     case TokenKind::Sub:
-      return 7;
-    case TokenKind::LeftShift:
-    case TokenKind::RightShift:
-      return 6;
+      return 5;
     case TokenKind::LessThan:
     case TokenKind::LessThanEq:
     case TokenKind::GreaterThan:
     case TokenKind::GreaterThanEq:
-      return 5;
+      return 4;
     case TokenKind::EqEq:
     case TokenKind::NotEq:
-      return 4;
-    case TokenKind::And:
-    case TokenKind::Or:
-    case TokenKind::Xor:
       return 3;
     case TokenKind::AndAnd:
     case TokenKind::OrOr:
-    case TokenKind::XorXor:
       return 2;
     case TokenKind::Eq:
     case TokenKind::AddEq:
@@ -295,14 +272,22 @@ static std::unique_ptr<Expr> parse_member_call_expr(std::unique_ptr<CContext> &c
   }
   ctx->next();  // eat the close parenthesis
 
-  return std::make_unique<MemberCallExpr>(std::make_unique<VarExpr>(base), callee, std::move(args));
+  Decl *d = curr_scope->get_decl(base);
+  if (!d) {
+    return warn_expr("unresolved identifier: " + base, ctx->last().meta);
+  }
+
+  VarDecl *str_decl = dynamic_cast<VarDecl *>(d);
+  if (!str_decl) {
+    return warn_expr("expected struct type", ctx->last().meta);
+  }
+
+  return std::make_unique<MemberCallExpr>(std::make_unique<DeclRefExpr>(base, str_decl->get_type()), callee, std::move(args));
 }
 
 
-/// Parses an access expression from the given context.
-///
-/// Access expressions are used to access fields of a struct.
-static std::unique_ptr<Expr> parse_access_expr(std::unique_ptr<CContext> &ctx, const std::string &base) {
+/// Parses a struct member access expression from the given context.
+static std::unique_ptr<Expr> parse_member_expr(std::unique_ptr<CContext> &ctx, const std::string &base) {
   ctx->next();  // eat the dot operator
 
   // verify that the base exists in this scope
@@ -311,13 +296,11 @@ static std::unique_ptr<Expr> parse_access_expr(std::unique_ptr<CContext> &ctx, c
     return warn_expr("unresolved identifier: " + base, ctx->last().meta);
   }
 
-  /*
   // verify that the base is a struct
   VarDecl *str_decl = dynamic_cast<VarDecl *>(d);
   if (!str_decl) {
     return warn_expr("expected struct type", ctx->last().meta);
   }
-  */
 
   if (!ctx->last().is_ident()) {
     return warn_expr("expected identifier after '.'", ctx->last().meta);
@@ -337,7 +320,7 @@ static std::unique_ptr<Expr> parse_access_expr(std::unique_ptr<CContext> &ctx, c
   }
   */
 
-  return std::make_unique<MemberExpr>(std::make_unique<VarExpr>(base), field);
+  return std::make_unique<MemberExpr>(std::make_unique<DeclRefExpr>(base, str_decl->get_type()), field);
 }
 
 
@@ -351,14 +334,17 @@ static std::unique_ptr<Expr> parse_identifier_expr(std::unique_ptr<CContext> &ct
   if (ctx->last().is_open_paren()) {
     return parse_call_expr(ctx, ident);
   } else if (ctx->last().is_dot()) {
-    return parse_access_expr(ctx, ident);
-  } else if (dynamic_cast<VarDecl *>(curr_scope->get_decl(ident))) {
-    return std::make_unique<VarExpr>(ident);
-  } else if (dynamic_cast<ParamVarDecl *>(curr_scope->get_decl(ident))) {
-    return std::make_unique<VarExpr>(ident);
+    return parse_member_expr(ctx, ident);
+  } else if (VarDecl *d = dynamic_cast<VarDecl *>(curr_scope->get_decl(ident))) {
+    return std::make_unique<DeclRefExpr>(ident, d->get_type());
+  } else if (ParamVarDecl *d = dynamic_cast<ParamVarDecl *>(curr_scope->get_decl(ident))) {
+    return std::make_unique<DeclRefExpr>(ident, d->get_type());
   }
 
-  return parse_init_expr(ctx, ident);
+  if (ctx->last().is_open_brace()) {
+    return parse_init_expr(ctx, ident);
+  }
+  return std::make_unique<DeclRefExpr>(ident, "unknown");
 }
 
 
@@ -369,12 +355,17 @@ static std::unique_ptr<Expr> parse_unary_expr(std::unique_ptr<CContext> &ctx) {
   TokenKind op_kind = ctx->last().kind;
   ctx->next();  // eat operator
 
+  UnaryOp oper = get_unary_op(op_kind);
+  if (oper == UnaryOp::UnknownUnaryOp) {
+    return warn_expr("unknown unary operator: " + std::to_string(op_kind), ctx->last().meta);
+  }
+
   std::unique_ptr<Expr> base = parse_primary_expr(ctx);
   if (!base) {
     return warn_expr("expected expression after unary operator", ctx->last().meta);
   }
 
-  return std::make_unique<UnaryExpr>(get_unary_op(op_kind), std::move(base));
+  return std::make_unique<UnaryExpr>(oper, std::move(base));
 }
 
 
@@ -427,6 +418,11 @@ static std::unique_ptr<Expr> parse_binary_expr(std::unique_ptr<CContext> &ctx, s
     TokenKind op_kind = ctx->last().kind;
     ctx->next();  // eat operator
 
+    BinaryOp oper = get_binary_op(op_kind);
+    if (oper == BinaryOp::UnknownBinaryOp) {
+      return warn_expr("unknown binary operator: " + std::to_string(op_kind), ctx->last().meta);
+    }
+
     std::unique_ptr<Expr> rval = parse_primary_expr(ctx);
     if (!rval) {
       return warn_expr("expected expression after binary operator", ctx->last().meta);
@@ -440,7 +436,7 @@ static std::unique_ptr<Expr> parse_binary_expr(std::unique_ptr<CContext> &ctx, s
       }
     }
 
-    base = std::make_unique<BinaryExpr>(get_binary_op(op_kind), std::move(base), std::move(rval));
+    base = std::make_unique<BinaryExpr>(oper, std::move(base), std::move(rval));
   }
 }
 

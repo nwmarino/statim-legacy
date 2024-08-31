@@ -76,8 +76,25 @@ const struct Token Tokenizer::advance_token() {
       }
       break;
 
-    /// Subtraction, subtraction assignment or thin arrow.
+    /// Negative numerical literals, subtraction, subtraction assignment or thin arrow.
     case '-':
+      if (isdigit(peek())) {
+        kind = Literal;
+        lit_kind = Integer;
+        value.push_back(src[iter]);
+        iter++;
+        col++;
+
+        while (isdigit(src[iter]) || src[iter] == '.') {
+          if (src[iter] == '.' && lit_kind == Integer) {
+            lit_kind = Float;
+          }
+          value.push_back(src[iter]);
+          iter++;
+          col++;
+        }
+        return Token(kind, meta, value, lit_kind);
+      }
       kind = Sub;
       if (peek() == '>') {
         kind = Arrow;
@@ -119,17 +136,8 @@ const struct Token Tokenizer::advance_token() {
       }
       break;
 
-    /// Dots or ranges.
+    /// Dots.
     case '.':
-      if (peek() == '.') {
-        if (peek_two() != '.') {
-          panic("bad range syntax", meta);
-          break;
-        }
-        kind = Range;
-        iter += 3;
-        col += 3;
-      }
       kind = Dot;
       break;
 
@@ -145,14 +153,10 @@ const struct Token Tokenizer::advance_token() {
       col++;
       break;
 
-    /// Less than (equals) or left shift.
+    /// Less than (equals).
     case '<':
       if (peek() == '=') {
         kind = LessThanEq;
-        iter++;
-        col++;
-      } else if (peek() == '<') {
-        kind = LeftShift;
         iter++;
         col++;
       } else {
@@ -166,12 +170,36 @@ const struct Token Tokenizer::advance_token() {
         kind = GreaterThanEq;
         iter++;
         col++;
-      } else if (peek() == '>') {
-        kind = RightShift;
-        iter++;
-        col++;
       } else {
         kind = GreaterThan;
+      }
+      break;
+
+    /// Logical and.
+    case '&':
+      if (peek() == '&') {
+        kind = AndAnd;
+        iter++;
+        col++;
+      }
+      break;
+
+    /// Logical or.
+    case '|':
+      if (peek() == '|') {
+        kind = OrOr;
+        iter++;
+        col++;
+      }
+      break;
+
+    /// Colon or Path.
+    case ':':
+      kind = Colon;
+      if (peek() == ':') {
+        kind = Path;
+        iter++;
+        col++;
       }
       break;
 
@@ -184,13 +212,9 @@ const struct Token Tokenizer::advance_token() {
     case ']': kind = CloseBracket; break;
     case ',': kind = Comma; break;
     case ';': kind = Semi; break;
-    case ':': kind = Colon; break;
     case '@': kind = At; break;
     case '#': kind = Hash; break;
     case '!': kind = Not; break;
-    case '&': kind = And; break;
-    case '|': kind = Or; break;
-    case '^': kind = Xor; break;
 
     /// Identifiers, numerics, unknowns.
     default:
@@ -283,7 +307,6 @@ std::string Token::to_str() {
     case Slash: return "Slash";
     case Sub: return "Sub";
     case Arrow: return "Arrow";
-    case Range: return "Range";
     case Dot: return "Dot";
     case Eq: return "Eq";
     case NotEq: return "NotEq";
@@ -305,19 +328,14 @@ std::string Token::to_str() {
     case Not: return "Not";
     case LessThan: return "LessThan";
     case GreaterThan: return "GreaterThan";
-    case And: return "And";
     case AndAnd: return "AndAnd";
-    case Or: return "Or";
     case OrOr: return "OrOr";
-    case Xor: return "Xor";
     case AddEq: return "AddEq";
     case SubEq: return "SubEq";
     case StarEq: return "StarEq";
     case SlashEq: return "SlashEq";
     case LessThanEq: return "LessThanEq";
     case GreaterThanEq: return "GreaterThanEq";
-    case LeftShift: return "LeftShift";
-    case RightShift: return "RightShift";
     default: return "Unknown";
   }
 }

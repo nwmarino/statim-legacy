@@ -18,7 +18,7 @@ class Stmt
 {
   public:
     virtual ~Stmt() = default;
-    const virtual std::string to_string(int n) = 0;
+    const virtual std::string to_string() = 0;
 };
 
 
@@ -34,7 +34,7 @@ class DeclStmt : public Stmt
     DeclStmt(std::unique_ptr<Decl> decl) : decl(std::move(decl)) {};
 
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -59,7 +59,7 @@ class CompoundStmt : public Stmt
 
     /// Returns a string representation of this compound statement.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -86,7 +86,7 @@ class IfStmt : public Stmt
 
     /// Returns a string representation of this if statement.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -108,8 +108,9 @@ class MatchCase : public Stmt
 
     /// Returns a string representation of this match case.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
+
 
 /// This class represents the structure of a match statement.
 class MatchStmt : public Stmt
@@ -125,7 +126,7 @@ class MatchStmt : public Stmt
 
     /// Returns a string representation of this match statement.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -145,7 +146,7 @@ class ReturnStmt : public Stmt
 
     /// Returns a string representation of this return statement.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -163,7 +164,7 @@ class UntilStmt : public Stmt
 
     /// Returns a string representation of this until statement.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 #endif  // STMT_STATIMC_H

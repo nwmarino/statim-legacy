@@ -15,12 +15,12 @@ class Unit
 {
   public:
     virtual ~Unit() = default;
-    virtual const std::string to_string(int n) = 0;
+    virtual const std::string to_string() = 0;
 };
 
 
 /// A package is the representation of a modular source file.
-class PackageUnit : public Unit
+class PackageUnit final : public Unit
 {
   private:
     const std::string name;
@@ -43,12 +43,12 @@ class PackageUnit : public Unit
 
     /// Returns a string representation of this package unit.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
 /// A crate is a collection of packages and represents a whole program.
-class CrateUnit : public Unit
+class CrateUnit final : public Unit
 {
   private:
     std::vector<std::unique_ptr<PackageUnit>> packages;
@@ -62,7 +62,7 @@ class CrateUnit : public Unit
     inline const std::string pkg_scope_to_string(const std::string &name) const { 
       for (std::unique_ptr<PackageUnit> const &package : packages) {
         if (package->get_name() == name) {
-          return package->get_scope()->to_string(0);
+          return package->get_scope()->to_string();
         }
       }
       return "";
@@ -70,7 +70,7 @@ class CrateUnit : public Unit
 
     /// Returns a string representation of this crate unit.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 #endif  // UNIT_STATIMC_H

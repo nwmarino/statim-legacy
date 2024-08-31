@@ -19,7 +19,7 @@ class Decl
   public:
     virtual ~Decl() = default;
     virtual const std::string get_name() const = 0;
-    virtual const std::string to_string(int n) = 0;
+    virtual const std::string to_string() = 0;
 };
 
 
@@ -147,7 +147,7 @@ class Scope final
 
     /// Returns a string representation of this scope tree.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -177,7 +177,7 @@ class ParamVarDecl final : public Decl
 
     /// Returns a string representation of this parameter.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 /// Class for function definitions and declarations.
@@ -232,7 +232,7 @@ class FunctionDecl final : public ScopedDecl
 
     /// Returns a string representation of this function declaration.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -283,7 +283,7 @@ class TraitDecl final : public Decl
 
     /// Returns a string representation of this trait declaration.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -308,7 +308,7 @@ class EnumVariant
 
     /// Returns a string representation of this enum variant.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 /// Class for enum declarations.
@@ -348,7 +348,7 @@ class EnumDecl final : public Decl
 
     /// Returns a string representation of this enum declaration.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -384,7 +384,7 @@ class ImplDecl final : public Decl
 
     /// Returns a string representation of this implementation declaration.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -425,7 +425,7 @@ class FieldDecl final : public Decl
 
     /// Returns a string representation of this struct fields.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 /// Class for struct declarations.
@@ -475,7 +475,7 @@ class StructDecl final : public ScopedDecl
 
     /// Returns a string representation of this struct declaration.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 
@@ -524,7 +524,7 @@ class VarDecl final : public Decl
 
     /// Returns a string representation of this variable declaration.
     [[nodiscard]]
-    const std::string to_string(int n);
+    const std::string to_string();
 };
 
 #endif  // DECL_STATIMC_H
