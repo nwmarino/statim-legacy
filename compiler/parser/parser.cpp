@@ -1161,11 +1161,29 @@ static std::unique_ptr<PackageUnit> parse_pkg(std::unique_ptr<CContext> &ctx) {
       ctx->next();  // eat package keyword
 
       if (ctx->last().is_ident()) {
-        imports.push_back(ctx->last().value);
-        ctx->next();  // eat import name
+        const std::string first = ctx->last().value;
+        ctx->next();  // eat first identifier
+
+        if (ctx->last().is_path()) {
+          ctx->next();  // eat path operator
+          if (!ctx->last().is_ident()) {
+            return warn_pkg("expected identifier after '::'", ctx->last().meta);
+          }
+          imports.push_back(first + '/' + ctx->last().value);
+          ctx->next();  // eat name
+        } else {
+          imports.push_back(first);
+        }
+        
+        if (!ctx->last().is_semi()) {
+          return warn_pkg("expected ';'", ctx->last().meta);
+        }
+        ctx->next();  // eat semi
       } else {
         panic("expected identifier after 'pkg'");
       }
+
+      continue;
     }
 
     bool is_private = false;

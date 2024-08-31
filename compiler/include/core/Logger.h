@@ -153,4 +153,14 @@ inline std::unique_ptr<Unit> warn_unit(std::string msg, const struct Metadata &d
   return nullptr;
 }
 
+
+/// Warn about a package unit parsing error.
+/// @param msg  The error message.
+/// @param data Metadata about the bad input.
+/// @return     nullptr
+inline std::unique_ptr<PackageUnit> warn_pkg(std::string msg, const struct Metadata &data) {
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  return nullptr;
+}
+
 #endif  // STATIMC_LOGGER_H

@@ -85,7 +85,14 @@ const std::string CrateUnit::to_string() {
 
 
 const std::string PackageUnit::to_string() {
-  std::string result = BOLD + YELLOW + "PackageUnit " + RESET + BLUE + name + RESET + '\n';
+  std::string result = BOLD + YELLOW + "PackageUnit " + RESET + BLUE + name + RESET;
+  if (imports.size() > 0) {
+    result += " << ";
+    for (const std::string &import : imports) {
+      result += YELLOW + import + " " + RESET;
+    }
+  }
+  result += '\n';
   place_vert[indent] = 1;
   for (std::unique_ptr<Decl> const &decl : decls) {
     at_last_child = decl == decls.back();

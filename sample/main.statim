@@ -1,3 +1,5 @@
+pkg lib;
+
 priv enum MyEnum {
   Plus,
   Minus,
