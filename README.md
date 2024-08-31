@@ -3,73 +3,52 @@
 | Operator | Precedence | Usage 
 |----------|------------|------
 | `=` `+=`, `-=`, `*=`, `/=` | 1 | Assignment
-| `&&`, `\|\|`, `^^` | 2 | Logical Comparison
-| `&`, `\|`, `^` | 3 | Bitwise Comparison
+| `&&`, `\|\|` | 2 | Logical Comparison
 | `==`, `!=` | 4 | Equality Comparison
 | `<`, `<=`, `>`, `>=` | 5 | Inequalities
-| `<<`, `>>` | 6 | Bitwise Shift
 | `+`, `-` | 7 | Additive Ops
 | `*`, `/` | 8 | Multiplicative Ops
-| `!`, `#`, `@`, `...` | 9 | Unary (not, hash, ref, range)
+| `!`, `#`, `@` | 9 | Unary (not, hash, ref)
 | `f()`, `.` | 10 | Calls, Member Access
-| `a++`, `a--` | 11 | Increment, Decrement
 
+### Primitive Types
 
-### Types
+`bool` boolean value (false, true)
 
-`bool` boolean value (0, 1)
+`unsigned` 64-bit unsigned integer.
 
 `i32` 32-bit signed integer.
 
-`u32` 32-bit unsigned integer.
-
 `i64` 64-bit signed integer.
-
-`u64` 64-bit unsigned integer.
 
 `float` floating point value.
 
-`float64` 64-bit floating point value.
-
 `char` singular character.
-
-`byte` singular byte.
 
 `str` character sequence.
 
-`bstr` byte sequence.
-
 `#Type` rune type.
+> For example, a rune `A` struct: `let a: #A = A { ... };`
 
 ### Variables
 
-Mutable assignments
+Variable assignments using `let`, and mutable with `mut`:
 ```rs
-// initialization
-let x: i32;
-
-// declaration
+let mut x: i32;
 x = 5;
 
-// initialization and declaration
-let x: i32 = 5;
-```
-
-Fixed assignment
-> Must be declared the same line it is initialized.
-```rs
-fix y: i32 = 6;
-```
-
-Alias assignments
-```rs
+// immutable declaration
 let y: i32 = 5;
-bind x, y;
 ```
+
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
 
 ### Control Flow
 
-If/else statements,
+If then/else then statements using `if`, `else`:
 
 ```rs
 if expression {
@@ -83,20 +62,30 @@ else {
 }
 ```
 
-Pattern matching,
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
+
+Pattern matching using `match`:
 
 ```rs
 match expression {
   x => ...,
-  y => ...,
+  y => { ... },
   z => ...,
-  _ => ...
+  _ => { ... }
 }
 ```
 
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
+
 ### Looping instructions
 
-Until loops
+Until loop statements:
 > Executes body until expression is met.
 ```rs
 until expression {
@@ -104,33 +93,75 @@ until expression {
 }
 ```
 
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
+
 ### User-defined Types
 
-Structs
+Define a type using `struct`:
 ```rs
-struct A {
-  a: i64;
-  b: u64;
+struct Dog {
+  name: str,
+  breed: str,
 }
 ```
 
-Define an abstract
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
+
+Construct defined types using initializer expressions:
 ```rs
-abstract Fun {
-  fn run() -> i32;
+let mut pet: Dog = Dog {
+  name: "Max",
+  breed: "Golden Retriever",
 }
 ```
 
-Implement an abstract to a struct,
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
+
+Define common behaviours using `trait`:
 ```rs
-impl Fun for A {
-  fn run() -> i32 { 
+trait MakeNoise {
+  fn woof() -> str;
+}
+```
+
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
+
+Implement methods to a struct using `impl`:
+```rs
+impl Dog {
+  fn walk() {
     ...
   }
 }
 ```
 
-Enumerations
+Also, implement traits to a struct using `impl`:
+```rs
+impl MakeNoise for Dog {
+  fn woof() -> str { 
+    ...
+  }
+}
+```
+
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
+
+Declare an enumerated type using `enum`:
 ```rs
 enum Token {
   Plus,
@@ -139,13 +170,28 @@ enum Token {
 }
 ```
 
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
+
 ### Packages
 
-Define a package file using `pkg FILE`. Import it elsewhere using the `use FILE`
-keyword. Keep definitions private using protection,
+Import another source file using `pkg NAME`.
 
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen
+
+Keep top-level declarations private to their package using the `priv` keyword:
 ```rs
-protect fn secret_function() -> void {
+priv fn secret_function() -> void {
   ...
 }
 ```
+
+- [x] Parsing
+- [ ] Passed
+- [ ] Lowering
+- [ ] Codegen

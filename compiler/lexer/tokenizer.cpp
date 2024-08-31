@@ -1,12 +1,9 @@
-/// Copyright 2024 Nick Marino (github.com/nwmarino)
-
 #include <cstdio>
-#include <iostream>
 #include <string>
 
-#include "../core/logger.h"
-#include "../core/token.h"
-#include "tokenizer.h"
+#include "../include/core/Logger.h"
+#include "../include/token/Token.h"
+#include "../include/token/Tokenizer.h"
 
 Tokenizer::Tokenizer(const std::string src, const std::string filename, std::size_t len)
   : src(src), filename(filename), len(len), prev('\0'), iter(0), line(1), col(1) {};
@@ -36,7 +33,7 @@ const struct Token Tokenizer::advance_token() {
       }
       return advance_token();
 
-    /// Slash or comment. Currently discard comments until doc support.
+    /// Slash, division assignment, or comment. Currently discard comments until doc support.
     case '/':
       if (peek() == '/') {
         while (src[iter] != '\n') {
@@ -50,15 +47,61 @@ const struct Token Tokenizer::advance_token() {
           col++;
         }
         return advance_token();
+      } else if (peek() == '=') {
+        kind = SlashEq;
+        iter++;
+        col++;
+        break;
       }
       kind = Slash;
       break;
 
-    /// Subtraction or thin arrow.
+    /// Multiplication or multiplicative assignment.
+    case '*':
+      kind = Star;
+      if (peek() == '=') {
+        kind = StarEq;
+        iter++;
+        col++;
+      }
+      break;
+
+    /// Addition or additive assignment.
+    case '+':
+      kind = Add;
+      if (peek() == '=') {
+        kind = AddEq;
+        iter++;
+        col++;
+      }
+      break;
+
+    /// Negative numerical literals, subtraction, subtraction assignment or thin arrow.
     case '-':
+      if (isdigit(peek())) {
+        kind = Literal;
+        lit_kind = Integer;
+        value.push_back(src[iter]);
+        iter++;
+        col++;
+
+        while (isdigit(src[iter]) || src[iter] == '.') {
+          if (src[iter] == '.' && lit_kind == Integer) {
+            lit_kind = Float;
+          }
+          value.push_back(src[iter]);
+          iter++;
+          col++;
+        }
+        return Token(kind, meta, value, lit_kind);
+      }
       kind = Sub;
       if (peek() == '>') {
         kind = Arrow;
+        iter++;
+        col++;
+      } else if (peek() == '=') {
+        kind = SubEq;
         iter++;
         col++;
       }
@@ -74,7 +117,7 @@ const struct Token Tokenizer::advance_token() {
       value = src[iter];
 
       if (peek() != '\'') {
-        sc_panic("Bad char literal", meta);
+        panic("bad char literal", meta);
       }
 
       iter++;
@@ -93,17 +136,8 @@ const struct Token Tokenizer::advance_token() {
       }
       break;
 
-    /// Dots or ranges.
+    /// Dots.
     case '.':
-      if (peek() == '.') {
-        if (peek_two() != '.') {
-          sc_panic("Bad range syntax", meta);
-          break;
-        }
-        kind = Range;
-        iter += 3;
-        col += 3;
-      }
       kind = Dot;
       break;
 
@@ -119,14 +153,10 @@ const struct Token Tokenizer::advance_token() {
       col++;
       break;
 
-    /// Less than (equals) or left shift.
+    /// Less than (equals).
     case '<':
       if (peek() == '=') {
         kind = LessThanEq;
-        iter++;
-        col++;
-      } else if (peek() == '<') {
-        kind = LeftShift;
         iter++;
         col++;
       } else {
@@ -140,12 +170,36 @@ const struct Token Tokenizer::advance_token() {
         kind = GreaterThanEq;
         iter++;
         col++;
-      } else if (peek() == '>') {
-        kind = RightShift;
-        iter++;
-        col++;
       } else {
         kind = GreaterThan;
+      }
+      break;
+
+    /// Logical and.
+    case '&':
+      if (peek() == '&') {
+        kind = AndAnd;
+        iter++;
+        col++;
+      }
+      break;
+
+    /// Logical or.
+    case '|':
+      if (peek() == '|') {
+        kind = OrOr;
+        iter++;
+        col++;
+      }
+      break;
+
+    /// Colon or Path.
+    case ':':
+      kind = Colon;
+      if (peek() == ':') {
+        kind = Path;
+        iter++;
+        col++;
       }
       break;
 
@@ -158,45 +212,9 @@ const struct Token Tokenizer::advance_token() {
     case ']': kind = CloseBracket; break;
     case ',': kind = Comma; break;
     case ';': kind = Semi; break;
-    case ':': kind = Colon; break;
-    case '+': kind = Add; break;
-    case '*': kind = Star; break;
     case '@': kind = At; break;
     case '#': kind = Hash; break;
     case '!': kind = Not; break;
-    case '&': kind = And; break;
-    case '|': kind = Or; break;
-    case '^': kind = Xor; break;
-
-    /// Byte literals.
-    case 'b':
-      if (peek() == '\'') {
-        kind = Literal;
-        lit_kind = Byte;
-
-        iter++;
-        col++;
-        value = src[iter];
-
-        if (peek() != '\'') {
-          sc_panic("Bad byte char literal", meta);
-        }
-
-        iter++;
-        col++;
-        break;
-
-      } else if (peek() == '"') {
-        kind = Literal;
-        lit_kind = ByteString;
-
-        while (peek() != '"') {
-          value.push_back(src[iter]);
-          iter++;
-          col++;
-        }
-        break;
-      }
 
     /// Identifiers, numerics, unknowns.
     default:
@@ -236,7 +254,7 @@ const struct Token Tokenizer::advance_token() {
         }
         return Token(kind, meta, value, lit_kind);
       }
-      sc_panic("Unresolved sequence: " + std::string(1, chr), meta);
+      panic("unresolved sequence: " + std::string(1, chr), meta);
       break;
   }
   iter++;
@@ -289,7 +307,6 @@ std::string Token::to_str() {
     case Slash: return "Slash";
     case Sub: return "Sub";
     case Arrow: return "Arrow";
-    case Range: return "Range";
     case Dot: return "Dot";
     case Eq: return "Eq";
     case NotEq: return "NotEq";
@@ -311,21 +328,14 @@ std::string Token::to_str() {
     case Not: return "Not";
     case LessThan: return "LessThan";
     case GreaterThan: return "GreaterThan";
-    case And: return "And";
     case AndAnd: return "AndAnd";
-    case Or: return "Or";
     case OrOr: return "OrOr";
-    case Xor: return "Xor";
-    case Increment: return "Increment";
-    case Decrement: return "Decrement";
     case AddEq: return "AddEq";
     case SubEq: return "SubEq";
     case StarEq: return "StarEq";
     case SlashEq: return "SlashEq";
     case LessThanEq: return "LessThanEq";
     case GreaterThanEq: return "GreaterThanEq";
-    case LeftShift: return "LeftShift";
-    case RightShift: return "RightShift";
     default: return "Unknown";
   }
 }

@@ -1,11 +1,12 @@
-/// Copyright 2024 Nick Marino (github.com/nwmarino)
-
 #ifndef STATIMC_TOKENIZER_H
 #define STATIMC_TOKENIZER_H
 
+/// Lexer for the compiler.
+/// Copyright 2024 Nick Marino (github.com/nwmarino)
+
 #include <string>
 
-#include "../core/token.h"
+#include "../token/Token.h"
 
 /// Iterative token parser.
 class Tokenizer {

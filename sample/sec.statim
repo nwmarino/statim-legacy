@@ -1,5 +1,0 @@
-pkg tri;
-
-fn bar() -> u32 {
-  return 1;
-}

@@ -1,7 +1,8 @@
-/// Copyright 2024 Nick Marino (github.com/nwmarino)
-
 #ifndef STATIMC_TOKEN_H
 #define STATIMC_TOKEN_H
+
+/// Recognized token and token information.
+/// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #include <string>
 
@@ -63,35 +64,23 @@ typedef enum {
   LessThan,
   /// ">"
   GreaterThan,
-  /// "&"
-  And,
-  /// "|"
-  Or,
-  /// "^"
-  Xor,
   
   /// Compound tokens:
   ///
+  /// "::"
+  Path,
   /// "=="
   EqEq,
   /// "!="
   NotEq,
-  /// "..."
-  Range,
   /// "&&"
   AndAnd,
   /// "||"
   OrOr,
-  /// "^^"
-  XorXor,
   /// "->"
   Arrow,
   /// "=>"
   FatArrow,
-  /// "++"
-  Increment,
-  /// "--"
-  Decrement,
   /// "+="
   AddEq,
   /// "-="
@@ -104,10 +93,6 @@ typedef enum {
   LessThanEq,
   /// ">="
   GreaterThanEq,
-  /// "<<"
-  LeftShift,
-  /// ">>"
-  RightShift,
 
   /// End of file.
   Eof
@@ -132,14 +117,8 @@ typedef enum {
   /// 'a', ';', '\\'
   Char,
 
-  /// b'a', b';', b'\\'
-  Byte,
-
   /// "hello", "world"
   String,
-
-  /// b"hello", b"world"
-  ByteString
 } LiteralKind;
 
 /// Metadata about a token.
@@ -202,95 +181,97 @@ struct Token {
     return *this;
   }
 
+  /// Determine if this token is an identifier or not.
   [[nodiscard]]
-  inline const bool is_ident() { return kind == Identifier; };
+  inline bool is_ident() const { return kind == Identifier; };
 
+  /// Determine if this token is a literal or not.
   [[nodiscard]]
-  inline const bool is_lit() { return kind == Literal; };
+  inline bool is_lit() const { return kind == Literal; };
 
+  /// Determine if this token is an integer literal or not.
   [[nodiscard]]
-  inline const bool is_numer() { return lit_kind && (lit_kind == Integer || lit_kind == Float); }
+  inline bool is_int() const { return is_lit() && lit_kind && lit_kind == Integer; };
 
+  /// Determine if this token is a boolean literal or not.
   [[nodiscard]]
-  inline const bool is_eof() { return kind == Eof; };
+  inline bool is_bool() const { return is_lit() && lit_kind && lit_kind == Bool; };
 
+  /// Determine if this token is a floating point literal or not.
+  [[nodiscard]]
+  inline bool is_float() const { return is_lit() && lit_kind && lit_kind == Float; };
+
+  /// Determine if this token is a character literal or not.
+  [[nodiscard]]
+  inline bool is_char() const { return is_lit() && lit_kind && lit_kind == Char; };
+
+  /// Determine if this token is a string literal or not.
+  [[nodiscard]]
+  inline bool is_str() const { return is_lit() && lit_kind && lit_kind == String; };
+
+  /// Determine if this token signifies the end of a file.
+  [[nodiscard]]
+  inline bool is_eof() const { return kind == Eof; };
+
+  /// Determine if this token is keyword or not.
+  [[nodiscard]]
+  inline bool is_kw(const std::string &value) const { return is_ident() && this->value == value; };
+
+  /// Determine if this token is an opening brace or not.
+  [[nodiscard]]
+  inline bool is_open_brace() const { return kind == OpenBrace; };
+
+  /// Determine if this token is a closing brace or not.
+  [[nodiscard]]
+  inline bool is_close_brace() const { return kind == CloseBrace; };
+
+  /// Determine if this token is an opening parenthesis or not.
+  [[nodiscard]]
+  inline bool is_open_paren() const { return kind == OpenParen; };
+
+  /// Determine if this token is a closing parenthesis or not.
+  [[nodiscard]]
+  inline bool is_close_paren() const { return kind == CloseParen; };
+
+  /// Determine if this token is a semi or not.
+  [[nodiscard]]
+  inline bool is_semi() const { return kind == Semi; };
+
+  /// Determine if this token is a colon or not.
+  [[nodiscard]]
+  inline bool is_colon() const { return kind == Colon; };
+
+  /// Determine if this token is a path or not.
+  [[nodiscard]]
+  inline bool is_path() const { return kind == Path; };
+
+  /// Determine if this token is a comma or not.
+  [[nodiscard]]
+  inline bool is_comma() const { return kind == Comma; };
+
+  /// Determine if this token is an equal sign or not.
+  [[nodiscard]]
+  inline bool is_eq() const { return kind == Eq; };
+
+  /// Determine if this token is an arrow or not.
+  [[nodiscard]]
+  inline bool is_arrow() const { return kind == Arrow; };
+
+  /// Determine if this token is a fat arrow or not.
+  [[nodiscard]]
+  inline bool is_fat_arrow() const { return kind == FatArrow; };
+
+  /// Determine if this token is a hash or not.
+  [[nodiscard]]
+  inline bool is_hash() const { return kind == Hash; };
+
+  /// Determine if this token is a dot or not.
+  [[nodiscard]]
+  inline bool is_dot() const { return kind == Dot; };
+
+  /// Returns a string representation of this token.
   [[nodiscard]]
   std::string to_str();
 };
-
-// An enum of recognized keywords.
-typedef enum KeywordType {
-  /// abstract
-  Abstract,
-
-  /// bind
-  Bind,
-
-  /// break
-  Break,
-
-  /// continue
-  Continue,
-
-  /// else
-  Else,
-
-  /// end
-  End,
-
-  /// enum
-  Enum,
-
-  /// extern
-  Extern,
-
-  /// false
-  False,
-
-  /// fix
-  Fix,
-
-  /// fn
-  Fn,
-
-  /// for
-  For,
-
-  /// if
-  If,
-
-  /// impl
-  Impl,
-
-  /// let
-  Let,
-
-  /// match
-  Match,
-
-  /// pkg
-  Pkg,
-
-  /// protect
-  Protect,
-
-  /// return
-  Return,
-
-  /// struct
-  Struct,
-
-  /// true
-  True,
-
-  /// union
-  Union,
-
-  /// until
-  Until,
-
-  /// use
-  Use
-} KeywordType;
 
 #endif  // STATIMC_TOKEN_H

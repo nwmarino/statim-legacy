@@ -1,3 +1,0 @@
-fn util() -> bool {
-  return false;
-}

@@ -1,27 +1,35 @@
-pkg sec;
-pkg tri;
+priv enum MyEnum {
+  Plus,
+  Minus,
+}
 
 fn main() {
-  match {}
-  return;
+  let mut A: MyStruct = MyStruct {
+    f1: 1,
+    f2: 0,
+  }
+  //let c: str = "hello";
 }
 
-impl Ab for A {
-  fn read() -> i32 {
-    return 1;
-  }
-
-  fn write() -> i32 { 
+fn foo(x: i32, y: bool) -> i32 {
+  if y {
+    return x;
+  } else {
     return 1;
   }
 }
 
-abstract Ab {
+priv struct MyStruct {
+  priv f1: i64,
+  f2: i64,
+}
+
+trait MyTrait {
   fn read() -> i32;
-  fn write() -> i32;
 }
 
-struct A {
-  A: i64,
-  B: i64,
+impl MyTrait for MyStruct {
+  priv fn read() -> i32 {
+    return 1;
+  }
 }
