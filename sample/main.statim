@@ -1,37 +1,8 @@
-pkg lib;
-
-priv enum MyEnum {
-  Plus,
-  Minus,
-}
-
 fn main() {
-  let mut A: MyStruct = MyStruct {
-    f1: 1,
-    f2: 0,
-  }
-  let B: MyEnum = Plus;
+  let mut numbers: i32;
+  numbers[1] = 5;
 }
 
-fn foo(x: i32, y: bool) -> i32 {
-  if y {
-    return x;
-  } else {
-    return 1;
-  }
-}
-
-priv struct MyStruct {
-  priv f1: i64,
-  f2: i64,
-}
-
-trait MyTrait {
-  fn read() -> i32;
-}
-
-impl MyTrait for MyStruct {
-  priv fn read() -> i32 {
-    return 1;
-  }
+fn foo() {
+  return x;
 }

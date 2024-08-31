@@ -180,6 +180,7 @@ class ParamVarDecl final : public Decl
     const std::string to_string();
 };
 
+
 /// Class for function definitions and declarations.
 class FunctionDecl final : public ScopedDecl
 {
@@ -427,6 +428,7 @@ class FieldDecl final : public Decl
     [[nodiscard]]
     const std::string to_string();
 };
+
 
 /// Class for struct declarations.
 class StructDecl final : public ScopedDecl

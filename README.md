@@ -25,7 +25,7 @@
 | `char` | base character | `'s'`, `'t'`, `'a'`, `'T'`, `'i'`, `'m'`
 | `str` | character sequence | `"staTim"` 
 | `#Type` | rune (ptr) | ...
-| `Array<T>` | fixed array of T | `[1, 2, 3]`, `['a', 'b', 'c']`
+| `Array[T]` | fixed array of T | `[1, 2, 3]`, `['a', 'b', 'c']`
 
 ### Variables
 
@@ -85,7 +85,6 @@ struct Shark {
   age: uint,
 }
 ```
-
 Construct defined types using initializer expressions:
 ```
 let mut fishy: Shark = Shark {
@@ -93,14 +92,12 @@ let mut fishy: Shark = Shark {
   age: 5,
 }
 ```
-
 Define common behaviours using `trait`:
 ```
 trait CanSwim {
   fn swim() -> void;
 }
 ```
-
 Implement methods to a struct using `impl`:
 ```
 impl Shark {
@@ -109,7 +106,6 @@ impl Shark {
   }
 }
 ```
-
 Implement common behaviour to a struct using `impl`:
 ```
 impl CanSwim for Shark {
@@ -118,7 +114,6 @@ impl CanSwim for Shark {
   }
 }
 ```
-
 Declare an enumerated type using `enum`:
 ```
 enum Operation {
@@ -133,7 +128,7 @@ enum Operation {
 Declare a rune with the `#` hash unary, and reference its position with `@` ref unary:
 ```
 struct Tree {
-  child: Tree
+  child: #Tree
 }
 
 ...
@@ -149,9 +144,9 @@ let mut Root: #Tree = Tree {
 
 ### Arrays
 
-Define an array using the `Array<T>` type:
+Define an array using `Array[T; n]`:
 ```
-let mut numbers: Array<i32>;
+let mut numbers: Array[i32; 1];
 ```
 Read/write elements at an index `i`:
 ```
@@ -162,19 +157,15 @@ let x: i32 = numbers[0];
 ### Packages
 
 Import another source file using `pkg`:
-
 ```
 pkg file;
 ...
 ```
-
 Import packages from other programs:
-
 ```
-pkg PROG::file;
+pkg prog::file;
 ...
 ```
-
 Keep declarations private to their parent scope using the `priv` keyword:
 ```
 priv fn secret_function() -> bool {

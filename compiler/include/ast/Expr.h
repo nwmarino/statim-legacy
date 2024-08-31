@@ -473,4 +473,37 @@ class MemberCallExpr : public CallExpr
     const std::string to_string();
 };
 
+
+/// This class represents an array access expression.
+///
+/// @example `foo[0]`, `bar[1]`
+class ArrayAccessExpr final : public Expr
+{
+  private:
+    std::unique_ptr<Expr> base;
+    std::unique_ptr<Expr> index;
+    std::string type;
+
+  public:
+    /// Constructor for array access expressions.
+    ArrayAccessExpr(std::unique_ptr<Expr> base, std::unique_ptr<Expr> index)
+      : base(std::move(base)), index(std::move(index)), type("unknown") {};
+
+    /// Gets the base of this array access expression.
+    inline std::unique_ptr<Expr> get_base() { return std::move(base); }
+
+    /// Gets the index of this array access expression.
+    inline std::unique_ptr<Expr> get_index() { return std::move(index); }
+
+    /// Gets the type of this array access expression.
+    inline const std::string get_type() const { return type; }
+
+    /// Sets the type of this array access expression.
+    inline void set_type(const std::string &type) { this->type = type; }
+
+    /// Returns a string representation of this array access expression.
+    [[nodiscard]]
+    const std::string to_string();
+};
+
 #endif  // EXPR_STATIMC_H

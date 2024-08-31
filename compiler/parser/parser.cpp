@@ -324,6 +324,38 @@ static std::unique_ptr<Expr> parse_member_expr(std::unique_ptr<CContext> &ctx, c
 }
 
 
+/// Parses an array access expression from the given context.
+///
+/// Array access expressions are in the form of `<expr>[<expr>]`.
+static std::unique_ptr<Expr> parse_array_access_expr(std::unique_ptr<CContext> &ctx, const std::string &base) {
+  ctx->next();  // eat open bracket
+
+  std::unique_ptr<Expr> index = parse_expr(ctx);
+  if (!index) {
+    return warn_expr("expected expression in array access", ctx->last().meta);
+  }
+
+  if (!ctx->last().is_close_bracket()) {
+    return warn_expr("expected ']'", ctx->last().meta);
+  }
+  ctx->next();  // eat close bracket
+
+  // verify that the base exists in this scope
+  Decl *d = curr_scope->get_decl(base);
+  if (!d) {
+    return warn_expr("unresolved identifier: " + base, ctx->last().meta);
+  }
+
+  // verify that the base is an array
+  VarDecl *arr_decl = dynamic_cast<VarDecl *>(d);
+  if (!arr_decl) {
+    return warn_expr("expected array type", ctx->last().meta);
+  }
+
+  return std::make_unique<ArrayAccessExpr>(std::make_unique<DeclRefExpr>(base, arr_decl->get_type()), std::move(index));
+}
+
+
 /// Parses an identifier expression from the given context.
 ///
 /// Identifiers are used to reference variables, function calls, etc.
@@ -335,6 +367,8 @@ static std::unique_ptr<Expr> parse_identifier_expr(std::unique_ptr<CContext> &ct
     return parse_call_expr(ctx, ident);
   } else if (ctx->last().is_dot()) {
     return parse_member_expr(ctx, ident);
+  } else if (ctx->last().is_open_bracket()) {
+    return parse_array_access_expr(ctx, ident);
   } else if (VarDecl *d = dynamic_cast<VarDecl *>(curr_scope->get_decl(ident))) {
     return std::make_unique<DeclRefExpr>(ident, d->get_type());
   } else if (ParamVarDecl *d = dynamic_cast<ParamVarDecl *>(curr_scope->get_decl(ident))) {
@@ -678,7 +712,7 @@ static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<CContext> &ctx) {
   if (!ctx->last().is_ident()) {
     return warn_stmt("expected type identifier", ctx->last().meta);
   }
-  const std::string type = ctx->last().value;
+  std::string type = ctx->last().value;
   ctx->next();  // eat type
 
   if (ctx->last().is_semi()) {

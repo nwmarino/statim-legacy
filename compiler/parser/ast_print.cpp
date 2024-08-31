@@ -427,3 +427,14 @@ const std::string MemberCallExpr::to_string() {
   at_last_child = false;
   return result;
 }
+
+
+const std::string ArrayAccessExpr::to_string() {
+  std::string result = piping() + MAGENTA + "ArrayAccessExpr" + GREEN + " '" + get_type() + "' " + BLUE + "[]" + RESET + '\n';
+  indent++;
+  at_last_child = false;
+  result += base->to_string();
+  at_last_child = true;
+  result += index->to_string();
+  return result;
+}
