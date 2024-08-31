@@ -1004,13 +1004,6 @@ static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<CContext> &ctx)
     trait = target;
     target = ctx->last().value;
     ctx->next();  // eat second name
-
-    /*
-    // verify that the trait exists in this scope
-    if (!curr_scope->get_decl(trait)) {
-      return warn_impl("trait not found: " + trait, ctx->last().meta);
-    }
-    */
   }
 
   if (!ctx->last().is_open_brace()) {
@@ -1018,15 +1011,6 @@ static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<CContext> &ctx)
   }
   ctx->next();  // eat open brace
 
-  /*
-  // resolve and enter the top-level struct scope
-  Decl *str_d = curr_scope->get_decl(target);
-  if (!str_d) {
-    return warn_impl("struct not found: " + target, ctx->last().meta);
-  }
-  StructDecl *struct_decl = dynamic_cast<StructDecl *>(str_d);
-  curr_scope = struct_decl->get_scope();
-  */
   std::vector<std::unique_ptr<FunctionDecl>> methods;
   while (!ctx->last().is_close_brace()) {
     bool is_private = false;
@@ -1052,35 +1036,6 @@ static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<CContext> &ctx)
     methods.push_back(std::move(method));
   }
   ctx->next();  // eat close brace
-  /*
-  // move back to parent scope
-  curr_scope = curr_scope->get_parent();
-
-  if (is_trait_impl) {
-    // verify that the struct implements the trait
-    TraitDecl *trait_decl = dynamic_cast<TraitDecl *>(curr_scope->get_decl(trait));
-    if (!trait_decl) {
-      return warn_impl("trait not found: " + trait, ctx->last().meta);
-    }
-
-    for (std::unique_ptr<FunctionDecl> &m : methods) {
-      bool found = false;
-      for (const std::pair<std::string, std::string> &t : trait_decl->get_methods()) {
-        if (m->get_name() == t.first) {
-          if (m->get_ret_type() != t.second) {
-            return warn_impl("method return type mismatch: " + m->get_name(), ctx->last().meta);
-          }
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        return warn_impl("method not found in trait: " + m->get_name(), ctx->last().meta);
-      }
-    }
-  }
-  */
-
   return std::make_unique<ImplDecl>(trait, target, std::move(methods));
 }
 
@@ -1197,8 +1152,9 @@ static std::unique_ptr<PackageUnit> parse_pkg(std::unique_ptr<CContext> &ctx) {
       panic("expected declaration or import", ctx->last().meta);
     }
 
+    // add declaration to package scope
+    curr_scope->add_decl(decl.get());
     decls.push_back(std::move(decl));
-
   }
 
   // clear scope

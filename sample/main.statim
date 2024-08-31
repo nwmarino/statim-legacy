@@ -10,7 +10,7 @@ fn main() {
     f1: 1,
     f2: 0,
   }
-  let c: str = "hello";
+  let B: MyEnum = Plus;
 }
 
 fn foo(x: i32, y: bool) -> i32 {
