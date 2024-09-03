@@ -3,11 +3,13 @@
 
 #include "include/ast/Builder.h"
 #include "include/token/Token.h"
-#include "include/core/CContext.h"
+#include "include/core/ASTContext.h"
+#include "include/ast/Unit.h"
 #include "include/core/Utils.h"
+#include "include/core/Logger.h"
 
 /// Consume and print out all tokens currently in a lexer stream.
-static void print_tkstream(std::unique_ptr<CContext> &Cctx) {
+static void print_tkstream(std::unique_ptr<ASTContext> &Cctx) {
   do {
     Cctx->next_file();
     while (!Cctx->last().is_eof()) {
@@ -59,8 +61,7 @@ int main(int argc, char *argv[]) {
     panic("no source files found in cwd: " + std::filesystem::current_path().string());
   }
 
-  std::unique_ptr<CContext> ctx = std::make_unique<CContext>(flags, std::move(files));
+  std::unique_ptr<ASTContext> ctx = std::make_unique<ASTContext>(flags, std::move(files));
   std::unique_ptr<CrateUnit> crate = build_ast(ctx);
   std::cout << crate->to_string();
-  //std::cout << crate->pkg_scope_to_string("main.statim");
 }

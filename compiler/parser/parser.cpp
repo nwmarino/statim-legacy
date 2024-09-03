@@ -11,10 +11,10 @@
 
 static std::shared_ptr<Scope> curr_scope;
 
-static std::unique_ptr<Expr> parse_expr(std::unique_ptr<CContext> &ctx);
-static std::unique_ptr<Stmt> parse_stmt(std::unique_ptr<CContext> &ctx);
-static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<CContext> &ctx);
-static std::unique_ptr<Expr> parse_primary_expr(std::unique_ptr<CContext> &ctx);
+static std::unique_ptr<Expr> parse_expr(std::unique_ptr<ASTContext> &ctx);
+static std::unique_ptr<Stmt> parse_stmt(std::unique_ptr<ASTContext> &ctx);
+static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<ASTContext> &ctx);
+static std::unique_ptr<Expr> parse_primary_expr(std::unique_ptr<ASTContext> &ctx);
 
 
 static UnaryOp get_unary_op(TokenKind op) {
@@ -117,7 +117,7 @@ static int get_precedence(TokenKind op) {
 /// Parses a numerical expression from the given context.
 ///
 /// Numerical expressions count as integer and floating point literals.
-static std::unique_ptr<Expr> parse_numerical_expr(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<Expr> parse_numerical_expr(std::unique_ptr<ASTContext> &ctx) {
   struct Token token = ctx->last();
   ctx->next();  // eat the literal
 
@@ -134,7 +134,7 @@ static std::unique_ptr<Expr> parse_numerical_expr(std::unique_ptr<CContext> &ctx
 /// Parses a single character expression from the given context.
 ///
 /// Character and byte expressions are single character literals.
-static std::unique_ptr<Expr> parse_character_expr(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<Expr> parse_character_expr(std::unique_ptr<ASTContext> &ctx) {
   struct Token token = ctx->last();
   ctx->next();  // eat the character or byte token
 
@@ -149,7 +149,7 @@ static std::unique_ptr<Expr> parse_character_expr(std::unique_ptr<CContext> &ctx
 /// Parses a string expression from the given context.
 ///
 /// String and byte string expressions are sequences of characters.
-static std::unique_ptr<Expr> parse_string_expr(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<Expr> parse_string_expr(std::unique_ptr<ASTContext> &ctx) {
   struct Token token = ctx->last();
   ctx->next();  // eat the string or byte string token
 
@@ -164,7 +164,7 @@ static std::unique_ptr<Expr> parse_string_expr(std::unique_ptr<CContext> &ctx) {
 /// Parses a boolean expression from the given context.
 ///
 /// Boolean expressions are either `true` or `false` identifiers.
-static std::unique_ptr<Expr> parse_boolean_expr(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<Expr> parse_boolean_expr(std::unique_ptr<ASTContext> &ctx) {
   std::string value = ctx->last().value;
   ctx->next();  // eat the boolean token
 
@@ -179,7 +179,7 @@ static std::unique_ptr<Expr> parse_boolean_expr(std::unique_ptr<CContext> &ctx) 
 /// Parses a function call expression from the given context.
 ///
 /// Function call expressions are in the form `foo(...)`.
-static std::unique_ptr<Expr> parse_call_expr(std::unique_ptr<CContext> &ctx, const std::string &callee) {
+static std::unique_ptr<Expr> parse_call_expr(std::unique_ptr<ASTContext> &ctx, const std::string &callee) {
   ctx->next();  // eat the open parenthesis
 
   std::vector<std::unique_ptr<Expr>> args;
@@ -206,7 +206,7 @@ static std::unique_ptr<Expr> parse_call_expr(std::unique_ptr<CContext> &ctx, con
 }
 
 /// Parses a struct construction expression from the given context.
-static std::unique_ptr<Expr> parse_init_expr(std::unique_ptr<CContext> &ctx, const std::string &ident) {
+static std::unique_ptr<Expr> parse_init_expr(std::unique_ptr<ASTContext> &ctx, const std::string &ident) {
   ctx->next();  // eat open brace
 
   std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields;
@@ -247,7 +247,7 @@ static std::unique_ptr<Expr> parse_init_expr(std::unique_ptr<CContext> &ctx, con
 
 
 /// Parses a struct function call expression from the given context.
-static std::unique_ptr<Expr> parse_member_call_expr(std::unique_ptr<CContext> &ctx, const std::string &base, const std::string &callee) {
+static std::unique_ptr<Expr> parse_member_call_expr(std::unique_ptr<ASTContext> &ctx, const std::string &base, const std::string &callee) {
   ctx->next();  // eat the dot operator
 
   std::vector<std::unique_ptr<Expr>> args;
@@ -287,7 +287,7 @@ static std::unique_ptr<Expr> parse_member_call_expr(std::unique_ptr<CContext> &c
 
 
 /// Parses a struct member access expression from the given context.
-static std::unique_ptr<Expr> parse_member_expr(std::unique_ptr<CContext> &ctx, const std::string &base) {
+static std::unique_ptr<Expr> parse_member_expr(std::unique_ptr<ASTContext> &ctx, const std::string &base) {
   ctx->next();  // eat the dot operator
 
   // verify that the base exists in this scope
@@ -327,7 +327,7 @@ static std::unique_ptr<Expr> parse_member_expr(std::unique_ptr<CContext> &ctx, c
 /// Parses an array access expression from the given context.
 ///
 /// Array access expressions are in the form of `<expr>[<expr>]`.
-static std::unique_ptr<Expr> parse_array_access_expr(std::unique_ptr<CContext> &ctx, const std::string &base) {
+static std::unique_ptr<Expr> parse_array_access_expr(std::unique_ptr<ASTContext> &ctx, const std::string &base) {
   ctx->next();  // eat open bracket
 
   std::unique_ptr<Expr> index = parse_expr(ctx);
@@ -359,7 +359,7 @@ static std::unique_ptr<Expr> parse_array_access_expr(std::unique_ptr<CContext> &
 /// Parses an identifier expression from the given context.
 ///
 /// Identifiers are used to reference variables, function calls, etc.
-static std::unique_ptr<Expr> parse_identifier_expr(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<Expr> parse_identifier_expr(std::unique_ptr<ASTContext> &ctx) {
   const std::string ident = ctx->last().value;
   ctx->next();  // eat the identifier
 
@@ -385,7 +385,7 @@ static std::unique_ptr<Expr> parse_identifier_expr(std::unique_ptr<CContext> &ct
 /// Parses a unary expression from the given context.
 ///
 /// Unary expressions are expressions that involve a single operand.
-static std::unique_ptr<Expr> parse_unary_expr(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<Expr> parse_unary_expr(std::unique_ptr<ASTContext> &ctx) {
   TokenKind op_kind = ctx->last().kind;
   ctx->next();  // eat operator
 
@@ -406,7 +406,7 @@ static std::unique_ptr<Expr> parse_unary_expr(std::unique_ptr<CContext> &ctx) {
 /// Parses a primary expression from the given context.
 ///
 /// Primary expressions are the most basic form of expressions.
-static std::unique_ptr<Expr> parse_primary_expr(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<Expr> parse_primary_expr(std::unique_ptr<ASTContext> &ctx) {
   if (ctx->last().is_int() || ctx->last().is_float()) {
     return parse_numerical_expr(ctx);
   }
@@ -441,7 +441,7 @@ static std::unique_ptr<Expr> parse_primary_expr(std::unique_ptr<CContext> &ctx) 
 /// Parses a binary expression from the given context.
 ///
 /// Binary expressions are expressions that involve two operands.
-static std::unique_ptr<Expr> parse_binary_expr(std::unique_ptr<CContext> &ctx, std::unique_ptr<Expr> base, int precedence) {
+static std::unique_ptr<Expr> parse_binary_expr(std::unique_ptr<ASTContext> &ctx, std::unique_ptr<Expr> base, int precedence) {
   while (1) {
     int token_prec = get_precedence(ctx->last().kind);
 
@@ -476,7 +476,7 @@ static std::unique_ptr<Expr> parse_binary_expr(std::unique_ptr<CContext> &ctx, s
 
 
 /// Parses a generic expression from the given context.
-static std::unique_ptr<Expr> parse_expr(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<Expr> parse_expr(std::unique_ptr<ASTContext> &ctx) {
   std::unique_ptr<Expr> base = parse_primary_expr(ctx);
   if (!base) {
     return warn_expr("expected expression", ctx->last().meta);
@@ -488,7 +488,7 @@ static std::unique_ptr<Expr> parse_expr(std::unique_ptr<CContext> &ctx) {
 /// Parses a compound statement from the given context.
 ///
 /// Compound statements are a list of statements with a scope.
-static std::unique_ptr<Stmt> parse_compound_stmt(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<Stmt> parse_compound_stmt(std::unique_ptr<ASTContext> &ctx) {
   ctx->next();  // eat open brace
 
   // declare new scope for the block
@@ -522,7 +522,7 @@ static std::unique_ptr<Stmt> parse_compound_stmt(std::unique_ptr<CContext> &ctx)
 /// Parses a return statement from the given context.
 ///
 /// Return statements appear in the form `return <expr>`, where <expr> may be implicitly null.
-static std::unique_ptr<Stmt> parse_return_stmt(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<Stmt> parse_return_stmt(std::unique_ptr<ASTContext> &ctx) {
   ctx->next();  // eat return keyword
 
   if (ctx->last().is_semi()) {
@@ -541,7 +541,7 @@ static std::unique_ptr<Stmt> parse_return_stmt(std::unique_ptr<CContext> &ctx) {
 /// Parses an if statement from the given context.
 ///
 /// If statements appear in the form `if <expr> { <stmt> } else { <stmt> }`.
-static std::unique_ptr<Stmt> parse_if_stmt(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<Stmt> parse_if_stmt(std::unique_ptr<ASTContext> &ctx) {
   ctx->next();  // eat if keyword
 
   std::unique_ptr<Expr> cond = parse_expr(ctx);
@@ -572,7 +572,7 @@ static std::unique_ptr<Stmt> parse_if_stmt(std::unique_ptr<CContext> &ctx) {
 /// Parses an until statement from the given context.
 ///
 /// Until statements appear in the form `until <expr> { <stmt> }`.
-static std::unique_ptr<Stmt> parse_until_stmt(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<Stmt> parse_until_stmt(std::unique_ptr<ASTContext> &ctx) {
   ctx->next();  // eat until keyword
 
   std::unique_ptr<Expr> cond = parse_expr(ctx);
@@ -592,7 +592,7 @@ static std::unique_ptr<Stmt> parse_until_stmt(std::unique_ptr<CContext> &ctx) {
 /// Parses a match statement from the given context.
 ///
 /// Match statements appear in the form `match <expr> { case <expr> => <stmt>, ... }`.
-static std::unique_ptr<Stmt> parse_match_stmt(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<Stmt> parse_match_stmt(std::unique_ptr<ASTContext> &ctx) {
   ctx->next();  // eat match keyword
 
   std::unique_ptr<Expr> match_expr = parse_expr(ctx);
@@ -646,7 +646,7 @@ static std::unique_ptr<Stmt> parse_match_stmt(std::unique_ptr<CContext> &ctx) {
 
 
 /// Parses a generic statement from the given context.
-static std::unique_ptr<Stmt> parse_stmt(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<Stmt> parse_stmt(std::unique_ptr<ASTContext> &ctx) {
   if (ctx->last().is_open_brace()) {
     return parse_compound_stmt(ctx);
   }
@@ -682,7 +682,7 @@ static std::unique_ptr<Stmt> parse_stmt(std::unique_ptr<CContext> &ctx) {
 /// Parses a variable declaration from the given context.
 ///
 /// Variable declarations are in the form of `let 'mut' <identifier> = <expr>;`.
-static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<ASTContext> &ctx) {
   ctx->next();  // eat let keyword
 
   bool is_mutable = false;
@@ -742,7 +742,7 @@ static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<CContext> &ctx) {
 /// Parses an enum declaration from the given context.
 ///
 /// Enum declarations are in the form of `enum <identifier> { <variants> }`.
-static std::unique_ptr<EnumDecl> parse_enum_decl(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<EnumDecl> parse_enum_decl(std::unique_ptr<ASTContext> &ctx) {
   ctx->next();  // eat enum keyword
 
   if (!ctx->last().is_ident()) {
@@ -796,7 +796,7 @@ static std::unique_ptr<EnumDecl> parse_enum_decl(std::unique_ptr<CContext> &ctx)
 /// Parses a function declaration from the given context.
 ///
 /// Function declarations are in the form of `fn <identifier>(<args>) -> <return_ty> { <body> }`.
-static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<ASTContext> &ctx) {
   ctx->next();  // eat fn keyword
 
   if (!ctx->last().is_ident()) {
@@ -889,7 +889,7 @@ static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<CContext> &ct
 /// Parses a struct declaration from the given context.
 ///
 /// Struct declarations are in the form of `struct <identifier> { <fields> }`.
-static std::unique_ptr<StructDecl> parse_struct_decl(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<StructDecl> parse_struct_decl(std::unique_ptr<ASTContext> &ctx) {
   ctx->next();  // eat struct keyword
 
   if (!ctx->last().is_ident()) {
@@ -973,7 +973,7 @@ static std::unique_ptr<StructDecl> parse_struct_decl(std::unique_ptr<CContext> &
 /// Parses a trait declaration from the given context.
 ///
 /// Trait declarations are in the form of `trait <identifier> { <methods> }`.
-static std::unique_ptr<TraitDecl> parse_trait_decl(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<TraitDecl> parse_trait_decl(std::unique_ptr<ASTContext> &ctx) {
   ctx->next();  // eat trait keyword
 
   if (!ctx->last().is_ident()) {
@@ -1018,7 +1018,7 @@ static std::unique_ptr<TraitDecl> parse_trait_decl(std::unique_ptr<CContext> &ct
 /// Parses an impl declaration from the given context.
 ///
 /// Impl declarations are in the form of `impl <struct> { <methods> }` or `impl <trait> for <struct> { <methods> }`.
-static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<ASTContext> &ctx) {
   ctx->next();  // eat impl keyword
 
   if (!ctx->last().is_ident()) {
@@ -1077,7 +1077,7 @@ static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<CContext> &ctx)
 /// Parses a declaration from the given context.
 ///
 /// Declarations are the top-level constructs in a package.
-static std::unique_ptr<Decl> parse_decl(std::unique_ptr<CContext> &ctx, bool is_private) {
+static std::unique_ptr<Decl> parse_decl(std::unique_ptr<ASTContext> &ctx, bool is_private) {
   if (ctx->last().is_kw("fn")) {
     if (is_private) {
       if (std::unique_ptr<FunctionDecl> decl = parse_fn_decl(ctx)) {
@@ -1136,7 +1136,7 @@ static std::unique_ptr<Decl> parse_decl(std::unique_ptr<CContext> &ctx, bool is_
 /// Parses a package from the given context.
 ///
 /// A package is a collection of definitions and imports.
-static std::unique_ptr<PackageUnit> parse_pkg(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<PackageUnit> parse_pkg(std::unique_ptr<ASTContext> &ctx) {
   const std::string name = remove_extension(ctx->file());
   std::vector<std::string> imports;
   std::vector<std::unique_ptr<Decl>> decls;
@@ -1201,7 +1201,7 @@ static std::unique_ptr<PackageUnit> parse_pkg(std::unique_ptr<CContext> &ctx) {
 /// Parses a crate from the given context.
 ///
 /// A crate is a collection of packages and represents a whole program.
-static std::unique_ptr<CrateUnit> parse_crate(std::unique_ptr<CContext> &ctx) {
+static std::unique_ptr<CrateUnit> parse_crate(std::unique_ptr<ASTContext> &ctx) {
   std::vector<std::unique_ptr<PackageUnit>> packages;
 
   do {
@@ -1222,6 +1222,6 @@ static std::unique_ptr<CrateUnit> parse_crate(std::unique_ptr<CContext> &ctx) {
 
 
 /// Builds an abstract syntax tree from the given context.
-std::unique_ptr<CrateUnit> build_ast(std::unique_ptr<CContext> &Cctx) {
+std::unique_ptr<CrateUnit> build_ast(std::unique_ptr<ASTContext> &Cctx) {
   return parse_crate(Cctx);
 }

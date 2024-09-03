@@ -7,15 +7,13 @@
 #include <filesystem>
 #include <fstream>
 
-#include "Logger.h"
-
 /// Read the contents of a file to a string.
 [[nodiscard]]
 inline std::string read_to_str(const std::string &path) {
   std::ifstream file(path);
 
   if (!file.is_open()) {
-    panic("could not open file: " + path);
+    fprintf(stderr, "could not open file: %s\n", path.c_str());
   }
 
   std::string contents;
@@ -48,14 +46,6 @@ inline std::string remove_extension(const std::string &filename) {
 [[nodiscard]]
 inline std::string read_cwd(void) {
   return std::filesystem::current_path().string();
-}
-
-
-/// Write an ast to a file.
-inline void write_ast(std::unique_ptr<CrateUnit> &crate) {
-  std::ofstream file("ast.txt");
-  file << crate.get()->to_string();
-  file.close();
 }
 
 #endif  // STATIMC_UTIL_H

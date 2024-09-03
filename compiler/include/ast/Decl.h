@@ -10,34 +10,37 @@
 #include <vector>
 
 #include "Expr.h"
+#include "../sema/ASTVisitor.h"
 
 class Stmt;
 
 /// Base class for all AST declarations.
 class Decl
 {
-  public:
-    virtual ~Decl() = default;
-    virtual const std::string get_name() const = 0;
-    virtual const std::string to_string() = 0;
+public:
+  virtual ~Decl() = default;
+  virtual void pass(ASTVisitor *visitor) = 0;
+  virtual const std::string get_name() const = 0;
+  virtual const std::string to_string() const = 0;
 };
 
 
 /// ScopedDecl - Base class for declarations with that contain a scope.
 class ScopedDecl : public Decl
 {
-  private:
-    std::shared_ptr<Scope> scope;
+private:
+  std::shared_ptr<Scope> scope;
 
-  public:
-    virtual ~ScopedDecl() = default;
-    virtual std::shared_ptr<Scope> get_scope() const = 0;
+public:
+  virtual ~ScopedDecl() = default;
+  virtual std::shared_ptr<Scope> get_scope() const = 0;
 };
 
 
 /// Context about a scope.
-struct ScopeContext
+struct ScopeContext final
 {
+public:
   /// If this scope is nested in a crate.
   bool is_crate_scope;
 
@@ -67,87 +70,87 @@ struct ScopeContext
 /// A temporary scope used when parsing the AST.
 class Scope final 
 {
-  private:
-    std::shared_ptr<Scope> parent;
-    struct ScopeContext ctx;
-    std::vector<Decl *> decls;
+private:
+  std::shared_ptr<Scope> parent;
+  struct ScopeContext ctx;
+  std::vector<Decl *> decls;
 
-  public:
-    /// Constructor for a scope.
-    Scope(std::shared_ptr<Scope> parent, struct ScopeContext ctx)
-      : parent(parent), ctx(ctx), decls() {};
+public:
+  /// Constructor for a scope.
+  Scope(std::shared_ptr<Scope> parent, struct ScopeContext ctx)
+    : parent(parent), ctx(ctx), decls() {};
 
-    /// Add a declaration to this scope.
-    inline void add_decl(Decl *d) { decls.push_back(d); }
+  /// Add a declaration to this scope.
+  inline void add_decl(Decl *d) { decls.push_back(d); }
 
-    /// Delete a declaration from this scope.
-    inline void del_decl(Decl *d) { decls.erase(std::remove(decls.begin(), decls.end(), d), decls.end()); }
+  /// Delete a declaration from this scope.
+  inline void del_decl(Decl *d) { decls.erase(std::remove(decls.begin(), decls.end(), d), decls.end()); }
 
-    /// Get the direct parent scope, if it exists.
-    [[nodiscard]]
-    inline std::shared_ptr<Scope> get_parent() { 
-      return parent;
+  /// Get the direct parent scope, if it exists.
+  [[nodiscard]]
+  inline std::shared_ptr<Scope> get_parent() { 
+    return parent;
+  }
+
+  /// Get the closest function scope, if it exists.
+  [[nodiscard]]
+  inline std::shared_ptr<Scope> get_fn_scope() {
+    std::shared_ptr<Scope> p = parent;
+    while (p != nullptr && !p->is_func_scope()) {
+      p = p->parent;
     }
+    return p;
+  }
 
-    /// Get the closest function scope, if it exists.
-    [[nodiscard]]
-    inline std::shared_ptr<Scope> get_fn_scope() {
-      std::shared_ptr<Scope> p = parent;
-      while (p != nullptr && !p->is_func_scope()) {
-        p = p->parent;
+  /// Get a declaration by its name, if it exists.
+  [[nodiscard]]
+  inline Decl *get_decl(const std::string &name) {
+    for (Decl *d : decls) {
+      if (d->get_name() == name) {
+        return d;
       }
-      return p;
     }
-
-    /// Get a declaration by its name, if it exists.
-    [[nodiscard]]
-    inline Decl *get_decl(const std::string &name) {
-      for (Decl *d : decls) {
-        if (d->get_name() == name) {
-          return d;
-        }
-      }
-      if (parent) {
-        return parent->get_decl(name);
-      }
-      return nullptr;
+    if (parent) {
+      return parent->get_decl(name);
     }
-    
-    /// Determine if this scope belongs to a crate.
-    [[nodiscard]]
-    inline bool is_crate_scope() const { return ctx.is_crate_scope; }
+    return nullptr;
+  }
+  
+  /// Determine if this scope belongs to a crate.
+  [[nodiscard]]
+  inline bool is_crate_scope() const { return ctx.is_crate_scope; }
 
-    /// Determine if this scope belongs to a package.
-    [[nodiscard]]
-    inline bool is_pkg_scope() const { return ctx.is_pkg_scope; }
+  /// Determine if this scope belongs to a package.
+  [[nodiscard]]
+  inline bool is_pkg_scope() const { return ctx.is_pkg_scope; }
 
-    /// Determine if this scope belongs to a declaration.
-    [[nodiscard]]
-    inline bool is_decl_scope() const { return ctx.is_decl_scope; }
+  /// Determine if this scope belongs to a declaration.
+  [[nodiscard]]
+  inline bool is_decl_scope() const { return ctx.is_decl_scope; }
 
-    /// Determine if this scope belongs to a function.
-    [[nodiscard]]
-    inline bool is_func_scope() const { return ctx.is_func_scope; }
+  /// Determine if this scope belongs to a function.
+  [[nodiscard]]
+  inline bool is_func_scope() const { return ctx.is_func_scope; }
 
-    /// Determine if this scope belongs to a struct.
-    [[nodiscard]]
-    inline bool is_struct_scope() const { return ctx.is_struct_scope; }
+  /// Determine if this scope belongs to a struct.
+  [[nodiscard]]
+  inline bool is_struct_scope() const { return ctx.is_struct_scope; }
 
-    /// Determine if this scope belongs to a loop.
-    [[nodiscard]]
-    inline bool is_loop_scope() const { return ctx.is_loop_scope; }
+  /// Determine if this scope belongs to a loop.
+  [[nodiscard]]
+  inline bool is_loop_scope() const { return ctx.is_loop_scope; }
 
-    /// Determine if this scope belongs to a conditional statement.
-    [[nodiscard]]
-    inline bool is_cond_scope() const { return ctx.is_cond_scope; }
+  /// Determine if this scope belongs to a conditional statement.
+  [[nodiscard]]
+  inline bool is_cond_scope() const { return ctx.is_cond_scope; }
 
-    /// Determine if this scope belongs to a compound statement.
-    [[nodiscard]]
-    inline bool is_compound_scope() const { return ctx.is_compound_scope; }
+  /// Determine if this scope belongs to a compound statement.
+  [[nodiscard]]
+  inline bool is_compound_scope() const { return ctx.is_compound_scope; }
 
-    /// Returns a string representation of this scope tree.
-    [[nodiscard]]
-    const std::string to_string();
+  /// Returns a string representation of this scope tree.
+  [[nodiscard]]
+  const std::string to_string();
 };
 
 
@@ -167,9 +170,11 @@ class ParamVarDecl final : public Decl
     ParamVarDecl(const std::string &name, const std::string &type)
       : name(name), type(type) {};
 
+    void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+
     /// Gets the name of this parameter.
     [[nodiscard]]
-    inline const std::string get_name() const { return name; }
+    inline const std::string get_name() const override { return name; }
 
     /// Gets the type of this parameter.
     [[nodiscard]]
@@ -177,63 +182,56 @@ class ParamVarDecl final : public Decl
 
     /// Returns a string representation of this parameter.
     [[nodiscard]]
-    const std::string to_string();
+    const std::string to_string() const override;
 };
 
 
 /// Class for function definitions and declarations.
 class FunctionDecl final : public ScopedDecl
 {
-  private:
-    const std::string name;
-    const std::string ret_type;
-    std::vector<std::unique_ptr<ParamVarDecl>> params;
-    std::unique_ptr<Stmt> body;
-    std::shared_ptr<Scope> scope;
-    bool priv;
+private:
+  const std::string name;
+  const std::string ret_type;
+  std::vector<std::unique_ptr<ParamVarDecl>> params;
+  std::unique_ptr<Stmt> body;
+  std::shared_ptr<Scope> scope;
+  bool priv;
 
-  public:
-    /// Constructor for function declarations with no body.
-    FunctionDecl(const std::string &name, const std::string &ret_type, std::vector<std::unique_ptr<ParamVarDecl>> params)
-      : name(name), ret_type(ret_type), params(std::move(params)), body(nullptr), priv(false) {};
+public:
+  FunctionDecl(const std::string &name, const std::string &ret_type, std::vector<std::unique_ptr<ParamVarDecl>> params)
+    : name(name), ret_type(ret_type), params(std::move(params)), body(nullptr), priv(false) {};
 
-    /// Constructor for function declarations with a body.
-    FunctionDecl(const std::string &name, const std::string &ret_type, std::vector<std::unique_ptr<ParamVarDecl>> params, std::unique_ptr<Stmt> body, std::shared_ptr<Scope> scope)
-      : name(name), ret_type(ret_type), params(std::move(params)), body(std::move(body)), scope(scope), priv(false) {};
-    
-    /// Returns true if this function declaration has a body.
-    [[nodiscard]]
-    inline bool has_body() const { return body != nullptr; }
+  FunctionDecl(const std::string &name, const std::string &ret_type, std::vector<std::unique_ptr<ParamVarDecl>> params, std::unique_ptr<Stmt> body, std::shared_ptr<Scope> scope)
+    : name(name), ret_type(ret_type), params(std::move(params)), body(std::move(body)), scope(scope), priv(false) {};
+  
+  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
-    /// Returns true if this is the entry function main.
-    [[nodiscard]]
-    inline bool is_main() const { return name == "main"; }
+  /// Returns true if this function declaration has a body.
+  inline bool has_body() const { return body != nullptr; }
 
-    /// Gets the name of this function declaration.
-    [[nodiscard]]
-    inline const std::string get_name() const { return name; }
+  /// Returns true if this is the entry function main.
+  inline bool is_main() const { return name == "main"; }
 
-    /// Gets the return type of this function declaration.
-    [[nodiscard]]
-    inline const std::string get_ret_type() const { return ret_type; }
+  /// Gets the name of this function declaration.
+  inline const std::string get_name() const override { return name; }
 
-    /// Get the scope of this function declaration.
-    [[nodiscard]]
-    inline std::shared_ptr<Scope> get_scope() const { return scope; }
+  /// Gets the return type of this function declaration.
+  inline const std::string get_ret_type() const { return ret_type; }
 
-    /// Returns true if this function declaration is private.
-    [[nodiscard]]
-    inline bool is_priv() const { return priv; }
+  /// Get the scope of this function declaration.
+  inline std::shared_ptr<Scope> get_scope() const override { return scope; }
 
-    /// Set this function declaration as private.
-    inline void set_priv() { priv = true; }
+  /// Returns true if this function declaration is private.
+  inline bool is_priv() const { return priv; }
 
-    // Set this function declaration as public.
-    inline void set_pub() { priv = false; }
+  /// Set this function declaration as private.
+  inline void set_priv() { priv = true; }
 
-    /// Returns a string representation of this function declaration.
-    [[nodiscard]]
-    const std::string to_string();
+  // Set this function declaration as public.
+  inline void set_pub() { priv = false; }
+
+  /// Returns a string representation of this function declaration.
+  const std::string to_string() const override;
 };
 
 
@@ -260,7 +258,7 @@ class TraitDecl final : public Decl
 
     /// Gets the name of this trait declaration.
     [[nodiscard]]
-    inline const std::string get_name() const { return name; }
+    inline const std::string get_name() const override { return name; }
 
     // Returns the expected method behaviour of this trait declaration.
     [[nodiscard]]
@@ -284,7 +282,7 @@ class TraitDecl final : public Decl
 
     /// Returns a string representation of this trait declaration.
     [[nodiscard]]
-    const std::string to_string();
+    const std::string to_string() const override;
 };
 
 
