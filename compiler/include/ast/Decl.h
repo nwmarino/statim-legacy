@@ -296,9 +296,9 @@ private:
   const std::string name;
 
 public:
-  /// Basic constructor for enum variants.
-  EnumVariant(const std::string &name)
-    : name(name) {};
+  EnumVariant(const std::string &name) : name(name) {};
+
+  void pass(ASTVisitor *visitor) { visitor->visit(this); }
 
   /// Gets the name of this enum variant.
   [[nodiscard]]

@@ -9,6 +9,8 @@
 #include <utility>
 #include <vector>
 
+#include "../sema/ASTVisitor.h"
+
 class Scope;
 class Decl;
 class Expr;
@@ -16,9 +18,10 @@ class Expr;
 /// Base class for a statement representation.
 class Stmt
 {
-  public:
-    virtual ~Stmt() = default;
-    const virtual std::string to_string() = 0;
+public:
+  virtual ~Stmt() = default;
+  virtual void pass(ASTVisitor *visitor) = 0;
+  const virtual std::string to_string() = 0;
 };
 
 
@@ -27,66 +30,64 @@ class Stmt
 /// In particular, these statements are used to declare variables within a scope.
 class DeclStmt : public Stmt
 {
-  private:
-    std::unique_ptr<Decl> decl;
+private:
+  std::unique_ptr<Decl> decl;
 
-  public:
-    DeclStmt(std::unique_ptr<Decl> decl) : decl(std::move(decl)) {};
+public:
+  DeclStmt(std::unique_ptr<Decl> decl) : decl(std::move(decl)) {};
 
-    [[nodiscard]]
-    const std::string to_string();
+  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+
+  /// Returns a string representation of this declaration statement.
+  const std::string to_string() override;
 };
 
 
 /// This class represents a list of statements.
-class CompoundStmt : public Stmt
+class CompoundStmt final : public Stmt
 {
-  private:
-    std::vector<std::unique_ptr<Stmt>> stmts;
-    std::shared_ptr<Scope> scope;
+private:
+  std::vector<std::unique_ptr<Stmt>> stmts;
+  std::shared_ptr<Scope> scope;
 
-  public:
-    /// Constructor for compound statements.
-    CompoundStmt(std::vector<std::unique_ptr<Stmt>> stmts, std::shared_ptr<Scope> scope) : stmts(std::move(stmts)), scope(scope) {};
+public:
+  CompoundStmt(std::vector<std::unique_ptr<Stmt>> stmts, std::shared_ptr<Scope> scope) : stmts(std::move(stmts)), scope(scope) {};
 
-    /// Determine if the body of this compound statement is empty.
-    [[nodiscard]]
-    inline bool is_empty() const { return stmts.empty(); }
+  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
-    /// Returns the scope of this compound statement.
-    [[nodiscard]]
-    inline std::shared_ptr<Scope> get_scope() const { return scope; }
+  /// Determine if the body of this compound statement is empty.
+  inline bool is_empty() const { return stmts.empty(); }
 
-    /// Returns a string representation of this compound statement.
-    [[nodiscard]]
-    const std::string to_string();
+  /// Returns the scope of this compound statement.
+  inline std::shared_ptr<Scope> get_scope() const { return scope; }
+
+  /// Returns a string representation of this compound statement.
+  const std::string to_string() override;
 };
 
 
 /// This class represents an if statement.
-class IfStmt : public Stmt
+class IfStmt final : public Stmt
 {
-  private:
-    std::unique_ptr<Expr> cond;
-    std::unique_ptr<Stmt> then_body;
-    std::unique_ptr<Stmt> else_body;
+private:
+  std::unique_ptr<Expr> cond;
+  std::unique_ptr<Stmt> then_body;
+  std::unique_ptr<Stmt> else_body;
 
-  public:
-    /// Constructor for if statements with an else body.
-    IfStmt(std::unique_ptr<Expr> cond, std::unique_ptr<Stmt> then_body, std::unique_ptr<Stmt> else_body)
-      : cond(std::move(cond)), then_body(std::move(then_body)), else_body(std::move(else_body)) {};
+public:
+  IfStmt(std::unique_ptr<Expr> cond, std::unique_ptr<Stmt> then_body, std::unique_ptr<Stmt> else_body)
+    : cond(std::move(cond)), then_body(std::move(then_body)), else_body(std::move(else_body)) {};
 
-    /// Constructor for if statements without an else body.
-    IfStmt(std::unique_ptr<Expr> cond, std::unique_ptr<Stmt> then_body)
-      : cond(std::move(cond)), then_body(std::move(then_body)), else_body(nullptr) {};
+  IfStmt(std::unique_ptr<Expr> cond, std::unique_ptr<Stmt> then_body)
+    : cond(std::move(cond)), then_body(std::move(then_body)), else_body(nullptr) {};
 
-    /// Determine if this if statement has an else body.
-    [[nodiscard]]
-    inline bool has_else() const { return else_body != nullptr; }
+  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
-    /// Returns a string representation of this if statement.
-    [[nodiscard]]
-    const std::string to_string();
+  /// Determine if this if statement has an else body.
+  inline bool has_else() const { return else_body != nullptr; }
+
+  /// Returns a string representation of this if statement.
+  const std::string to_string() override;
 };
 
 
@@ -95,76 +96,75 @@ class IfStmt : public Stmt
 /// These classes are used to represent pattern matching constructs in the AST.
 
 /// This class represents a possible pattern matching class.
-class MatchCase : public Stmt
+class MatchCase final : public Stmt
 {
-  private:
-    std::unique_ptr<Expr> expr;
-    std::unique_ptr<Stmt> body;
+private:
+  std::unique_ptr<Expr> expr;
+  std::unique_ptr<Stmt> body;
 
-  public:
-    /// Constructor for match cases.
-    MatchCase(std::unique_ptr<Expr> expr, std::unique_ptr<Stmt> body)
-      : expr(std::move(expr)), body(std::move(body)) {};
+public:
+  MatchCase(std::unique_ptr<Expr> expr, std::unique_ptr<Stmt> body)
+    : expr(std::move(expr)), body(std::move(body)) {};
 
-    /// Returns a string representation of this match case.
-    [[nodiscard]]
-    const std::string to_string();
+  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+
+  /// Returns a string representation of this match case.
+  const std::string to_string() override;
 };
 
 
 /// This class represents the structure of a match statement.
-class MatchStmt : public Stmt
+class MatchStmt final : public Stmt
 {
-  private:
-    std::unique_ptr<Expr> expr;
-    std::vector<std::unique_ptr<MatchCase>> cases;
+private:
+  std::unique_ptr<Expr> expr;
+  std::vector<std::unique_ptr<MatchCase>> cases;
 
-  public:
-    /// Constructor for match statements.
-    MatchStmt(std::unique_ptr<Expr> expr, std::vector<std::unique_ptr<MatchCase>> cases)
-      : expr(std::move(expr)), cases(std::move(cases)) {};
+public:
+  MatchStmt(std::unique_ptr<Expr> expr, std::vector<std::unique_ptr<MatchCase>> cases)
+    : expr(std::move(expr)), cases(std::move(cases)) {};
 
-    /// Returns a string representation of this match statement.
-    [[nodiscard]]
-    const std::string to_string();
+  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+
+  /// Returns a string representation of this match statement.
+  const std::string to_string() override;
 };
 
 
 /// This class represents a function return statement.
-class ReturnStmt : public Stmt
+class ReturnStmt final : public Stmt
 {
-  private:
-    std::unique_ptr<Expr> expr;
+private:
+  std::unique_ptr<Expr> expr;
 
-  public:
-    /// Constructor for return statements with an expression.
-    ReturnStmt(std::unique_ptr<Expr> expr) : expr(std::move(expr)) {};
+public:
+  ReturnStmt(std::unique_ptr<Expr> expr) : expr(std::move(expr)) {};
+  
+  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
-    /// Determine if this return statement has an expression.
-    [[nodiscard]]
-    inline bool has_expr() const { return expr != nullptr; }
+  /// Determine if this return statement has an expression.
+  inline bool has_expr() const { return expr != nullptr; }
 
-    /// Returns a string representation of this return statement.
-    [[nodiscard]]
-    const std::string to_string();
+  /// Returns a string representation of this return statement.
+  const std::string to_string() override;
 };
 
 
 /// This class represents a looping until statement.
-class UntilStmt : public Stmt
+class UntilStmt final : public Stmt
 {
-  private:
-    std::unique_ptr<Expr> cond;
-    std::unique_ptr<Stmt> body;
+private:
+  std::unique_ptr<Expr> cond;
+  std::unique_ptr<Stmt> body;
 
-  public:
-    /// Constructor for until statements.
-    UntilStmt(std::unique_ptr<Expr> cond, std::unique_ptr<Stmt> body)
-      : cond(std::move(cond)), body(std::move(body)) {};
+public:
+  UntilStmt(std::unique_ptr<Expr> cond, std::unique_ptr<Stmt> body)
+    : cond(std::move(cond)), body(std::move(body)) {};
 
-    /// Returns a string representation of this until statement.
-    [[nodiscard]]
-    const std::string to_string();
+  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+
+  /// Returns a string representation of this until statement.
+  const std::string to_string() override;
 };
 
 #endif  // STMT_STATIMC_H

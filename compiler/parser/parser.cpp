@@ -205,6 +205,7 @@ static std::unique_ptr<Expr> parse_call_expr(std::unique_ptr<ASTContext> &ctx, c
   return std::make_unique<CallExpr>(callee, std::move(args));
 }
 
+
 /// Parses a struct construction expression from the given context.
 static std::unique_ptr<Expr> parse_init_expr(std::unique_ptr<ASTContext> &ctx, const std::string &ident) {
   ctx->next();  // eat open brace

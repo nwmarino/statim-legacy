@@ -29,6 +29,22 @@ class ReturnStmt;
 class BreakStmt;
 class ContinueStmt;
 
+class NullExpr;
+class DefaultExpr;
+class BooleanLiteral;
+class IntegerLiteral;
+class FPLiteral;
+class CharLiteral;
+class StringLiteral;
+class DeclRefExpr;
+class BinaryExpr;
+class UnaryExpr;
+class InitExpr;
+class CallExpr;
+class MemberExpr;
+class MemberCallExpr;
+class ArrayAccessExpr;
+
 class ASTVisitor
 {
 public:
@@ -53,7 +69,22 @@ public:
   virtual void visit(ReturnStmt *s) = 0;
   virtual void visit(BreakStmt *s) = 0;
   virtual void visit(ContinueStmt *s) = 0;
-  
+
+  virtual void visit(NullExpr *e) = 0;
+  virtual void visit(DefaultExpr *e) = 0;
+  virtual void visit(BooleanLiteral *e) = 0;
+  virtual void visit(IntegerLiteral *e) = 0;
+  virtual void visit(FPLiteral *e) = 0;
+  virtual void visit(CharLiteral *e) = 0;
+  virtual void visit(StringLiteral *e) = 0;
+  virtual void visit(DeclRefExpr *e) = 0;
+  virtual void visit(BinaryExpr *e) = 0;
+  virtual void visit(UnaryExpr *e) = 0;
+  virtual void visit(InitExpr *e) = 0;
+  virtual void visit(CallExpr *e) = 0;
+  virtual void visit(MemberExpr *e) = 0;
+  virtual void visit(MemberCallExpr *e) = 0;
+  virtual void visit(ArrayAccessExpr *e) = 0;
 };
 
 #endif  // VISITOR_STATIMC_H
