@@ -19,7 +19,6 @@ static const std::string CYAN = "\033[36m";
 static const std::string WHITE = "\033[37m";
 static const std::string BOLD = "\033[1m";
 
-
 /// Returns a string representation of piping dependent on indent, place_vert, and at_last_child.
 static const std::string piping() {
   std::string result = BLUE;
