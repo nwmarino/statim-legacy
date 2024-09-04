@@ -16,6 +16,7 @@ class FieldDecl;
 class TraitDecl;
 class ImplDecl;
 class EnumDecl;
+class EnumVariant;
 class VarDecl;
 
 class DeclStmt;
@@ -23,8 +24,7 @@ class CompoundStmt;
 class IfStmt;
 class MatchCase;
 class MatchStmt;
-class WhileStmt;
-class ForStmt;
+class UntilStmt;
 class ReturnStmt;
 class BreakStmt;
 class ContinueStmt;
@@ -41,7 +41,18 @@ public:
   virtual void visit(TraitDecl *d) = 0;
   virtual void visit(ImplDecl *d) = 0;
   virtual void visit(EnumDecl *d) = 0;
+  virtual void visit(EnumVariant *d) = 0;
   virtual void visit(VarDecl *d) = 0;
+
+  virtual void visit(DeclStmt *s) = 0;
+  virtual void visit(CompoundStmt *s) = 0;
+  virtual void visit(IfStmt *s) = 0;
+  virtual void visit(MatchCase *s) = 0;
+  virtual void visit(MatchStmt *s) = 0;
+  virtual void visit(UntilStmt *s) = 0;
+  virtual void visit(ReturnStmt *s) = 0;
+  virtual void visit(BreakStmt *s) = 0;
+  virtual void visit(ContinueStmt *s) = 0;
   
 };
 

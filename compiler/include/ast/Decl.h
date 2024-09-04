@@ -21,7 +21,7 @@ public:
   virtual ~Decl() = default;
   virtual void pass(ASTVisitor *visitor) = 0;
   virtual const std::string get_name() const = 0;
-  virtual const std::string to_string() const = 0;
+  virtual const std::string to_string() = 0;
 };
 
 
@@ -182,7 +182,7 @@ class ParamVarDecl final : public Decl
 
     /// Returns a string representation of this parameter.
     [[nodiscard]]
-    const std::string to_string() const override;
+    const std::string to_string() override;
 };
 
 
@@ -231,7 +231,7 @@ public:
   inline void set_pub() { priv = false; }
 
   /// Returns a string representation of this function declaration.
-  const std::string to_string() const override;
+  const std::string to_string() override;
 };
 
 
@@ -242,47 +242,46 @@ public:
 /// Class for trait declarations.
 class TraitDecl final : public Decl
 {
-  private:
-    const std::string name;
-    std::vector<std::unique_ptr<FunctionDecl>> decls;
-    bool priv;
+private:
+  const std::string name;
+  std::vector<std::unique_ptr<FunctionDecl>> decls;
+  bool priv;
 
-  public:
-    /// Constructor for trait declarations with no function declarations.
-    TraitDecl(const std::string &name)
-      : name(name), decls(), priv(false) {};
+public:
+  TraitDecl(const std::string &name)
+    : name(name), decls(), priv(false) {};
 
-    /// Constructor for trait declarations with function declarations.
-    TraitDecl(const std::string &name, std::vector<std::unique_ptr<FunctionDecl>> decls)
-      : name(name), decls(std::move(decls)), priv(false) {};
+  TraitDecl(const std::string &name, std::vector<std::unique_ptr<FunctionDecl>> decls)
+    : name(name), decls(std::move(decls)), priv(false) {};
 
-    /// Gets the name of this trait declaration.
-    [[nodiscard]]
-    inline const std::string get_name() const override { return name; }
+  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
-    // Returns the expected method behaviour of this trait declaration.
-    [[nodiscard]]
-    inline const std::vector<std::pair<std::string, std::string>> get_methods() const { 
-      std::vector<std::pair<std::string, std::string>> methods;
-      for (const std::unique_ptr<FunctionDecl> &m : decls) {
-        methods.push_back(std::make_pair(m->get_name(), m->get_ret_type()));
-      }
-      return std::move(methods);
+  /// Gets the name of this trait declaration.
+  [[nodiscard]]
+  inline const std::string get_name() const override { return name; }
+
+  // Returns the expected method behaviour of this trait declaration.
+  [[nodiscard]]
+  inline const std::vector<std::pair<std::string, std::string>> get_methods() const { 
+    std::vector<std::pair<std::string, std::string>> methods;
+    for (const std::unique_ptr<FunctionDecl> &m : decls) {
+      methods.push_back(std::make_pair(m->get_name(), m->get_ret_type()));
     }
+    return std::move(methods);
+  }
 
-    /// Returns true if this function declaration is private.
-    [[nodiscard]]
-    inline bool is_priv() const { return priv; }
+  /// Returns true if this function declaration is private.
+  [[nodiscard]]
+  inline bool is_priv() const { return priv; }
 
-    /// Set this function declaration as private.
-    inline void set_priv() { priv = true; }
+  /// Set this function declaration as private.
+  inline void set_priv() { priv = true; }
 
-    // Set this function declaration as public.
-    inline void set_pub() { priv = false; }
+  // Set this function declaration as public.
+  inline void set_pub() { priv = false; }
 
-    /// Returns a string representation of this trait declaration.
-    [[nodiscard]]
-    const std::string to_string() const override;
+  /// Returns a string representation of this trait declaration.
+  const std::string to_string() override;
 };
 
 
@@ -293,61 +292,57 @@ class TraitDecl final : public Decl
 /// Class for enum variants.
 class EnumVariant
 {
-  private:
-    const std::string name;
+private:
+  const std::string name;
 
-  public:
-    /// Basic constructor for enum variants.
-    EnumVariant(const std::string &name)
-      : name(name) {};
+public:
+  /// Basic constructor for enum variants.
+  EnumVariant(const std::string &name)
+    : name(name) {};
 
-    /// Gets the name of this enum variant.
-    [[nodiscard]]
-    inline const std::string get_name() const { return name; }
+  /// Gets the name of this enum variant.
+  [[nodiscard]]
+  inline const std::string get_name() const { return name; }
 
-    /// Returns a string representation of this enum variant.
-    [[nodiscard]]
-    const std::string to_string();
+  /// Returns a string representation of this enum variant.
+  [[nodiscard]]
+  const std::string to_string();
 };
 
 /// Class for enum declarations.
 class EnumDecl final : public Decl
 {
-  private:
-    const std::string name;
-    std::vector<EnumVariant> variants;
-    bool priv;
+private:
+  const std::string name;
+  std::vector<EnumVariant> variants;
+  bool priv;
 
-  public:
-    /// Constructor for enum declarations with no variants.
-    EnumDecl(const std::string &name)
-      : name(name), variants(), priv(false) {};
+public:
+  EnumDecl(const std::string &name)
+    : name(name), variants(), priv(false) {};
 
-    /// Constructor for enum declarations with variants.
-    EnumDecl(const std::string &name, std::vector<EnumVariant> variants)
-      : name(name), variants(std::move(variants)), priv(false) {};
+  EnumDecl(const std::string &name, std::vector<EnumVariant> variants)
+    : name(name), variants(std::move(variants)), priv(false) {};
 
-    /// Gets the name of this enum declaration.
-    [[nodiscard]]
-    inline const std::string get_name() const { return name; }
+  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
-    /// Gets the variants of this enum declaration.
-    [[nodiscard]]
-    inline const std::vector<EnumVariant> get_variants() const { return variants; }
+  /// Gets the name of this enum declaration.
+  inline const std::string get_name() const override { return name; }
 
-    /// Returns true if this function declaration is private.
-    [[nodiscard]]
-    inline bool is_priv() const { return priv; }
+  /// Gets the variants of this enum declaration.
+  inline const std::vector<EnumVariant> get_variants() const { return variants; }
 
-    /// Set this function declaration as private.
-    inline void set_priv() { priv = true; }
+  /// Returns true if this function declaration is private.
+  inline bool is_priv() const { return priv; }
 
-    // Set this function declaration as public.
-    inline void set_pub() { priv = false; }
+  /// Set this function declaration as private.
+  inline void set_priv() { priv = true; }
 
-    /// Returns a string representation of this enum declaration.
-    [[nodiscard]]
-    const std::string to_string();
+  // Set this function declaration as public.
+  inline void set_pub() { priv = false; }
+
+  /// Returns a string representation of this enum declaration.
+  const std::string to_string() override;
 };
 
 
@@ -358,32 +353,29 @@ class EnumDecl final : public Decl
 /// Class for implementation declarations.
 class ImplDecl final : public Decl
 {
-  private:
-    const std::string _trait;
-    const std::string _struct;
-    std::vector<std::unique_ptr<FunctionDecl>> methods;
-    bool is_trait_impl;
+private:
+  const std::string _trait;
+  const std::string _struct;
+  std::vector<std::unique_ptr<FunctionDecl>> methods;
+  bool is_trait_impl;
 
-  public:
-    /// Constructor for trait implementations.
-    ImplDecl(const std::string &_trait, const std::string &_struct, std::vector<std::unique_ptr<FunctionDecl>> methods)
-      : _trait(_trait), _struct(_struct), methods(std::move(methods)), is_trait_impl(_trait == "" ? false : true) {};
+public:
+  ImplDecl(const std::string &_trait, const std::string &_struct, std::vector<std::unique_ptr<FunctionDecl>> methods)
+    : _trait(_trait), _struct(_struct), methods(std::move(methods)), is_trait_impl(_trait == "" ? false : true) {};
 
-    /// Gets the name of the abstract declaration of this implementation declaration.
-    [[nodiscard]]
-    inline const std::string trait() const { return is_trait() ? _trait : ""; }
+  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
-    /// Gets the name of the target struct of this implementation declaration.
-    [[nodiscard]]
-    inline const std::string get_name() const { return _struct; }
+  // Returns the name of the trait this declaration implements, or an empty string otherwise.
+  inline const std::string trait() const { return is_trait() ? _trait : ""; }
 
-    /// Returns true if this is a trait implementation.
-    [[nodiscard]]
-    inline bool is_trait() const { return is_trait_impl; }
+  /// Gets the name of the target struct of this implementation declaration.
+  inline const std::string get_name() const override { return _struct; }
 
-    /// Returns a string representation of this implementation declaration.
-    [[nodiscard]]
-    const std::string to_string();
+  /// Returns true if this is a trait implementation.
+  inline bool is_trait() const { return is_trait_impl; }
+
+  /// Returns a string representation of this implementation declaration.
+  const std::string to_string() override;
 };
 
 
@@ -394,137 +386,123 @@ class ImplDecl final : public Decl
 /// Class for struct fields.
 class FieldDecl final : public Decl
 {
-  private:
-    const std::string name;
-    const std::string type;
-    bool priv;
+private:
+  const std::string name;
+  const std::string type;
+  bool priv;
 
-  public:
-    /// Basic constructor for struct fields.
-    FieldDecl(const std::string &name, const std::string &type)
-      : name(name), type(type), priv(false) {};
+public:
+  /// Basic constructor for struct fields.
+  FieldDecl(const std::string &name, const std::string &type)
+    : name(name), type(type), priv(false) {};
 
-    /// Gets the name of this struct fields.
-    [[nodiscard]]
-    inline const std::string get_name() const { return name; }
+  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
-    /// Gets the type of this struct fields.
-    [[nodiscard]]
-    inline const std::string get_type() const { return type; }
+  /// Gets the name of this struct fields.
+  inline const std::string get_name() const override { return name; }
 
-    /// Returns true if this function declaration is private.
-    [[nodiscard]]
-    inline bool is_priv() const { return priv; }
+  /// Gets the type of this struct fields.
+  inline const std::string get_type() const { return type; }
 
-    /// Set this function declaration as private.
-    inline void set_priv() { priv = true; }
+  /// Returns true if this function declaration is private.
+  inline bool is_priv() const { return priv; }
 
-    // Set this function declaration as public.
-    inline void set_pub() { priv = false; }
+  /// Set this function declaration as private.
+  inline void set_priv() { priv = true; }
 
-    /// Returns a string representation of this struct fields.
-    [[nodiscard]]
-    const std::string to_string();
+  // Set this function declaration as public.
+  inline void set_pub() { priv = false; }
+
+  /// Returns a string representation of this struct fields.
+  const std::string to_string() override;
 };
 
 
 /// Class for struct declarations.
 class StructDecl final : public ScopedDecl
 {
-  private:
-    const std::string name;
-    std::vector<std::unique_ptr<FieldDecl>> fields;
-    std::shared_ptr<Scope> scope;
-    std::vector<std::string> _impls;
-    bool priv;
+private:
+  const std::string name;
+  std::vector<std::unique_ptr<FieldDecl>> fields;
+  std::shared_ptr<Scope> scope;
+  std::vector<std::string> _impls;
+  bool priv;
 
-  public:
-    /// Basic constructor for struct declarations.
-    StructDecl(const std::string &name, std::vector<std::unique_ptr<FieldDecl>> fields, std::shared_ptr<Scope> scope)
-      : name(name), fields(std::move(fields)), scope(scope), priv(false), _impls() {};
+public:
+  StructDecl(const std::string &name, std::vector<std::unique_ptr<FieldDecl>> fields, std::shared_ptr<Scope> scope)
+    : name(name), fields(std::move(fields)), scope(scope), priv(false), _impls() {};
 
-    /// Gets the name of this struct declaration.
-    [[nodiscard]]
-    inline const std::string get_name() const { return name; }
+  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
-    /// Returns true if this function declaration is private.
-    [[nodiscard]]
-    inline bool is_priv() const { return priv; }
+  /// Gets the name of this struct declaration.
+  inline const std::string get_name() const override { return name; }
 
-    /// Set this function declaration as private.
-    inline void set_priv() { priv = true; }
+  /// Returns true if this function declaration is private.
+  inline bool is_priv() const { return priv; }
 
-    // Set this function declaration as public.
-    inline void set_pub() { priv = false; }
+  /// Set this function declaration as private.
+  inline void set_priv() { priv = true; }
 
-    /// Get the scope of this struct declaration.
-    [[nodiscard]]
-    inline std::shared_ptr<Scope> get_scope() const { return scope; }
+  // Set this function declaration as public.
+  inline void set_pub() { priv = false; }
 
-    /// Determine if this struct type has a field by name.
-    [[nodiscard]]
-    inline bool has_field(const std::string &name) const {
-      return std::find_if(fields.begin(), fields.end(), [&name](const std::unique_ptr<FieldDecl> &f) { return f->get_name() == name; }) != fields.end();
-    }
+  /// Get the scope of this struct declaration.
+  inline std::shared_ptr<Scope> get_scope() const override { return scope; }
 
-    /// Determine if this struct implements a trait.
-    [[nodiscard]]
-    inline bool impls(const std::string &trait) const {
-      return std::find(_impls.begin(), _impls.end(), trait) != _impls.end();
-    }
+  /// Determine if this struct type has a field by name.
+  inline bool has_field(const std::string &name) const {
+    return std::find_if(fields.begin(), fields.end(), [&name](const std::unique_ptr<FieldDecl> &f) { return f->get_name() == name; }) != fields.end();
+  }
 
-    /// Returns a string representation of this struct declaration.
-    [[nodiscard]]
-    const std::string to_string();
+  /// Determine if this struct implements a trait.
+  inline bool impls(const std::string &trait) const {
+    return std::find(_impls.begin(), _impls.end(), trait) != _impls.end();
+  }
+
+  /// Returns a string representation of this struct declaration.
+  const std::string to_string() override;
 };
 
 
 /// Class for variable declarations.
 class VarDecl final : public Decl
 {
-  private:
-    const std::string name;
-    const std::string type;
-    std::unique_ptr<Expr> expr;
-    bool mut;
-    bool rune;
+private:
+  const std::string name;
+  const std::string type;
+  std::unique_ptr<Expr> expr;
+  bool mut;
+  bool rune;
 
-  public:
-    /// Constructor for variable declarations with an expression.
-    VarDecl(const std::string &name, const std::string &type, std::unique_ptr<Expr> expr, bool mut, bool rune)
-      : name(name), type(type), expr(std::move(expr)), mut(mut), rune(rune) {};
+public:
+  VarDecl(const std::string &name, const std::string &type, std::unique_ptr<Expr> expr, bool mut, bool rune)
+    : name(name), type(type), expr(std::move(expr)), mut(mut), rune(rune) {};
 
-    /// Constructor for variable declarations without an expression.
-    VarDecl(const std::string &name, const std::string &type, bool mut, bool rune)
-      : name(name), type(type), expr(nullptr), mut(mut), rune(rune) {};
+  VarDecl(const std::string &name, const std::string &type, bool mut, bool rune)
+    : name(name), type(type), expr(nullptr), mut(mut), rune(rune) {};
 
-    /// Gets the name of this variable declaration.
-    [[nodiscard]]
-    inline const std::string get_name() const { return name; }
+  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
-    /// Gets the type of this variable declaration.
-    [[nodiscard]]
-    inline const std::string get_type() const { return type; }
+  /// Gets the name of this variable declaration.
+  inline const std::string get_name() const override { return name; }
 
-    /// Returns true if this variable declaration has an expression.
-    [[nodiscard]]
-    inline bool has_expr() const { return expr != nullptr; }
+  /// Gets the type of this variable declaration.
+  inline const std::string get_type() const { return type; }
 
-    /// Gets the expression of this variable declaration.
-    [[nodiscard]]
-    inline std::unique_ptr<Expr> &get_expr() { return expr; }
+  /// Returns true if this variable declaration has an expression.
+  inline bool has_expr() const { return expr != nullptr; }
 
-    /// Determine if this variable declaration is mutable.
-    [[nodiscard]]
-    inline bool is_mut() const { return mut; }
+  /// Gets the expression of this variable declaration.
+  inline std::unique_ptr<Expr> &get_expr() { return expr; }
 
-    /// Determine if this variable declaration is a rune.
-    [[nodiscard]]
-    inline bool is_rune() const { return rune; }
+  /// Determine if this variable declaration is mutable.
+  inline bool is_mut() const { return mut; }
 
-    /// Returns a string representation of this variable declaration.
-    [[nodiscard]]
-    const std::string to_string();
+  /// Determine if this variable declaration is a rune.
+  inline bool is_rune() const { return rune; }
+
+  /// Returns a string representation of this variable declaration.
+  const std::string to_string() override;
 };
 
 #endif  // DECL_STATIMC_H

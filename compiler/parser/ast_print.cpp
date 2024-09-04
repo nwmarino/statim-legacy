@@ -1,8 +1,4 @@
-///===--- ast_print.cpp : AST pretty printer -------------------------------===///
-///
-/// This source file houses the pretty printer for the AST.
-///
-///===----------------------------------------------------------------------===///
+/// This source file houses the code for the ast printer.
 
 #include "../include/ast/Decl.h"
 #include "../include/ast/Expr.h"
@@ -11,7 +7,7 @@
 
 static int indent = 0;
 static bool at_last_child = false;
-static std::vector<int> place_vert = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+static std::vector<int> place_vert = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 static const std::string RESET = "\033[0m";
 static const std::string RED = "\033[31m";

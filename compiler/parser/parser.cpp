@@ -6,6 +6,7 @@
 #include "../include/ast/Decl.h"
 #include "../include/ast/Expr.h"
 #include "../include/ast/Stmt.h"
+#include "../include/core/ASTContext.h"
 #include "../include/core/Logger.h"
 #include "../include/core/Utils.h"
 
@@ -15,7 +16,6 @@ static std::unique_ptr<Expr> parse_expr(std::unique_ptr<ASTContext> &ctx);
 static std::unique_ptr<Stmt> parse_stmt(std::unique_ptr<ASTContext> &ctx);
 static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<ASTContext> &ctx);
 static std::unique_ptr<Expr> parse_primary_expr(std::unique_ptr<ASTContext> &ctx);
-
 
 static UnaryOp get_unary_op(TokenKind op) {
   switch (op) {
