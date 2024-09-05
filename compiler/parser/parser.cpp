@@ -836,6 +836,10 @@ static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<ASTContext> &
 
     std::unique_ptr<ParamVarDecl> param = std::make_unique<ParamVarDecl>(param_name, param_type);
 
+    if (curr_scope->get_decl(param_name)) {
+      return warn_fn("parameter identifier already exists in scope: " + param_name, ctx->last().meta);
+    }
+
     // add param to function scope
     curr_scope->add_decl(param.get());
     params.push_back(std::move(param));

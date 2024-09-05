@@ -14,7 +14,7 @@
 | `!`, `#`, `@` | 7 | Unary (not, hash, ref)
 | `f()`, `.` | 8 | Calls, Member Access
 
-### Primitive Types
+### Types
 
 | Symbol | Type | Example Literal
 |--------|------|----------------

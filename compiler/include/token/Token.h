@@ -227,7 +227,13 @@ struct Token {
   [[nodiscard]]
   inline bool is_eof() const { return kind == Eof; };
 
-  /// Determine if this token is a keyword or not.
+  /*
+  /// Determine if this token is any keyword or not.
+  [[nodiscard]]
+  inline bool is_kw() const {};
+  */
+
+  /// Determine if this token is a keyword of a certain type or not.
   [[nodiscard]]
   inline bool is_kw(const std::string &value) const { return is_ident() && this->value == value; };
 

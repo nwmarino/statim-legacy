@@ -215,8 +215,23 @@ public:
   /// Gets the name of this function declaration.
   inline const std::string get_name() const override { return name; }
 
+  /// Returns true if the function has a parameters, and false otherwise.
+  inline bool has_params() const { return !params.empty(); }
+
+  /// Returns the parameters of this function declaration.
+  inline const std::vector<ParamVarDecl *> get_params() const {
+    std::vector<ParamVarDecl *> params = {};
+    for (ParamVarDecl *p : params) {
+      params.push_back(p);
+    }
+    return params;
+  }
+
   /// Gets the return type of this function declaration.
   inline const std::string get_ret_type() const { return ret_type; }
+
+  /// Returns the body of this function declaration.
+  inline Stmt *get_body() const { return body.get(); }
 
   /// Get the scope of this function declaration.
   inline std::shared_ptr<Scope> get_scope() const override { return scope; }

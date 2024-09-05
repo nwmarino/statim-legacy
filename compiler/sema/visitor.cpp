@@ -48,9 +48,47 @@ void PassVisitor::visit(PackageUnit *u) {
   // import scope trees
 
 
-  for (std::unique_ptr<Decl> &decl : u->get_decls()) {
+  for (Decl *decl : u->get_decls()) {
     decl->pass(this);
   }
 }
 
+
+void PassVisitor::visit(FunctionDecl *d) {
+  // check for duplicate declaration
+  if (d->get_scope()->get_decl(d->get_name())) {
+    panic("symbol already exists in scope: " + d->get_name());
+  }
+
+  // check for entry function
+  if (d->get_name() == "main") {
+    // check no params exist
+    if (d->has_params()) {
+      panic("entry function 'main' cannot have parameters");
+    }
+
+    // check return type is void
+    if (d->get_ret_type() != "void") {
+      panic("entry function 'main' must return void");
+    }
+
+    has_entry = true;
+  }
+
+  // check that each param type exists in this scope
+  for (ParamVarDecl *param : d->get_params()) {
+    if (!d->get_scope()->get_decl(param->get_type())) {
+      panic("unresolved parameter type: " + param->get_type());
+    }
+  }
+  
+  // check that a return type exists
+  if (d->get_ret_type() != "void" && !d->get_scope()->get_decl(d->get_ret_type())) {
+    panic("unresolved return type: " + d->get_ret_type());
+  }
+
+  if (Stmt *s = d->get_body()) {
+    s->pass(this);
+  }
+}
 

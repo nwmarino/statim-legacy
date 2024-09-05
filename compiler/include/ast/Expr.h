@@ -5,6 +5,7 @@
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #include "Stmt.h"
+#include "../core/Type.h"
 #include "../sema/ASTVisitor.h"
 
 /// UnaryOp - Enumeration of recognized unary operators.
@@ -86,10 +87,10 @@ typedef enum {
 class Expr : public Stmt
 {
 public:
-    virtual ~Expr() = default;
-    virtual void pass(ASTVisitor *visitor) = 0;
-    const virtual std::string get_type() const = 0;
-    const virtual std::string to_string() = 0;
+  virtual ~Expr() = default;
+  virtual void pass(ASTVisitor *visitor) = 0;
+  const virtual std::string get_type_id() const = 0;
+  const virtual std::string to_string() = 0;
 };
 
 
@@ -97,15 +98,15 @@ public:
 class NullExpr final : public Expr
 {
 private:
-  const std::string type;
+  Type *__type;
 
 public:
-  NullExpr() : type("null") {};
+  NullExpr(){};
 
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
   /// Gets the type of this null expression.
-  inline const std::string get_type() const override { return type; }
+  inline const std::string get_type_id() const override { return "null"; }
 
   /// Returns a string representation of this null expression.
   const std::string to_string() override;
@@ -116,15 +117,14 @@ public:
 class DefaultExpr final : public Expr
 {
 private:
-  const std::string type;
+  Type *__type;
 
 public:
-  DefaultExpr() : type("default") {};
-
+  DefaultExpr(){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
   /// Gets the type of this default expression.
-  inline const std::string get_type() const override { return type; }
+  inline const std::string get_type_id() const override { return "default"; }
 
   /// Returns a string representation of this expression.
   const std::string to_string() override;
@@ -137,19 +137,18 @@ public:
 class BooleanLiteral final : public Expr
 {
 private:
-  bool value;
-  const std::string type;
+  const unsigned int value;
+  Type *__type;
 
 public:
-  BooleanLiteral(bool value) : value(value), type("bool") {};
-
+  BooleanLiteral(bool value) : value(value ? 1 : 0){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
   /// Gets the value of this boolean expression.
   inline bool get_value() const { return value; }
 
   /// Gets the type of this boolean expression.
-  inline const std::string get_type() const override { return type; }
+  inline const std::string get_type_id() const override { return "bool"; }
 
   /// Returns a string representation of this boolean expression.
   const std::string to_string() override;
@@ -162,13 +161,13 @@ public:
 class IntegerLiteral final : public Expr
 {
 private:
-  const int value;
+  const long value;
   const bool signedness;
-  const std::string type;
+  const std::string type_ident;
+  Type *__type;
 
 public:
-  IntegerLiteral(int value) : value(value), signedness(value < 0), type("int") {};
-
+  IntegerLiteral(int value, const std::string &type_ident) : value(value), signedness(value < 0), type_ident(type_ident){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
   /// Gets the value of this integer expression.
@@ -178,7 +177,7 @@ public:
   inline bool is_signed() const { return signedness; }
 
   /// Gets the type of this integer expression.
-  inline const std::string get_type() const override { return type; }
+  inline const std::string get_type_id() const override { return type_ident; }
 
   /// Returns a string representation of this integer expression.
   const std::string to_string() override;
@@ -192,7 +191,7 @@ class FPLiteral final : public Expr
 {
 private:
   const double value;
-  const std::string type;
+  Type *__type;
 
 public:
   FPLiteral(double value) : value(value), type("float") {};
