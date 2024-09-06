@@ -19,10 +19,10 @@
 | Symbol | Type | Example Literal
 |--------|------|----------------
 | `bool` | boolean | `true`, `false`
-| `uint` | unsigned integer (64-bit) | `0`, `1`, `2147483648`
+| `uint` | unsigned integer (32-bit) | `0`, `1`, `2147483648`
 | `i32`  | signed integer (32-bit) | `-1`, `0`, `2147483648`
 | `i64`  | signed integer (64-bit) | `9.223372e+18`
-| `float` | floating point (64-bit) | `0.25`, `3.14`
+| `float` | floating point (32/64-bit) | `0.25`, `3.14`
 | `char` | base character | `'s'`, `'t'`, `'a'`, `'T'`, `'i'`, `'m'`
 | `str` | character sequence | `"staTim"` 
 | `#Type` | rune (ptr) | ...

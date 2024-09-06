@@ -5,11 +5,8 @@
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #include <string>
-#include <vector>
 
 /// Type - Base class for all types.
-///
-/// This class is the base class for all types in the intermediate representation.
 class Type
 {
 public:
@@ -22,32 +19,47 @@ public:
 };
 
 
-/// BuiltinType - A primitive type in the language.
+/// PrimitiveType - A primitive type in the language.
 ///
 /// This class represents a primitive type in the intermediate representation.
 /// All primitive types are represented by this class, for example `i32`, `bool`, etc.
-class BuiltinType : public Type
+class PrimitiveType final : public Type
 {
+public:
+  enum PrimitiveKind {
+    __UINT1,
+    __UINT32,
+    __INT32,
+    __INT64,
+    __FP32,
+    __FP64,
+    __CHAR,
+  };
+  PrimitiveType(PrimitiveKind K);
+  bool is_bool_evaluable(void) const override { return true; }
+  bool is_null(void) const override { return false; }
+  bool is_void(void) const override { return false; }
 
+private:
+  const PrimitiveKind __kind;
+
+public:
+  PrimitiveKind get_kind(void) const { return __kind; }
+  bool is_integer(void) const override { return get_kind() <= __INT64; }
+  bool is_float(void) const override { return get_kind() == __FP32 || get_kind() == __FP64; }
 };
 
 
-/// RefType - Represents a reference to a possibly (un)defined type.
-///
-/// This class represents a reference to a type in the intermediate representation.
-/// It is used as a stepping stone between parsing and semantic analysis, since types
-/// cannot be guaranteed to exist in scope at parse time.
-class RefType final : public Type
+/// DefinedType - Represents a type defined by the source.
+class DefinedType : public Type
 {
-private:
-  const std::string __ident;
-
 public:
-  /// @param ident The identifier of the type.
-  RefType(const std::string &ident);1
-
-  /// Returns the name which this reference type refers to.
-  const std::string get_name(void) const;
+  virtual ~DefinedType() = default;
+  bool is_bool_evaluable(void) const override { return false; }
+  bool is_null(void) const override { return false; }
+  bool is_void(void) const override { return false; }
+  bool is_integer(void) const override { return false; }
+  bool is_float(void) const override { return false; }
 };
 
 
@@ -55,17 +67,15 @@ public:
 ///
 /// This class represents an array type in the intermediate representation.
 /// All defined array types are represented by this class.
-class ArrayType final : public Type 
+class ArrayType final : public DefinedType 
 {
 private:
-  const unsigned int __size;
-  const Type *__elem_type;
+  const unsigned int __len;
+  const Type *__type;
 
 public:
   /// @param T The element type of the array.
-  ArrayType(unsigned int size, const Type *T);
-
-  /// Returns true if the element type is valid.
+  ArrayType(unsigned int size, const Type *T) : __len(size), __type(T){};
   bool is_valid_element(void) const;
 };
 
@@ -74,35 +84,15 @@ public:
 ///
 /// This class represents a rune type in the intermediate representation.
 /// The rune type is a pointer to an object.
-class RuneType final : public Type
+class RuneType final : public DefinedType
 {
 private:
-  const Type *__elem_type;
+  const Type *__type;
 
 public:
   /// @param T The type which the rune points to.
-  RuneType(const Type *T);
-
-  /// Returns true if the element type is valid.
+  RuneType(const Type *T) : __type(T){};
   bool is_valid_element(void) const;
-};
-
-
-/// IntegerType - Represents an integer type.
-///
-/// This class represents an integer type in the intermediate representation.
-/// All primitive integer types are represented by this class.
-class IntegerType final : public Type
-{
-private:
-  const unsigned int __width;
-
-public:
-  /// @param width The bit width of the integer type.
-  IntegerType(unsigned int width);
-
-  /// Returns the bit width of this type.
-  unsigned int bit_width(void) const;
 };
 
 
@@ -110,15 +100,15 @@ public:
 ///
 /// This class represents a struct type in the intermediate representation.
 /// All defined struct types are represented by this class.
-class StructType final : public Type
+class StructType final : public DefinedType
 {
 private:
   const std::string __struct_name;
 
 public:
-
-  /// Returns the name which this type refers to.
-  const std::string get_name(void) const;
+  /// @param name The name of the struct.
+  StructType(const std::string &name) : __struct_name(name){};
+  const std::string get_name(void) const { return __struct_name; }
 };
 
 #endif  // TYPE_STATIMC_H
