@@ -61,6 +61,9 @@ public:
   inline std::string file(void) const;
   /// Moves to the next input file and consumes the previous.
   void next_file(void);
+  /// Resolves a type by name. Returns a `TypeRef` object if the type is not found.
+  [[nodiscard]]
+  Type* resolve_type(const std::string &name);
 };
 
 #endif  // ASTCONTEXT_STATIMC_H

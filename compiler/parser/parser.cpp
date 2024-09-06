@@ -122,9 +122,9 @@ static std::unique_ptr<Expr> parse_numerical_expr(std::unique_ptr<ASTContext> &c
   ctx->next();  // eat the literal
 
   if (token.is_int()) {
-    return std::make_unique<IntegerLiteral>(std::stoll(token.value));
+    return std::make_unique<IntegerLiteral>(std::stoll(token.value), ctx->resolve_type("i64"));
   } else if (token.is_float()) {
-    return std::make_unique<FPLiteral>(std::stod(token.value));
+    return std::make_unique<FPLiteral>(std::stod(token.value), ctx->resolve_type("float"));
   }
 
   return warn_expr("unknown literal kind: " + std::to_string(token.kind), token.meta);
@@ -139,7 +139,7 @@ static std::unique_ptr<Expr> parse_character_expr(std::unique_ptr<ASTContext> &c
   ctx->next();  // eat the character or byte token
 
   if (token.is_char()) {
-    return std::make_unique<CharLiteral>(token.value[0]);
+    return std::make_unique<CharLiteral>(token.value[0], ctx->resolve_type("char"));
   }
 
   return warn_expr("unknown character or byte kind: " + std::to_string(token.kind), ctx->last().meta);
@@ -154,7 +154,7 @@ static std::unique_ptr<Expr> parse_string_expr(std::unique_ptr<ASTContext> &ctx)
   ctx->next();  // eat the string or byte string token
 
   if (token.is_str()) {
-    return std::make_unique<StringLiteral>(token.value);
+    return std::make_unique<StringLiteral>(token.value, ctx->resolve_type("str"));
   }
 
   return warn_expr("unknown string or byte string kind: " + std::to_string(token.kind), ctx->last().meta);
@@ -172,7 +172,7 @@ static std::unique_ptr<Expr> parse_boolean_expr(std::unique_ptr<ASTContext> &ctx
     return warn_expr("invalid boolean token: " + value, ctx->last().meta);
   }
 
-  return std::make_unique<BooleanLiteral>(value == "true");
+  return std::make_unique<BooleanLiteral>(value == "true", ctx->resolve_type("bool"));
 }
 
 
@@ -243,7 +243,7 @@ static std::unique_ptr<Expr> parse_init_expr(std::unique_ptr<ASTContext> &ctx, c
   }
   ctx->next();  // eat close brace
 
-  return std::make_unique<InitExpr>(ident, std::move(fields));
+  return std::make_unique<InitExpr>(ctx->resolve_type(ident), std::move(fields));
 }
 
 
@@ -379,7 +379,13 @@ static std::unique_ptr<Expr> parse_identifier_expr(std::unique_ptr<ASTContext> &
   if (ctx->last().is_open_brace()) {
     return parse_init_expr(ctx, ident);
   }
-  return std::make_unique<DeclRefExpr>(ident, "unknown");
+
+  if (Decl *d = curr_scope->get_decl(ident)) {
+    if (VarDecl *v = dynamic_cast<VarDecl *>(d)) {
+      return std::make_unique<DeclRefExpr>(ident, v->get_type());
+    }
+  }
+  return std::make_unique<DeclRefExpr>(ident, nullptr);
 }
 
 
@@ -426,7 +432,7 @@ static std::unique_ptr<Expr> parse_primary_expr(std::unique_ptr<ASTContext> &ctx
 
   if (ctx->last().is_kw("null")) {
     ctx->next();  // eat the `null` identifier
-    return std::make_unique<NullExpr>();
+    return std::make_unique<NullExpr>(nullptr);
   }
 
   if (ctx->last().is_ident()) {
@@ -527,7 +533,7 @@ static std::unique_ptr<Stmt> parse_return_stmt(std::unique_ptr<ASTContext> &ctx)
   ctx->next();  // eat return keyword
 
   if (ctx->last().is_semi()) {
-    return std::make_unique<ReturnStmt>(std::make_unique<NullExpr>());
+    return std::make_unique<ReturnStmt>(std::make_unique<NullExpr>(nullptr));
   }
 
   std::unique_ptr<Expr> expr = parse_expr(ctx);
@@ -611,7 +617,7 @@ static std::unique_ptr<Stmt> parse_match_stmt(std::unique_ptr<ASTContext> &ctx) 
     std::unique_ptr<Expr> case_expr;
     if (ctx->last().is_ident() && ctx->last().value == "_") {
       ctx->next();  // eat default token
-      case_expr = std::make_unique<DefaultExpr>();
+      case_expr = std::make_unique<DefaultExpr>(nullptr);
     } else {
       case_expr = parse_expr(ctx);
     }
@@ -717,7 +723,7 @@ static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<ASTContext> &ctx) {
   ctx->next();  // eat type
 
   if (ctx->last().is_semi()) {
-    std::unique_ptr<VarDecl> decl = std::make_unique<VarDecl>(name, type, is_mutable, is_rune);
+    std::unique_ptr<VarDecl> decl = std::make_unique<VarDecl>(name, ctx->resolve_type(type), is_mutable, is_rune);
 
     // add declaration to parent scope
     curr_scope->add_decl(decl.get());
@@ -732,7 +738,7 @@ static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<ASTContext> &ctx) {
     return warn_stmt("expected expression after '='", ctx->last().meta);
   }
 
-  std::unique_ptr<VarDecl> decl = std::make_unique<VarDecl>(name, type, std::move(value), is_mutable, is_rune);
+  std::unique_ptr<VarDecl> decl = std::make_unique<VarDecl>(name, ctx->resolve_type(type), std::move(value), is_mutable, is_rune);
 
   // add declaration to parent scope
   curr_scope->add_decl(decl.get());
@@ -834,7 +840,7 @@ static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<ASTContext> &
     const std::string param_type = ctx->last().value;
     ctx->next();  // eat param type
 
-    std::unique_ptr<ParamVarDecl> param = std::make_unique<ParamVarDecl>(param_name, param_type);
+    std::unique_ptr<ParamVarDecl> param = std::make_unique<ParamVarDecl>(param_name, ctx->resolve_type(param_type));
 
     if (curr_scope->get_decl(param_name)) {
       return warn_fn("parameter identifier already exists in scope: " + param_name, ctx->last().meta);

@@ -6,6 +6,49 @@
 
 #include <string>
 
+static const std::string RESERVED[] = {
+  "fn",
+  "let",
+  "mut",
+  "if",
+  "else",
+  "until",
+  "for",
+  "return",
+  "break",
+  "continue",
+  "true",
+  "false",
+  "null",
+  "struct",
+  "enum",
+  "impl",
+  "impls",
+  "trait",
+  "match",
+  "priv",
+  "pkg",
+  "void",
+  "bool",
+  "char",
+  "uint",
+  "i32",
+  "i64",
+  "str",
+  "float"
+};
+
+
+/// Determine if a string is a reserved keyword.
+[[nodiscard]]
+inline bool is_reserved_ident(const std::string &value) {
+  for (const std::string &kw : RESERVED) {
+    if (kw == value) return true;
+  }
+  return false;
+};
+
+
 /// TokenKind - Enumeration of recognized token kinds.
 ///
 /// This enum represents the different kinds of tokens that can be
@@ -227,15 +270,12 @@ struct Token {
   [[nodiscard]]
   inline bool is_eof() const { return kind == Eof; };
 
-  /*
-  /// Determine if this token is any keyword or not.
   [[nodiscard]]
-  inline bool is_kw() const {};
-  */
+  inline bool is_kw() const { return is_ident() && is_reserved_ident(this->value);};
 
   /// Determine if this token is a keyword of a certain type or not.
   [[nodiscard]]
-  inline bool is_kw(const std::string &value) const { return is_ident() && this->value == value; };
+  inline bool is_kw(const std::string &value) const { return is_kw() && this->value == value; };
 
   /// Determine if this token is an opening brace or not.
   [[nodiscard]]

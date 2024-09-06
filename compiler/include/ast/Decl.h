@@ -76,9 +76,7 @@ private:
   std::vector<Decl *> decls;
 
 public:
-  /// Constructor for a scope.
-  Scope(std::shared_ptr<Scope> parent, struct ScopeContext ctx)
-    : parent(parent), ctx(ctx), decls() {};
+  Scope(std::shared_ptr<Scope> parent, struct ScopeContext ctx) : parent(parent), ctx(ctx), decls() {};
 
   /// Add a declaration to this scope.
   inline void add_decl(Decl *d) { decls.push_back(d); }
@@ -161,28 +159,22 @@ public:
 /// Class for function parameters.
 class ParamVarDecl final : public Decl
 {
-  private:
-    const std::string name;
-    const std::string type;
+private:
+  const std::string name;
+  const Type *T;
 
-  public:
-    /// Basic constructor for parameters.
-    ParamVarDecl(const std::string &name, const std::string &type)
-      : name(name), type(type) {};
+public:
+  ParamVarDecl(const std::string &name, Type *T) : name(name), T(T){};
+  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline const Type* get_type() const { return T; }
+  /// Gets the name of this parameter.
 
-    void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  [[nodiscard]]
+  inline const std::string get_name() const override { return name; }
 
-    /// Gets the name of this parameter.
-    [[nodiscard]]
-    inline const std::string get_name() const override { return name; }
-
-    /// Gets the type of this parameter.
-    [[nodiscard]]
-    inline const std::string get_type() const { return type; }
-
-    /// Returns a string representation of this parameter.
-    [[nodiscard]]
-    const std::string to_string() override;
+  /// Returns a string representation of this parameter.
+  [[nodiscard]]
+  const std::string to_string() override;
 };
 
 
@@ -191,20 +183,19 @@ class FunctionDecl final : public ScopedDecl
 {
 private:
   const std::string name;
-  const std::string ret_type;
+  const Type *T;
   std::vector<std::unique_ptr<ParamVarDecl>> params;
   std::unique_ptr<Stmt> body;
   std::shared_ptr<Scope> scope;
   bool priv;
 
 public:
-  FunctionDecl(const std::string &name, const std::string &ret_type, std::vector<std::unique_ptr<ParamVarDecl>> params)
-    : name(name), ret_type(ret_type), params(std::move(params)), body(nullptr), priv(false) {};
-
-  FunctionDecl(const std::string &name, const std::string &ret_type, std::vector<std::unique_ptr<ParamVarDecl>> params, std::unique_ptr<Stmt> body, std::shared_ptr<Scope> scope)
-    : name(name), ret_type(ret_type), params(std::move(params)), body(std::move(body)), scope(scope), priv(false) {};
-  
+  FunctionDecl(const std::string &name, const Type *T, std::vector<std::unique_ptr<ParamVarDecl>> params)
+    : name(name), T(T), params(std::move(params)), body(nullptr), priv(false) {};
+  FunctionDecl(const std::string &name, const Type *T, std::vector<std::unique_ptr<ParamVarDecl>> params, std::unique_ptr<Stmt> body, std::shared_ptr<Scope> scope)
+    : name(name), T(T), params(std::move(params)), body(std::move(body)), scope(scope), priv(false) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline const Type* get_type() const { return T; }
 
   /// Returns true if this function declaration has a body.
   inline bool has_body() const { return body != nullptr; }
@@ -226,9 +217,6 @@ public:
     }
     return params;
   }
-
-  /// Gets the return type of this function declaration.
-  inline const std::string get_ret_type() const { return ret_type; }
 
   /// Returns the body of this function declaration.
   inline Stmt *get_body() const { return body.get(); }
@@ -263,12 +251,9 @@ private:
   bool priv;
 
 public:
-  TraitDecl(const std::string &name)
-    : name(name), decls(), priv(false) {};
-
+  TraitDecl(const std::string &name) : name(name), decls(), priv(false){};
   TraitDecl(const std::string &name, std::vector<std::unique_ptr<FunctionDecl>> decls)
-    : name(name), decls(std::move(decls)), priv(false) {};
-
+    : name(name), decls(std::move(decls)), priv(false){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
   /// Gets the name of this trait declaration.
@@ -277,10 +262,10 @@ public:
 
   // Returns the expected method behaviour of this trait declaration.
   [[nodiscard]]
-  inline const std::vector<std::pair<std::string, std::string>> get_methods() const { 
-    std::vector<std::pair<std::string, std::string>> methods;
+  inline const std::vector<std::pair<std::string, const Type *>> get_methods() const { 
+    std::vector<std::pair<std::string, const Type *>> methods;
     for (const std::unique_ptr<FunctionDecl> &m : decls) {
-      methods.push_back(std::make_pair(m->get_name(), m->get_ret_type()));
+      methods.push_back(std::make_pair(m->get_name(), m->get_type()));
     }
     return std::move(methods);
   }
@@ -403,21 +388,16 @@ class FieldDecl final : public Decl
 {
 private:
   const std::string name;
-  const std::string type;
+  const Type *T;
   bool priv;
 
 public:
-  /// Basic constructor for struct fields.
-  FieldDecl(const std::string &name, const std::string &type)
-    : name(name), type(type), priv(false) {};
-
+  FieldDecl(const std::string &name, const Type *T) : name(name), T(T), priv(false) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline const Type* get_type() const { return T; }
 
   /// Gets the name of this struct fields.
   inline const std::string get_name() const override { return name; }
-
-  /// Gets the type of this struct fields.
-  inline const std::string get_type() const { return type; }
 
   /// Returns true if this function declaration is private.
   inline bool is_priv() const { return priv; }
@@ -484,25 +464,21 @@ class VarDecl final : public Decl
 {
 private:
   const std::string name;
-  const std::string type;
+  Type *T;
   std::unique_ptr<Expr> expr;
   bool mut;
   bool rune;
 
 public:
-  VarDecl(const std::string &name, const std::string &type, std::unique_ptr<Expr> expr, bool mut, bool rune)
-    : name(name), type(type), expr(std::move(expr)), mut(mut), rune(rune) {};
-
-  VarDecl(const std::string &name, const std::string &type, bool mut, bool rune)
-    : name(name), type(type), expr(nullptr), mut(mut), rune(rune) {};
-
+  VarDecl(const std::string &name, Type *T, std::unique_ptr<Expr> expr, bool mut, bool rune)
+    : name(name), T(T), expr(std::move(expr)), mut(mut), rune(rune) {};
+  VarDecl(const std::string &name, Type *T, bool mut, bool rune)
+    : name(name), T(T), expr(nullptr), mut(mut), rune(rune) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline Type* get_type() const { return T; }
 
   /// Gets the name of this variable declaration.
   inline const std::string get_name() const override { return name; }
-
-  /// Gets the type of this variable declaration.
-  inline const std::string get_type() const { return type; }
 
   /// Returns true if this variable declaration has an expression.
   inline bool has_expr() const { return expr != nullptr; }

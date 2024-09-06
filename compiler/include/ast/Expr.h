@@ -89,73 +89,70 @@ class Expr : public Stmt
 public:
   virtual ~Expr() = default;
   virtual void pass(ASTVisitor *visitor) = 0;
-  const virtual std::string get_type_id() const = 0;
-  const virtual std::string to_string() = 0;
+  virtual Type* get_type() const = 0;
+  virtual const std::string to_string() = 0;
 };
 
 
-/// This class represents the `null` literal expression.
+/// NullExpr - Represents a null expression.
+///
+/// @example `null`
 class NullExpr final : public Expr
 {
 private:
-  Type *__type;
+  Type *T;
 
 public:
-  NullExpr(){};
-
+  NullExpr(Type *T) : T(T){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-
-  /// Gets the type of this null expression.
-  inline const std::string get_type_id() const override { return "null"; }
+  inline Type* get_type() const override { return T; }
 
   /// Returns a string representation of this null expression.
   const std::string to_string() override;
 };
 
 
-/// This class represents a default expression in some match statement.
+/// DefaultExpr - Represents a default expression in pattern matching.
+///
+/// @example `_`
 class DefaultExpr final : public Expr
 {
 private:
-  Type *__type;
+  Type *T;
 
 public:
-  DefaultExpr(){};
+  DefaultExpr(Type *T) : T(T){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-
-  /// Gets the type of this default expression.
-  inline const std::string get_type_id() const override { return "default"; }
+  inline Type* get_type() const override { return T; }
 
   /// Returns a string representation of this expression.
   const std::string to_string() override;
 };
 
 
-/// This class represents a boolean literal expression.
+/// BooleanLiteral - Represents a boolean literal expression.
 ///
 /// @example `true`, `false`
 class BooleanLiteral final : public Expr
 {
 private:
   const unsigned int value;
-  Type *__type;
+  Type *T;
 
 public:
-  BooleanLiteral(bool value) : value(value ? 1 : 0){};
+  BooleanLiteral(bool value, Type *T) : value(value ? 1 : 0), T(T){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline Type* get_type() const override { return T; }
 
   /// Gets the value of this boolean expression.
   inline bool get_value() const { return value; }
-
-  /// Gets the type of this boolean expression.
-  inline const std::string get_type_id() const override { return "bool"; }
 
   /// Returns a string representation of this boolean expression.
   const std::string to_string() override;
 };
 
 
-/// This class represents an integer literal expression.
+/// IntegerLiteral - Represents an integer literal expression.
 ///
 /// @example `0`, `512`, `1024`
 class IntegerLiteral final : public Expr
@@ -163,12 +160,12 @@ class IntegerLiteral final : public Expr
 private:
   const long value;
   const bool signedness;
-  const std::string type_ident;
-  Type *__type;
+  Type *T;
 
 public:
-  IntegerLiteral(int value, const std::string &type_ident) : value(value), signedness(value < 0), type_ident(type_ident){};
+  IntegerLiteral(int value, Type *T) : value(value), signedness(value < 0), T(T){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline Type* get_type() const override { return T; }
 
   /// Gets the value of this integer expression.
   inline int get_value() const { return value; }
@@ -176,115 +173,100 @@ public:
   /// Gets the signedness of this integer expression.
   inline bool is_signed() const { return signedness; }
 
-  /// Gets the type of this integer expression.
-  inline const std::string get_type_id() const override { return type_ident; }
-
   /// Returns a string representation of this integer expression.
   const std::string to_string() override;
 };
 
 
-/// This class represents a floating point literal expression.
+/// FPLiteral - Represents a floating point literal expression.
 ///
 /// @example `0.0`, `3.14`, `6.28`
 class FPLiteral final : public Expr
 {
 private:
   const double value;
-  Type *__type;
+  Type *T;
 
 public:
-  FPLiteral(double value) : value(value), type("float") {};
-
+  FPLiteral(double value, Type *T) : value(value), T(T) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline Type* get_type() const override { return T; }
 
   /// Gets the value of this floating point expression.
   inline double get_value() const { return value; }
-
-  /// Gets the type of this floating point expression.
-  inline const std::string get_type() const override { return type; }
 
   /// Returns a string representation of this floating point expression.
   const std::string to_string() override;
 };
 
 
-/// This class represents a character literal expression.
+/// CharLiteral - Represents a character literal expression.
 ///
 /// @example `'a'`, `'b'`, `'c'`
 class CharLiteral final : public Expr
 {
 private:
   const char value;
-  const std::string type;
+  Type *T;
 
 public:
-  CharLiteral(char value) : value(value), type("char") {};
-
+  CharLiteral(char value, Type *T) : value(value), T(T){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline Type* get_type() const override { return T; }
 
   /// Gets the value of this character expression.
   inline char get_value() const { return value; }
-
-  /// Gets the type of this character expression.
-  inline const std::string get_type() const override { return type; }
 
   /// Returns a string representation of this character expression.
   const std::string to_string() override;
 };
 
 
-/// This class represents a string literal expression.
+/// StringLiteral - Represents a string literal expression.
 ///
 /// @example `"hello, world"`, `"foo"`, `"bar"`
 class StringLiteral final : public Expr
 {
 private:
   const std::string value;
-  const std::string type;
+  Type *T;
 
 public:
-  StringLiteral(const std::string &value) : value(value), type("str") {};
-
+  StringLiteral(const std::string &value, Type *T) : value(value), T(T){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline Type* get_type() const override { return T; }
 
   /// Gets the value of this string expression.
   inline const std::string get_value() const { return value; }
-
-  /// Gets the type of this string expression.
-  inline const std::string get_type() const override { return type; }
 
   /// Returns a string representation of this string expression.
   const std::string to_string() override;
 };
 
 
-/// This class represents a declaration reference expression.
+/// DeclRefExpr - Represents a reference to a declaration.
 ///
 /// @example `x`, `y`, `z`
 class DeclRefExpr final : public Expr
 {
 private:
   const std::string ident;
-  const std::string type;
+  Type *T;
 
 public:
-  DeclRefExpr(const std::string &ident, const std::string &type) : ident(ident), type(type) {};
-
+  DeclRefExpr(const std::string &ident, Type *T) : ident(ident), T(T){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline Type* get_type() const override { return T; }
 
   /// Gets the identifier of this reference expression.
   inline const std::string get_ident() const { return ident; }
-
-  /// Gets the type of this reference expression.
-  inline const std::string get_type() const override { return type; }
 
   /// Returns a string representation of this reference expression.
   const std::string to_string() override;
 };
 
 
-/// This class represents a binary expression.
+/// BinaryExpr - Represents a binary expression.
 ///
 /// @example `x + y`, `x - y`, `x * y`
 class BinaryExpr final : public Expr
@@ -293,18 +275,20 @@ private:
   const BinaryOp op;
   std::unique_ptr<Expr> lhs;
   std::unique_ptr<Expr> rhs;
-  std::string type;
+  Type *T;
 
 public:
   BinaryExpr(const BinaryOp op, std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs) : op(op), lhs(std::move(lhs)), rhs(std::move(rhs)) {
     if (this->lhs && this->rhs) {
-      type = this->lhs->get_type() == this->rhs->get_type() ? this->lhs->get_type() : "mismatch";
+      T = this->lhs->get_type() == this->rhs->get_type() ? this->lhs->get_type() : nullptr;
     } else {
-      type = this->lhs->get_type();
+      T = this->lhs->get_type();
     }
-  };
-
+  }
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+
+  /// Returns the type of this binary expression. Returns `nullptr` if the operand types mismatch.
+  inline Type* get_type() const override { return T; }
 
   /// Gets the operator of this binary expression.
   inline const BinaryOp get_op() const { return op; }
@@ -315,15 +299,12 @@ public:
   /// Gets the right-hand side of this binary expression.
   inline std::unique_ptr<Expr> get_rhs() { return std::move(rhs); }
 
-  /// Gets the type of this binary expression.
-  inline const std::string get_type() const override { return type; }
-
   /// Returns a string representation of this binary expression.
   const std::string to_string() override;
 };
 
 
-/// This class represents a unary expression.
+/// UnaryExpr - Represents a unary expression.
 ///
 /// @example `!x`, `y++`, `#z`
 class UnaryExpr final : public Expr
@@ -331,18 +312,15 @@ class UnaryExpr final : public Expr
 private:
   const UnaryOp op;
   std::unique_ptr<Expr> expr;
-  const std::string type;
+  Type *T;
 
 public:
-  UnaryExpr(const UnaryOp op, std::unique_ptr<Expr> expr) : op(op), expr(std::move(expr)), type(this->expr->get_type()) {};
-
+  UnaryExpr(const UnaryOp op, std::unique_ptr<Expr> expr) : op(op), expr(std::move(expr)), T(this->expr->get_type()){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline Type* get_type() const override { return T; }
 
   /// Gets the operator of this unary expression.
   inline const UnaryOp get_op() const { return op; }
-
-  /// Gets the type of this unary expression.
-  inline const std::string get_type() const override { return type; }
 
   /// Gets the expr of this unary expression.
   inline std::unique_ptr<Expr> get_expr() { return std::move(expr); }
@@ -352,23 +330,20 @@ public:
 };
 
 
-/// This class represents an initialization expression.
+/// InitExpr - Represents an initialization expression.
 ///
 /// @example `Foo { x: 1, y: 2 }`, `Bar { z: 3, w: 4 }`
 class InitExpr final : public Expr
 {
 private:
-  const std::string type;
+  Type *T;
   std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields;
 
 public:
-  InitExpr(const std::string &type, std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields)
-    : type(type), fields(std::move(fields)) {};
-
+  InitExpr(Type *T, std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields)
+    : T(T), fields(std::move(fields)){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-
-  /// Gets the identifier of this initialization expression.
-  inline const std::string get_type() const override { return type; }
+  inline Type* get_type() const override { return T; }
 
   /// Gets the fields of this initialization expression.
   inline std::vector<std::pair<std::string, std::unique_ptr<Expr>>>& get_fields() { return fields; }
@@ -378,7 +353,7 @@ public:
 };
 
 
-/// This class represents a function call expression.
+/// CallExpr - Represents a function call expression.
 ///
 /// @example `foo()`, `bar(x, y, 3)`
 class CallExpr : public Expr
@@ -386,29 +361,28 @@ class CallExpr : public Expr
 protected:
   const std::string callee;
   std::vector<std::unique_ptr<Expr>> args;
-  std::string type;
+  Type* T;
 
 public:
   CallExpr(const std::string &callee, std::vector<std::unique_ptr<Expr>> args)
-    : callee(callee), args(std::move(args)), type("unknown") {};
-
+    : callee(callee), args(std::move(args)), T(nullptr){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+
+  /// Returns the type of this function call expression. Returns `nullptr` if the callee is undefined yet.
+  inline Type* get_type() const override { return T; }
 
   /// Gets the callee of this function call expression.
   inline const std::string get_callee() const { return callee; }
 
-  /// Gets the type of this function call expression.
-  inline const std::string get_type() const override { return type; }
-
   /// Sets the type of this function call expression.
-  inline void set_type(const std::string &type) { this->type = type; }
+  inline void set_type(Type *T) { this->T = T; }
 
   /// Returns a string representation of this function call expression.
   const std::string to_string() override;
 };
 
 
-/// This class represents member access expressions.
+/// MemberExpr - Represents member access expressions.
 ///
 /// @example `foo.bar`, `baz.qux`
 class MemberExpr final : public Expr
@@ -416,33 +390,31 @@ class MemberExpr final : public Expr
 private:
   std::unique_ptr<Expr> base;
   const std::string member;
-  std::string type;
+  Type *T;
 
 public:
   MemberExpr(std::unique_ptr<Expr> base, const std::string &member)
-    : base(std::move(base)), member(member), type("unknown") {};
-
+    : base(std::move(base)), member(member), T(nullptr){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+
+  /// Returns the type of this member access expression. Returns `nullptr` if the member is undefined yet.
+  inline Type* get_type() const override { return T; }
 
   /// Gets the base of this member access expression.
   inline std::unique_ptr<Expr> get_base() { return std::move(base); }
 
-  /// Gets the type of this member access expression.
-  inline const std::string get_type() const override { return type; }
-
   /// Sets the type of this member access expression.
-  inline void set_type(const std::string &type) { this->type = type; }
+  inline void set_type(Type *T) { this->T = T; }
 
   /// Gets the member of this member access expression.
   inline const std::string get_member() const { return member; }
 
   /// Returns a string representation of this member access expression.
-  [[nodiscard]]
   const std::string to_string() override;
 };
 
 
-/// This class represents member call expressions.
+/// MemberCallExpr - Represents a member call expression.
 ///
 /// @example `foo.bar()`, `baz.qux()`
 class MemberCallExpr final : public CallExpr
@@ -453,7 +425,6 @@ private:
 public:
   MemberCallExpr(std::unique_ptr<Expr> base, const std::string &callee, std::vector<std::unique_ptr<Expr>> args)
     : base(std::move(base)), CallExpr(callee, std::move(args)) {};
-
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
   /// Gets the base of this member call expression.
@@ -463,12 +434,11 @@ public:
   inline const std::string get_callee() const { return callee; }
 
   /// Returns a string representation of this member call expression.
-  [[nodiscard]]
   const std::string to_string() override;
 };
 
 
-/// This class represents an array access expression.
+/// ArrayAccessExpr - Represents an array access expression.
 ///
 /// @example `foo[0]`, `bar[1]`
 class ArrayAccessExpr final : public Expr
@@ -476,25 +446,18 @@ class ArrayAccessExpr final : public Expr
 private:
   std::unique_ptr<Expr> base;
   std::unique_ptr<Expr> index;
-  std::string type;
 
 public:
   ArrayAccessExpr(std::unique_ptr<Expr> base, std::unique_ptr<Expr> index)
-    : base(std::move(base)), index(std::move(index)), type("unknown") {};
-
+    : base(std::move(base)), index(std::move(index)){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline Type* get_type() const override { return base->get_type(); }
 
   /// Gets the base of this array access expression.
   inline std::unique_ptr<Expr> get_base() { return std::move(base); }
 
   /// Gets the index of this array access expression.
   inline std::unique_ptr<Expr> get_index() { return std::move(index); }
-
-  /// Gets the type of this array access expression.
-  inline const std::string get_type() const override { return type; }
-
-  /// Sets the type of this array access expression.
-  inline void set_type(const std::string &type) { this->type = type; }
 
   /// Returns a string representation of this array access expression.
   const std::string to_string() override;

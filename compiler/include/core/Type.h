@@ -19,6 +19,30 @@ public:
 };
 
 
+/// TypeRef - Represents a reference to a possibly undefined type.
+///
+/// This class represents a reference to an undefined type in the intermediate representation.
+/// It is used to represent a type that is not yet defined. For example, a struct type that is not yet defined.
+/// In particular, this class sees use in the parsing stage of the compiler.
+class TypeRef final : public Type
+{
+private:
+  const std::string ident;
+  Type *T;
+
+public:
+  TypeRef(const std::string &ident) : ident(ident), T(nullptr){};
+  void set_type(Type *T) { this->T = T; }
+  const std::string get_ident(void) const { return ident; }
+  Type *get_type(void) const { return T; }
+  bool is_bool_evaluable(void) const override { return false; }
+  bool is_null(void) const override { return false; }
+  bool is_void(void) const override { return false; }
+  bool is_integer(void) const override { return false; }
+  bool is_float(void) const override { return false; }
+};
+
+
 /// PrimitiveType - A primitive type in the language.
 ///
 /// This class represents a primitive type in the intermediate representation.
