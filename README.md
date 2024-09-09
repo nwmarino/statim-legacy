@@ -123,6 +123,10 @@ enum Operation {
   ...
 }
 ```
+Declare a variable of an `enum` type:
+```
+let op: Operation = Operation::Plus;
+```
 
 ### Runes
 

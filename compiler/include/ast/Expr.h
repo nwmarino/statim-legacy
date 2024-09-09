@@ -89,7 +89,7 @@ class Expr : public Stmt
 public:
   virtual ~Expr() = default;
   virtual void pass(ASTVisitor *visitor) = 0;
-  virtual Type* get_type() const = 0;
+  virtual const Type* get_type() const = 0;
   virtual const std::string to_string() = 0;
 };
 
@@ -100,12 +100,12 @@ public:
 class NullExpr final : public Expr
 {
 private:
-  Type *T;
+  const Type *T;
 
 public:
   NullExpr(Type *T) : T(T){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  inline Type* get_type() const override { return T; }
+  inline const Type* get_type() const override { return T; }
 
   /// Returns a string representation of this null expression.
   const std::string to_string() override;
@@ -118,12 +118,12 @@ public:
 class DefaultExpr final : public Expr
 {
 private:
-  Type *T;
+  const Type *T;
 
 public:
-  DefaultExpr(Type *T) : T(T){};
+  DefaultExpr(const Type *T) : T(T){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  inline Type* get_type() const override { return T; }
+  inline const Type* get_type() const override { return T; }
 
   /// Returns a string representation of this expression.
   const std::string to_string() override;
@@ -137,12 +137,12 @@ class BooleanLiteral final : public Expr
 {
 private:
   const unsigned int value;
-  Type *T;
+  const Type *T;
 
 public:
-  BooleanLiteral(bool value, Type *T) : value(value ? 1 : 0), T(T){};
+  BooleanLiteral(bool value, const Type *T) : value(value ? 1 : 0), T(T){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  inline Type* get_type() const override { return T; }
+  inline const Type* get_type() const override { return T; }
 
   /// Gets the value of this boolean expression.
   inline bool get_value() const { return value; }
@@ -160,12 +160,12 @@ class IntegerLiteral final : public Expr
 private:
   const long value;
   const bool signedness;
-  Type *T;
+  const Type *T;
 
 public:
-  IntegerLiteral(int value, Type *T) : value(value), signedness(value < 0), T(T){};
+  IntegerLiteral(int value, const Type *T) : value(value), signedness(value < 0), T(T){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  inline Type* get_type() const override { return T; }
+  inline const Type* get_type() const override { return T; }
 
   /// Gets the value of this integer expression.
   inline int get_value() const { return value; }
@@ -185,12 +185,12 @@ class FPLiteral final : public Expr
 {
 private:
   const double value;
-  Type *T;
+  const Type *T;
 
 public:
-  FPLiteral(double value, Type *T) : value(value), T(T) {};
+  FPLiteral(double value, const Type *T) : value(value), T(T) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  inline Type* get_type() const override { return T; }
+  inline const Type* get_type() const override { return T; }
 
   /// Gets the value of this floating point expression.
   inline double get_value() const { return value; }
@@ -207,12 +207,12 @@ class CharLiteral final : public Expr
 {
 private:
   const char value;
-  Type *T;
+  const Type *T;
 
 public:
-  CharLiteral(char value, Type *T) : value(value), T(T){};
+  CharLiteral(char value, const Type *T) : value(value), T(T){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  inline Type* get_type() const override { return T; }
+  inline const Type* get_type() const override { return T; }
 
   /// Gets the value of this character expression.
   inline char get_value() const { return value; }
@@ -229,12 +229,12 @@ class StringLiteral final : public Expr
 {
 private:
   const std::string value;
-  Type *T;
+  const Type *T;
 
 public:
-  StringLiteral(const std::string &value, Type *T) : value(value), T(T){};
+  StringLiteral(const std::string &value, const Type *T) : value(value), T(T){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  inline Type* get_type() const override { return T; }
+  inline const Type* get_type() const override { return T; }
 
   /// Gets the value of this string expression.
   inline const std::string get_value() const { return value; }
@@ -251,12 +251,12 @@ class DeclRefExpr final : public Expr
 {
 private:
   const std::string ident;
-  Type *T;
+  const Type *T;
 
 public:
-  DeclRefExpr(const std::string &ident, Type *T) : ident(ident), T(T){};
+  DeclRefExpr(const std::string &ident, const Type *T) : ident(ident), T(T){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  inline Type* get_type() const override { return T; }
+  inline const Type* get_type() const override { return T; }
 
   /// Gets the identifier of this reference expression.
   inline const std::string get_ident() const { return ident; }
@@ -275,7 +275,7 @@ private:
   const BinaryOp op;
   std::unique_ptr<Expr> lhs;
   std::unique_ptr<Expr> rhs;
-  Type *T;
+  const Type *T;
 
 public:
   BinaryExpr(const BinaryOp op, std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs) : op(op), lhs(std::move(lhs)), rhs(std::move(rhs)) {
@@ -288,7 +288,7 @@ public:
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
   /// Returns the type of this binary expression. Returns `nullptr` if the operand types mismatch.
-  inline Type* get_type() const override { return T; }
+  inline const Type* get_type() const override { return T; }
 
   /// Gets the operator of this binary expression.
   inline const BinaryOp get_op() const { return op; }
@@ -312,12 +312,12 @@ class UnaryExpr final : public Expr
 private:
   const UnaryOp op;
   std::unique_ptr<Expr> expr;
-  Type *T;
+  const Type *T;
 
 public:
   UnaryExpr(const UnaryOp op, std::unique_ptr<Expr> expr) : op(op), expr(std::move(expr)), T(this->expr->get_type()){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  inline Type* get_type() const override { return T; }
+  inline const Type* get_type() const override { return T; }
 
   /// Gets the operator of this unary expression.
   inline const UnaryOp get_op() const { return op; }
@@ -336,14 +336,14 @@ public:
 class InitExpr final : public Expr
 {
 private:
-  Type *T;
+  const Type *T;
   std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields;
 
 public:
-  InitExpr(Type *T, std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields)
+  InitExpr(const Type *T, std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields)
     : T(T), fields(std::move(fields)){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  inline Type* get_type() const override { return T; }
+  inline const Type* get_type() const override { return T; }
 
   /// Gets the fields of this initialization expression.
   inline std::vector<std::pair<std::string, std::unique_ptr<Expr>>>& get_fields() { return fields; }
@@ -361,7 +361,7 @@ class CallExpr : public Expr
 protected:
   const std::string callee;
   std::vector<std::unique_ptr<Expr>> args;
-  Type* T;
+  const Type* T;
 
 public:
   CallExpr(const std::string &callee, std::vector<std::unique_ptr<Expr>> args)
@@ -369,7 +369,7 @@ public:
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
   /// Returns the type of this function call expression. Returns `nullptr` if the callee is undefined yet.
-  inline Type* get_type() const override { return T; }
+  inline const Type* get_type() const override { return T; }
 
   /// Gets the callee of this function call expression.
   inline const std::string get_callee() const { return callee; }
@@ -390,7 +390,7 @@ class MemberExpr final : public Expr
 private:
   std::unique_ptr<Expr> base;
   const std::string member;
-  Type *T;
+  const Type *T;
 
 public:
   MemberExpr(std::unique_ptr<Expr> base, const std::string &member)
@@ -398,7 +398,7 @@ public:
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
   /// Returns the type of this member access expression. Returns `nullptr` if the member is undefined yet.
-  inline Type* get_type() const override { return T; }
+  inline const Type* get_type() const override { return T; }
 
   /// Gets the base of this member access expression.
   inline std::unique_ptr<Expr> get_base() { return std::move(base); }
@@ -451,7 +451,7 @@ public:
   ArrayAccessExpr(std::unique_ptr<Expr> base, std::unique_ptr<Expr> index)
     : base(std::move(base)), index(std::move(index)){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  inline Type* get_type() const override { return base->get_type(); }
+  inline const Type* get_type() const override { return base->get_type(); }
 
   /// Gets the base of this array access expression.
   inline std::unique_ptr<Expr> get_base() { return std::move(base); }

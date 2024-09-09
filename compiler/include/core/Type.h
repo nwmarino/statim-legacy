@@ -14,8 +14,12 @@ public:
   virtual bool is_bool_evaluable(void) const = 0;
   virtual bool is_null(void) const = 0;
   virtual bool is_void(void) const = 0;
+  virtual bool is_bool(void) const = 0;
   virtual bool is_integer(void) const = 0;
   virtual bool is_float(void) const = 0;
+  virtual bool is_builtin(void) const = 0;
+  virtual bool is_matchable(void) const = 0;
+  virtual std::string to_string(void) const = 0;
 };
 
 
@@ -28,18 +32,22 @@ class TypeRef final : public Type
 {
 private:
   const std::string ident;
-  Type *T;
+  const Type *T;
 
 public:
   TypeRef(const std::string &ident) : ident(ident), T(nullptr){};
   void set_type(Type *T) { this->T = T; }
   const std::string get_ident(void) const { return ident; }
-  Type *get_type(void) const { return T; }
+  const Type *get_type(void) const { return T; }
   bool is_bool_evaluable(void) const override { return false; }
   bool is_null(void) const override { return false; }
   bool is_void(void) const override { return false; }
+  bool is_bool(void) const override { return false; }
   bool is_integer(void) const override { return false; }
   bool is_float(void) const override { return false; }
+  bool is_builtin(void) const override { return false; }
+  bool is_matchable(void) const override { return false; }
+  std::string to_string(void) const override { return ident; }
 };
 
 
@@ -59,18 +67,33 @@ public:
     __FP64,
     __CHAR,
   };
-  PrimitiveType(PrimitiveKind K);
   bool is_bool_evaluable(void) const override { return true; }
   bool is_null(void) const override { return false; }
   bool is_void(void) const override { return false; }
+  bool is_builtin(void) const override { return true; }
+  bool is_matchable(void) const override { return true; }
 
 private:
   const PrimitiveKind __kind;
 
 public:
+  PrimitiveType(PrimitiveKind K) : __kind(K){};
   PrimitiveKind get_kind(void) const { return __kind; }
+  bool is_bool(void) const override { return get_kind() == __UINT1; }
   bool is_integer(void) const override { return get_kind() <= __INT64; }
   bool is_float(void) const override { return get_kind() == __FP32 || get_kind() == __FP64; }
+  std::string to_string(void) const override {
+    switch (get_kind()) {
+      case __UINT1: return "bool";
+      case __UINT32: return "u32";
+      case __INT32: return "i32";
+      case __INT64: return "i64";
+      case __FP32: return "f32";
+      case __FP64: return "f64";
+      case __CHAR: return "char";
+      default: return "unknown";
+    }
+  }
 };
 
 
@@ -82,8 +105,11 @@ public:
   bool is_bool_evaluable(void) const override { return false; }
   bool is_null(void) const override { return false; }
   bool is_void(void) const override { return false; }
+  bool is_bool(void) const override { return false; }
   bool is_integer(void) const override { return false; }
   bool is_float(void) const override { return false; }
+  bool is_builtin(void) const override { return false; }
+  bool is_matchable(void) const override { return false; }
 };
 
 
@@ -100,7 +126,9 @@ private:
 public:
   /// @param T The element type of the array.
   ArrayType(unsigned int size, const Type *T) : __len(size), __type(T){};
+  bool is_builtin(void) const override { return false; }
   bool is_valid_element(void) const;
+  std::string to_string(void) const override { return __type->to_string() + "[" + std::to_string(__len) + "]"; }
 };
 
 
@@ -116,7 +144,9 @@ private:
 public:
   /// @param T The type which the rune points to.
   RuneType(const Type *T) : __type(T){};
+  bool is_builtin(void) const override { return false; }
   bool is_valid_element(void) const;
+  std::string to_string(void) const override { return '#' + __type->to_string(); }
 };
 
 
@@ -132,7 +162,9 @@ private:
 public:
   /// @param name The name of the struct.
   StructType(const std::string &name) : __struct_name(name){};
+  bool is_builtin(void) const override { return false; }
   const std::string get_name(void) const { return __struct_name; }
+  std::string to_string(void) const override { return __struct_name; }
 };
 
 #endif  // TYPE_STATIMC_H

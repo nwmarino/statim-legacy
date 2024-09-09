@@ -35,8 +35,8 @@ private:
 
 public:
   DeclStmt(std::unique_ptr<Decl> decl) : decl(std::move(decl)) {};
-
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline Decl* get_decl() const { return decl.get(); }
 
   /// Returns a string representation of this declaration statement.
   const std::string to_string() override;
@@ -52,8 +52,14 @@ private:
 
 public:
   CompoundStmt(std::vector<std::unique_ptr<Stmt>> stmts, std::shared_ptr<Scope> scope) : stmts(std::move(stmts)), scope(scope) {};
-
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline std::vector<Stmt *> get_stmts() const {
+    std::vector<Stmt *> stmt_ptrs;
+    for (auto &stmt : stmts) {
+      stmt_ptrs.push_back(stmt.get());
+    }
+    return stmt_ptrs;
+  }
 
   /// Determine if the body of this compound statement is empty.
   inline bool is_empty() const { return stmts.empty(); }
@@ -77,11 +83,12 @@ private:
 public:
   IfStmt(std::unique_ptr<Expr> cond, std::unique_ptr<Stmt> then_body, std::unique_ptr<Stmt> else_body)
     : cond(std::move(cond)), then_body(std::move(then_body)), else_body(std::move(else_body)) {};
-
   IfStmt(std::unique_ptr<Expr> cond, std::unique_ptr<Stmt> then_body)
     : cond(std::move(cond)), then_body(std::move(then_body)), else_body(nullptr) {};
-
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline Expr* get_cond() const { return cond.get(); }
+  inline Stmt* get_then_body() const { return then_body ? then_body.get() : nullptr; }
+  inline Stmt* get_else_body() const { return else_body ? else_body.get() : nullptr; }
 
   /// Determine if this if statement has an else body.
   inline bool has_else() const { return else_body != nullptr; }
@@ -104,9 +111,10 @@ private:
 
 public:
   MatchCase(std::unique_ptr<Expr> expr, std::unique_ptr<Stmt> body)
-    : expr(std::move(expr)), body(std::move(body)) {};
-
+    : expr(std::move(expr)), body(std::move(body)){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline Expr* get_expr() const { return expr.get(); }
+  inline Stmt* get_body() const { return body.get(); }
 
   /// Returns a string representation of this match case.
   const std::string to_string() override;
@@ -122,9 +130,16 @@ private:
 
 public:
   MatchStmt(std::unique_ptr<Expr> expr, std::vector<std::unique_ptr<MatchCase>> cases)
-    : expr(std::move(expr)), cases(std::move(cases)) {};
-
+    : expr(std::move(expr)), cases(std::move(cases)){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline Expr* get_expr() const { return expr.get(); }
+  inline std::vector<MatchCase *> get_cases() const {
+    std::vector<MatchCase *> case_ptrs;
+    for (auto &c : cases) {
+      case_ptrs.push_back(c.get());
+    }
+    return case_ptrs;
+  }
 
   /// Returns a string representation of this match statement.
   const std::string to_string() override;
@@ -138,9 +153,9 @@ private:
   std::unique_ptr<Expr> expr;
 
 public:
-  ReturnStmt(std::unique_ptr<Expr> expr) : expr(std::move(expr)) {};
-  
+  ReturnStmt(std::unique_ptr<Expr> expr) : expr(std::move(expr)){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline Expr* get_expr() const { return expr.get(); }
 
   /// Determine if this return statement has an expression.
   inline bool has_expr() const { return expr != nullptr; }
@@ -159,9 +174,10 @@ private:
 
 public:
   UntilStmt(std::unique_ptr<Expr> cond, std::unique_ptr<Stmt> body)
-    : cond(std::move(cond)), body(std::move(body)) {};
-
+    : cond(std::move(cond)), body(std::move(body)){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline Expr* get_cond() const { return cond.get(); }
+  inline Stmt* get_body() const { return body.get(); }
 
   /// Returns a string representation of this until statement.
   const std::string to_string() override;

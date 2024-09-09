@@ -5,12 +5,12 @@
 ASTContext::ASTContext(struct CFlags flags, std::vector<struct CFile> input)
 : flags(flags), input(input), _last(Token(Eof)), _last_two(Token(Eof)), type_table({}) {
   // load built-in types
-  type_table["bool"] = new PrimitiveType(PrimitiveType::PrimitiveKind::__UINT1);
-  type_table["uint"] = new PrimitiveType(PrimitiveType::PrimitiveKind::__UINT32);
-  type_table["i32"] = new PrimitiveType(PrimitiveType::PrimitiveKind::__INT32);
-  type_table["i64"] = new PrimitiveType(PrimitiveType::PrimitiveKind::__INT64);
-  type_table["float"] = new PrimitiveType(PrimitiveType::PrimitiveKind::__FP32);
-  type_table["char"] = new PrimitiveType(PrimitiveType::PrimitiveKind::__CHAR);
+  type_table["bool"] = new PrimitiveType(PrimitiveType::__UINT1);
+  type_table["uint"] = new PrimitiveType(PrimitiveType::__UINT32);
+  type_table["i32"] = new PrimitiveType(PrimitiveType::__INT32);
+  type_table["i64"] = new PrimitiveType(PrimitiveType::__INT64);
+  type_table["float"] = new PrimitiveType(PrimitiveType::__FP32);
+  type_table["char"] = new PrimitiveType(PrimitiveType::__CHAR);
 }
 
 
@@ -32,14 +32,14 @@ void ASTContext::next_file(void) {
 
 
 Type* ASTContext::resolve_type(const std::string &name) {
+  if (name == "void") { 
+    return nullptr;
+  }
+
   if (type_table.find(name) != type_table.end()) {
     return type_table.at(name);
   }
+  
   type_table[name] = new TypeRef(name);
   return type_table.at(name);
 }
-
-
-inline struct Token ASTContext::last(void) const { return _last; }
-inline struct Token ASTContext::last_two(void) const { return _last_two; }
-inline std::string ASTContext::file(void) const { return _file; }

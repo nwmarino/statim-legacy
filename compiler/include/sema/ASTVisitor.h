@@ -19,7 +19,7 @@ class FieldDecl;
 class TraitDecl;
 class ImplDecl;
 class EnumDecl;
-class EnumVariant;
+class EnumVariantDecl;
 class VarDecl;
 
 class DeclStmt;
@@ -68,7 +68,7 @@ public:
   virtual void visit(TraitDecl *d) = 0;
   virtual void visit(ImplDecl *d) = 0;
   virtual void visit(EnumDecl *d) = 0;
-  virtual void visit(EnumVariant *d) = 0;
+  virtual void visit(EnumVariantDecl *d) = 0;
   virtual void visit(VarDecl *d) = 0;
 
   virtual void visit(DeclStmt *s) = 0;
@@ -117,7 +117,7 @@ public:
   void visit(TraitDecl *d) override;
   void visit(ImplDecl *d) override;
   void visit(EnumDecl *d) override;
-  void visit(EnumVariant *d) override;
+  void visit(EnumVariantDecl *d) override;
   void visit(VarDecl *d) override;
 
   void visit(DeclStmt *s) override;

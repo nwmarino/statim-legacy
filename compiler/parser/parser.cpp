@@ -764,7 +764,7 @@ static std::unique_ptr<EnumDecl> parse_enum_decl(std::unique_ptr<ASTContext> &ct
   }
   ctx->next();  // eat open brace
 
-  std::vector<EnumVariant> variants;
+  std::vector<std::unique_ptr<EnumVariantDecl>> variants;
   while (!ctx->last().is_close_brace()) {
     if (!ctx->last().is_ident()) {
       return warn_enum("expected identifier in enum variant list", ctx->last().meta);
@@ -774,13 +774,13 @@ static std::unique_ptr<EnumDecl> parse_enum_decl(std::unique_ptr<ASTContext> &ct
     ctx->next();  // eat variant name
     
     // verify the variant does not already exist
-    for (const EnumVariant &v : variants) {
-      if (v.get_name() == variant_name) {
+    for (const std::unique_ptr<EnumVariantDecl> &v : variants) {
+      if (v->get_name() == variant_name) {
         return warn_enum("variant already exists: " + variant_name + " in " + name, ctx->last().meta);
       }
     }
 
-    variants.push_back(EnumVariant(variant_name));
+    variants.push_back(std::make_unique<EnumVariantDecl>(variant_name));
     if (ctx->last().is_close_brace()) {
       break;
     }
@@ -870,7 +870,7 @@ static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<ASTContext> &
 
   if (ctx->last().is_semi()) {
     ctx->next();  // eat semi
-    return std::make_unique<FunctionDecl>(name, ret_type, std::move(params));
+    return std::make_unique<FunctionDecl>(name, ctx->resolve_type(ret_type), std::move(params));
   }
 
   if (!ctx->last().is_open_brace() ) {
@@ -886,7 +886,7 @@ static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<ASTContext> &
     return warn_fn("expected function body", ctx->last().meta);
   }
 
-  std::unique_ptr<FunctionDecl> function = std::make_unique<FunctionDecl>(name, ret_type, std::move(params), std::move(body), scope);
+  std::unique_ptr<FunctionDecl> function = std::make_unique<FunctionDecl>(name, ctx->resolve_type(ret_type), std::move(params), std::move(body), scope);
 
   // move back to parent scope
   curr_scope = curr_scope->get_parent();
@@ -900,18 +900,18 @@ static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<ASTContext> &
 /// Parses a struct declaration from the given context.
 ///
 /// Struct declarations are in the form of `struct <identifier> { <fields> }`.
-static std::unique_ptr<StructDecl> parse_struct_decl(std::unique_ptr<ASTContext> &ctx) {
+static std::unique_ptr<TypeDecl> parse_struct_decl(std::unique_ptr<ASTContext> &ctx) {
   ctx->next();  // eat struct keyword
 
   if (!ctx->last().is_ident()) {
-    return warn_struct("expected identifier after 'struct'", ctx->last().meta);
+    return warn_tydecl("expected identifier after 'struct'", ctx->last().meta);
   }
 
   const std::string name = ctx->last().value;
   ctx->next();  // eat struct name
 
   if (!ctx->last().is_open_brace()) {
-    return warn_struct("expected '{' after struct identifier", ctx->last().meta);
+    return warn_tydecl("expected '{' after struct identifier", ctx->last().meta);
   }
   ctx->next();  // eat open brace
 
@@ -923,7 +923,7 @@ static std::unique_ptr<StructDecl> parse_struct_decl(std::unique_ptr<ASTContext>
   std::vector<std::unique_ptr<FieldDecl>> fields;
   while (!ctx->last().is_close_brace()) {
     if (!ctx->last().is_ident()) {
-      return warn_struct("expected identifier", ctx->last().meta);
+      return warn_tydecl("expected identifier", ctx->last().meta);
     }
 
     bool is_private = false;
@@ -936,12 +936,12 @@ static std::unique_ptr<StructDecl> parse_struct_decl(std::unique_ptr<ASTContext>
     ctx->next();  // eat field name
 
     if (!ctx->last().is_colon()) {
-      return warn_struct("expected ':'", ctx->last().meta);
+      return warn_tydecl("expected ':'", ctx->last().meta);
     }
     ctx->next();  // eat colon
 
     if (!ctx->last().is_ident()) {
-      return warn_struct("expected type", ctx->last().meta);
+      return warn_tydecl("expected type", ctx->last().meta);
     }
 
     const std::string field_type = ctx->last().value;
@@ -950,11 +950,11 @@ static std::unique_ptr<StructDecl> parse_struct_decl(std::unique_ptr<ASTContext>
     // verify that the field does not already exist
     for (const std::unique_ptr<FieldDecl> &f : fields) {
       if (f->get_name() == field_name) {
-        return warn_struct("field already exists: " + field_name + " in " + name, ctx->last().meta);
+        return warn_tydecl("field already exists: " + field_name + " in " + name, ctx->last().meta);
       }
     }
 
-    std::unique_ptr<FieldDecl> field = std::make_unique<FieldDecl>(field_name, field_type);
+    std::unique_ptr<FieldDecl> field = std::make_unique<FieldDecl>(field_name, ctx->resolve_type(field_type));
     if (is_private) {
       field->set_priv();
     }
@@ -964,7 +964,7 @@ static std::unique_ptr<StructDecl> parse_struct_decl(std::unique_ptr<ASTContext>
     fields.push_back(std::move(field));
 
     if (!ctx->last().is_comma()) {
-      return warn_struct("expected ','", ctx->last().meta);
+      return warn_tydecl("expected ','", ctx->last().meta);
     }
     ctx->next();  // eat comma
   }
@@ -976,7 +976,7 @@ static std::unique_ptr<StructDecl> parse_struct_decl(std::unique_ptr<ASTContext>
   curr_scope = curr_scope->get_parent();
 
   // add struct declaration to parent scope
-  curr_scope->add_decl(structure.get());
+  curr_scope->add_decl(static_cast<TypeDecl *>(structure.get()));
   return structure;
 }
 
@@ -1102,7 +1102,7 @@ static std::unique_ptr<Decl> parse_decl(std::unique_ptr<ASTContext> &ctx, bool i
 
   if (ctx->last().is_kw("struct")) {
     if (is_private) {
-      if (std::unique_ptr<StructDecl> decl = parse_struct_decl(ctx)) {
+      if (std::unique_ptr<TypeDecl> decl = parse_struct_decl(ctx)) {
         decl->set_priv();
         return decl;
       }

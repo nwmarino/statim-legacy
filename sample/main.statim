@@ -1,8 +1,18 @@
 fn main() {
-  let mut numbers: i32;
-  numbers[1] = 5;
+  let x: i32 = 0;
 }
 
-fn foo() {
-  return x;
+fn foo() -> void {
+  let y: i64 = 2;
+  return y;
+}
+
+struct LeBronJames {
+  points: i32,
+}
+
+fn bar() -> LeBronJames {
+  return LeBronJames {
+    points: 16,
+  };
 }

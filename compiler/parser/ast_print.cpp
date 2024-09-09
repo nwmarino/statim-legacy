@@ -100,7 +100,8 @@ const std::string PackageUnit::to_string() {
 
 
 const std::string FunctionDecl::to_string() {
-  std::string result = piping() + BOLD + RED + "FunctionDecl" + RESET + GREEN + " '" + get_ret_type() + "' " + BLUE + name + RESET;
+  const std::string type = get_type() ? get_type()->to_string() : "void";
+  std::string result = piping() + BOLD + RED + "FunctionDecl" + RESET + GREEN + " '" + type + "' " + BLUE + name + RESET;
   result = is_priv() ? result + " private\n" : result + '\n'; 
   indent++;
   for (std::unique_ptr<ParamVarDecl> &param : params) {
@@ -116,12 +117,12 @@ const std::string FunctionDecl::to_string() {
 
 
 const std::string ParamVarDecl::to_string() {
-  return piping() + RED + "ParamVarDecl" + GREEN + " '" + get_type() + "' " + BLUE + name + RESET + '\n';
+  return piping() + RED + "ParamVarDecl" + GREEN + " '" + get_type()->to_string() + "' " + BLUE + name + RESET + '\n';
 }
 
 
 const std::string FieldDecl::to_string() {
-  std::string result = piping() + RED + "FieldDecl" + GREEN + " '" + get_type() + "' " + BLUE + name + RESET;
+  std::string result = piping() + RED + "FieldDecl" + GREEN + " '" + get_type()->to_string() + "' " + BLUE + name + RESET;
   if (is_priv()) {
     result += " private\n";
   } else {
@@ -160,8 +161,8 @@ const std::string ImplDecl::to_string() {
 }
 
 
-const std::string EnumVariant::to_string() {
-  return piping() + RED + "EnumVariant " + BLUE + name + RESET + '\n';
+const std::string EnumVariantDecl::to_string() {
+  return piping() + RED + "EnumVariantDecl " + BLUE + name + RESET + '\n';
 }
 
 
@@ -169,9 +170,9 @@ const std::string EnumDecl::to_string() {
   std::string result = is_priv() ? piping() + BOLD + RED + "EnumDecl " + RESET + BLUE + name + RESET + " private\n" : \
     piping() + BOLD + RED + "EnumDecl " + RESET + BLUE + name + RESET + '\n';
   indent++;
-  for (EnumVariant &variant : variants) {
+  for (const std::unique_ptr<EnumVariantDecl> &variant : variants) {
     at_last_child = &variant == &variants.back();
-    result += variant.to_string();
+    result += variant->to_string();
   }
   indent = 0;
   return result;
@@ -192,7 +193,7 @@ const std::string TraitDecl::to_string() {
 
 
 const std::string VarDecl::to_string() {
-  std::string result = piping() + RED + "VarDecl" + GREEN + " '" + get_type() + "' " + BLUE + name + RESET; 
+  std::string result = piping() + RED + "VarDecl" + GREEN + " '" + get_type()->to_string() + "' " + BLUE + name + RESET; 
   result = is_mut() ? result + " mutable" : result;
   result = is_rune() ? result + " rune\n" : result + '\n';
   if (has_expr()) {
@@ -302,42 +303,42 @@ const std::string UntilStmt::to_string() {
 
 
 const std::string DefaultExpr::to_string() {
-  return piping() + MAGENTA + "DefaultExpr" + GREEN + " '" + get_type() + "' " + BOLD + CYAN + "_" + RESET + '\n';
+  return piping() + MAGENTA + "DefaultExpr" + GREEN + " '" + get_type()->to_string() + "' " + BOLD + CYAN + "_" + RESET + '\n';
 }
 
 
 const std::string NullExpr::to_string() {
-  return piping() + MAGENTA + "NullExpr" + GREEN + " '" + get_type() + "' " + BOLD + CYAN + "null" + RESET + '\n';
+  return piping() + MAGENTA + "NullExpr" + GREEN + " '" + get_type()->to_string() + "' " + BOLD + CYAN + "null" + RESET + '\n';
 }
 
 
 const std::string BooleanLiteral::to_string() {
-  return piping() + MAGENTA + "BooleanLiteral" + GREEN + " '" + get_type() + "' " + BOLD + CYAN + std::to_string(value) + RESET + '\n';
+  return piping() + MAGENTA + "BooleanLiteral" + GREEN + " '" + get_type()->to_string() + "' " + BOLD + CYAN + std::to_string(value) + RESET + '\n';
 }
 
 
 const std::string IntegerLiteral::to_string() {
-  return piping() + MAGENTA + "IntegerLiteral" + GREEN + " '" + get_type() + "' " + BOLD + CYAN + std::to_string(value) + RESET + '\n';
+  return piping() + MAGENTA + "IntegerLiteral" + GREEN + " '" + get_type()->to_string() + "' " + BOLD + CYAN + std::to_string(value) + RESET + '\n';
 }
 
 
 const std::string FPLiteral::to_string() {
-  return piping() + MAGENTA + "FPLiteral" + GREEN + " '" + get_type() + "' " + BOLD + CYAN + std::to_string(value) + RESET + '\n';
+  return piping() + MAGENTA + "FPLiteral" + GREEN + " '" + get_type()->to_string() + "' " + BOLD + CYAN + std::to_string(value) + RESET + '\n';
 }
 
 
 const std::string CharLiteral::to_string() {
-  return piping() + MAGENTA + "CharLiteral" + GREEN + " '" + get_type() + "' " + BOLD + CYAN + '\'' + value + '\'' + RESET + '\n';
+  return piping() + MAGENTA + "CharLiteral" + GREEN + " '" + get_type()->to_string() + "' " + BOLD + CYAN + '\'' + value + '\'' + RESET + '\n';
 }
 
 
 const std::string StringLiteral::to_string() {
-  return piping() + MAGENTA + "StringLiteral" + GREEN + " '" + get_type() + "' " + BOLD + CYAN + "\"" + value + "\"" + RESET + '\n';
+  return piping() + MAGENTA + "StringLiteral" + GREEN + " '" + get_type()->to_string() + "' " + BOLD + CYAN + "\"" + value + "\"" + RESET + '\n';
 }
 
 
 const std::string BinaryExpr::to_string() {
-  std::string result = piping() + MAGENTA + "BinaryExpr" + GREEN + " '" + get_type() + "' " + BOLD + CYAN + binary_to_string(op) + RESET + '\n';
+  std::string result = piping() + MAGENTA + "BinaryExpr" + GREEN + " '" + get_type()->to_string() + "' " + BOLD + CYAN + binary_to_string(op) + RESET + '\n';
   indent++;
   place_vert[indent] = 1;
   int s_indent = indent;
@@ -352,7 +353,7 @@ const std::string BinaryExpr::to_string() {
 
 
 const std::string UnaryExpr::to_string() {
-  std::string result = piping() + MAGENTA + "UnaryExpr" + GREEN + " '" + get_type() + "' " + BOLD + CYAN + unary_to_string(op) + RESET + '\n';
+  std::string result = piping() + MAGENTA + "UnaryExpr" + GREEN + " '" + get_type()->to_string() + "' " + BOLD + CYAN + unary_to_string(op) + RESET + '\n';
   indent++;
   result += expr->to_string();
   return result;
@@ -360,7 +361,7 @@ const std::string UnaryExpr::to_string() {
 
 
 const std::string CallExpr::to_string() {
-  std::string result = piping() + MAGENTA + "CallExpr" + GREEN + " '" + get_type() + "' " + BLUE + '\'' + callee + '\'' + RESET + '\n';
+  std::string result = piping() + MAGENTA + "CallExpr" + GREEN + " '" + get_type()->to_string() + "' " + BLUE + '\'' + callee + '\'' + RESET + '\n';
   indent++;
   at_last_child = false;
   for (std::unique_ptr<Expr> const &arg : args) {
@@ -373,14 +374,15 @@ const std::string CallExpr::to_string() {
 
 
 const std::string DeclRefExpr::to_string() {
-  std::string result = piping() + MAGENTA + "DeclRefExpr" + GREEN + " '" + get_type() + "' " + BLUE + ident + RESET + '\n';
+  const std::string type = get_type() ? get_type()->to_string() : "void";
+  std::string result = piping() + MAGENTA + "DeclRefExpr" + GREEN + " '" + type + "' " + BLUE + ident + RESET + '\n';
   at_last_child = false;
   return result;
 }
 
 
 const std::string InitExpr::to_string() {
-  std::string result = piping() + MAGENTA + "InitExpr" + GREEN + " '" + get_type() + '\'' + RESET + '\n';
+  std::string result = piping() + MAGENTA + "InitExpr" + GREEN + " '" + get_type()->to_string() + '\'' + RESET + '\n';
   indent++;
   place_vert[indent] = 1;
   for (std::pair<std::string, std::unique_ptr<Expr>> const &field : fields) {
@@ -388,7 +390,7 @@ const std::string InitExpr::to_string() {
     if (at_last_child) {
       place_vert[indent] = 0;
     }
-    result += piping() + RED + "Field" + GREEN + " '" + field.second->get_type() + "' " + BLUE + field.first + RESET + '\n';
+    result += piping() + RED + "Field" + GREEN + " '" + field.second->get_type()->to_string() + "' " + BLUE + field.first + RESET + '\n';
     at_last_child = true;
     indent++;
     result += field.second->to_string();
@@ -401,7 +403,7 @@ const std::string InitExpr::to_string() {
 
 
 const std::string MemberExpr::to_string() {
-  std::string result = piping() + MAGENTA + "MemberExpr" + GREEN + " '" + get_type() + "' " + BLUE + '\'' + get_member() + '\'' + RESET + '\n';
+  std::string result = piping() + MAGENTA + "MemberExpr" + GREEN + " '" + get_type()->to_string() + "' " + BLUE + '\'' + get_member() + '\'' + RESET + '\n';
   indent++;
   at_last_child = true;
   result += base->to_string();
@@ -411,7 +413,7 @@ const std::string MemberExpr::to_string() {
 
 
 const std::string MemberCallExpr::to_string() {
-  std::string result = piping() + MAGENTA + "MemberCallExpr" + GREEN + " '" + get_type() + "' " + BLUE + '\'' + callee + '\'' + RESET + '\n';
+  std::string result = piping() + MAGENTA + "MemberCallExpr" + GREEN + " '" + get_type()->to_string() + "' " + BLUE + '\'' + callee + '\'' + RESET + '\n';
   indent++;
   at_last_child = false;
   result += base->to_string();
@@ -425,7 +427,7 @@ const std::string MemberCallExpr::to_string() {
 
 
 const std::string ArrayAccessExpr::to_string() {
-  std::string result = piping() + MAGENTA + "ArrayAccessExpr" + GREEN + " '" + get_type() + "' " + BLUE + "[]" + RESET + '\n';
+  std::string result = piping() + MAGENTA + "ArrayAccessExpr" + GREEN + " '" + get_type()->to_string() + "' " + BLUE + "[]" + RESET + '\n';
   indent++;
   at_last_child = false;
   result += base->to_string();

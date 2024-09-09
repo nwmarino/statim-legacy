@@ -52,18 +52,21 @@ public:
   struct Token next(void);
   /// Gets the last token in the stream.
   [[nodiscard]]
-  inline struct Token last(void) const;
+  inline struct Token last(void) const { return _last; }
   /// Gets the second to last token in the stream.
   [[nodiscard]]
-  inline struct Token last_two(void) const;
+  inline struct Token last_two(void) const { return _last_two; }
   /// Gets the name of the currently open file.
   [[nodiscard]]
-  inline std::string file(void) const;
+  inline std::string file(void) const { return _file; }
   /// Moves to the next input file and consumes the previous.
   void next_file(void);
   /// Resolves a type by name. Returns a `TypeRef` object if the type is not found.
   [[nodiscard]]
   Type* resolve_type(const std::string &name);
+  /// Declares a type in the type table. Used for source defined types. Panics if the type already exists.
+  /// @returns A pointer to the new type.
+  Type* declare_type(const std::string &name, Type *T);
 };
 
 #endif  // ASTCONTEXT_STATIMC_H
