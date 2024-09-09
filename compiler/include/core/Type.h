@@ -78,6 +78,18 @@ private:
 
 public:
   PrimitiveType(PrimitiveKind K) : __kind(K){};
+  bool compare(const Type *T) const {
+    if (const PrimitiveType *P = dynamic_cast<const PrimitiveType *>(T)) {
+      if (this->is_integer()) {
+        return T->is_integer();
+      } else if (this->is_float()) {
+        return T->is_float();
+      } else {
+        return this->get_kind() == P->get_kind();
+      }
+    }
+    return false;
+  }
   PrimitiveKind get_kind(void) const { return __kind; }
   bool is_bool(void) const override { return get_kind() == __UINT1; }
   bool is_integer(void) const override { return get_kind() <= __INT64; }

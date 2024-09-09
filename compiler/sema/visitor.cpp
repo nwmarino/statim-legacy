@@ -61,6 +61,7 @@ void PassVisitor::visit(PackageUnit *u) {
 
   for (Decl *decl : u->get_decls()) {
     decl->pass(this);
+    std::cout << "Passed decl: " + decl->get_name() + '\n'; // debugging
   }
 }
 
@@ -70,7 +71,7 @@ void PassVisitor::visit(PackageUnit *u) {
 /// in particular that no return type or arguments exist.
 void PassVisitor::visit(FunctionDecl *d) {
   // check for entry function
-  if (d->get_name() == "main") {
+  if (d->is_main()) {
     // check no params exist
     if (d->has_params()) {
       panic("entry function 'main' cannot have parameters");
@@ -89,22 +90,23 @@ void PassVisitor::visit(FunctionDecl *d) {
   for (ParamVarDecl *param : d->get_params()) {
     param->pass(this);
   }
-  top_scope = nullptr;
   
   // check that a valid return type exists
-  if (!d->get_type()->is_builtin()) {
-    if (const TypeRef *T = dynamic_cast<const TypeRef *>(d->get_type())) {
-      StructDecl *struct_d = dynamic_cast<StructDecl *>(d->get_scope()->get_decl(T->get_ident()));
-      if (!struct_d) {
-        panic("unresolved return type: " + T->get_ident());
-      }
-
-      // assign real type
-      if (struct_d->get_type()) {
-        d->set_type(struct_d->get_type());
-      }
+  if (d->get_type() && !d->get_type()->is_builtin()) {
+    const TypeRef *T = dynamic_cast<const TypeRef *>(d->get_type());
+    if (!T) {
+      panic("unresolved return type: " + d->get_name());
     }
-    panic("unresolved return type in scope: " + d->get_name());
+
+    StructDecl *struct_d = dynamic_cast<StructDecl *>(d->get_scope()->get_decl(T->get_ident()));
+    if (!struct_d) {
+      panic("unresolved return type: " + T->get_ident());
+    }
+
+    // assign real type
+    if (struct_d->get_type()) {
+      d->set_type(struct_d->get_type());
+    }
   }
 
   fn_ret_type = d->get_type();
@@ -112,6 +114,7 @@ void PassVisitor::visit(FunctionDecl *d) {
     s->pass(this);
   }
   fn_ret_type = nullptr;
+  top_scope = nullptr;
 }
 
 
@@ -245,6 +248,7 @@ void PassVisitor::visit(EnumVariantDecl *d) {
 /// This check verifies that a variable declaration has a valid type, and that
 /// its type matches with that of the assigned expression, if it is not empty.
 void PassVisitor::visit(VarDecl *d) {
+  d->get_expr()->pass(this);
   if (!d->get_type()->is_builtin()) {
     // type is a reference
     if (const TypeRef *T = dynamic_cast<const TypeRef *>(d->get_type())) {
@@ -260,13 +264,19 @@ void PassVisitor::visit(VarDecl *d) {
       // assign real type
       if (struct_d->get_type()) {
         d->set_type(struct_d->get_type());
+        return;
       }
     } else {
       panic("unresolved variable type in scope: " + d->get_name());
     } 
   }
 
-  if (d->get_type() != d->get_expr()->get_type()) {
+  const PrimitiveType *pt = dynamic_cast<const PrimitiveType *>(d->get_type());
+  if (!pt) {
+    panic("unresolved variable type in scope: " + d->get_name());
+  }
+
+  if (!pt->compare(d->get_expr()->get_type())) {
     panic("type mismatch: " + d->get_name());
   }
 }
@@ -369,13 +379,13 @@ void PassVisitor::visit(UntilStmt *s) {
 /// expression, if it exists, is equivelant to the return type of the function.
 void PassVisitor::visit(ReturnStmt *s) {
   // check that the return stmt is in a function scope
-  if (!top_scope->is_func_scope()) {
+  if (!top_scope) {
     panic("return statement outside of function scope");
   }
 
   if (!s->get_expr() && !fn_ret_type) {
     return;
-  } else if (fn_ret_type) {
+  } else if (s->get_expr() && !fn_ret_type) {
     panic("return statement in void function");
   }
 

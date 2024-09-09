@@ -63,5 +63,9 @@ int main(int argc, char *argv[]) {
 
   std::unique_ptr<ASTContext> ctx = std::make_unique<ASTContext>(flags, std::move(files));
   std::unique_ptr<CrateUnit> crate = build_ast(ctx);
+
+  std::unique_ptr<ASTVisitor> visitor = std::make_unique<PassVisitor>();
+  crate->pass(visitor.get());
+
   std::cout << crate->to_string();
 }

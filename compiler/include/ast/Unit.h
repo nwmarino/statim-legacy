@@ -4,6 +4,7 @@
 /// Translation unit related AST nodes.
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
+#include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
@@ -38,8 +39,8 @@ public:
   /// Gets the declarations of this package unit.
   inline std::vector<Decl *> get_decls() const {
     std::vector<Decl *> decls = {};
-    for (Decl *d : decls) {
-      decls.push_back(d);
+    for (const std::unique_ptr<Decl> &d : this->decls) {
+      decls.push_back(d.get());
     }
     return decls;
   }
