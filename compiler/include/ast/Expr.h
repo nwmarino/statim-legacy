@@ -7,6 +7,8 @@
 #include "Stmt.h"
 #include "../core/Type.h"
 #include "../sema/ASTVisitor.h"
+#include <memory>
+#include <utility>
 
 /// UnaryOp - Enumeration of recognized unary operators.
 typedef enum {
@@ -336,17 +338,25 @@ public:
 class InitExpr final : public Expr
 {
 private:
+  const std::string ident;
   const Type *T;
   std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields;
 
 public:
-  InitExpr(const Type *T, std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields)
-    : T(T), fields(std::move(fields)){};
+  InitExpr(const std::string &ident, const Type *T, std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields)
+    : ident(ident), T(T), fields(std::move(fields)){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const override { return T; }
-
+  inline std::string get_ident() { return ident; }
+  
   /// Gets the fields of this initialization expression.
-  inline std::vector<std::pair<std::string, std::unique_ptr<Expr>>>& get_fields() { return fields; }
+  inline std::vector<std::pair<std::string, Expr *>> get_fields() {
+    std::vector<std::pair<std::string, Expr *>> fields = {};
+    for (const std::pair<std::string, std::unique_ptr<Expr>> &f : this->fields) {
+      fields.push_back(std::make_pair(f.first, f.second.get()));
+    }
+    return fields;
+  }
 
   /// Returns a string representation of this initialization expression.
   const std::string to_string() override;

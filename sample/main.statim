@@ -11,7 +11,7 @@ struct LeBronJames {
 }
 
 
-fn bar() -> LeBronJames {
+fn bar() -> LeBronJames { 
   return LeBronJames {
     points: '1',
   }

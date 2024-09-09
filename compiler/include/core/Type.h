@@ -47,7 +47,7 @@ public:
   bool is_float(void) const override { return false; }
   bool is_builtin(void) const override { return false; }
   bool is_matchable(void) const override { return false; }
-  std::string to_string(void) const override { return ident; }
+  std::string to_string(void) const override { return ident + " referenced"; }
 };
 
 

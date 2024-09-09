@@ -1,5 +1,6 @@
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #include "../include/ast/Unit.h"
 #include "../include/ast/Decl.h"
@@ -476,8 +477,54 @@ void PassVisitor::visit(UnaryExpr *e) {
 }
 
 
+/// This check verifies that a struct initialization expression is valid.
+/// It checks that all fields initialized exist in the struct, and that
+/// their types correspond.
 void PassVisitor::visit(InitExpr *e) {
-  return;
+  // resolve target struct
+  StructDecl *d = dynamic_cast<StructDecl *>(pkg_scope->get_decl(e->get_ident()));
+  if (!d) {
+    panic("unresolved struct: " + e->get_ident());
+  }
+
+  // check each field is valid
+  for (const std::pair<std::string, Expr *> f : e->get_fields()) {
+    // check that the field exists in the struct
+    for (const FieldDecl *fd : d->get_fields()) {
+      if (fd->get_name() == f.first) {
+        break;
+      }
+      panic("unknown field: " + f.first);
+    }
+
+    // check that the type of the field is correct
+    if (!f.second->get_type()->is_builtin()) {
+      // type is a reference
+      if (const TypeRef *T = dynamic_cast<const TypeRef *>(f.second->get_type())) {
+        if (!top_scope) {
+          panic("scoping error: " + f.first);
+        }
+
+        StructDecl *struct_d = dynamic_cast<StructDecl *>(top_scope->get_decl(T->get_ident()));
+        if (!struct_d) {
+          panic("unresolved field type: " + T->get_ident());
+        }
+
+        // assign real type
+        if (const TypeRef *T = dynamic_cast<const TypeRef *>(f.second->get_type())) {
+          if (struct_d->get_type()) {
+            T->set_type(struct_d->get_type());
+          }
+        } else {
+          panic("unresolved field type in scope: " + f.first);
+        }
+      } else {
+        panic("unresolved field type in scope: " + f.first);
+      }
+    }
+
+    f.second->pa ss(this);
+  }
 }
 
 

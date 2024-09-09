@@ -229,6 +229,13 @@ static std::unique_ptr<Expr> parse_init_expr(std::unique_ptr<ASTContext> &ctx, c
       return warn_expr("expected expression after ':'", ctx->last().meta);
     }
 
+    // check that the field isnt duplicated
+    for (const auto &[name, _] : fields) {
+      if (name == field_name) {
+        return warn_expr("duplicate field: " + field_name, ctx->last().meta);
+      }
+    }
+
     fields.push_back(std::make_pair(field_name, std::move(field_expr)));
 
     if (ctx->last().is_close_brace()) {
@@ -243,7 +250,7 @@ static std::unique_ptr<Expr> parse_init_expr(std::unique_ptr<ASTContext> &ctx, c
   }
   ctx->next();  // eat close brace
 
-  return std::make_unique<InitExpr>(ctx->resolve_type(ident), std::move(fields));
+  return std::make_unique<InitExpr>(ident, ctx->resolve_type(ident), std::move(fields));
 }
 
 
@@ -971,7 +978,7 @@ static std::unique_ptr<TypeDecl> parse_struct_decl(std::unique_ptr<ASTContext> &
   ctx->next();  // eat close brace
 
   std::unique_ptr<StructDecl> structure = std::make_unique<StructDecl>(name, std::move(fields), scope);
-
+  structure->set_type(new StructType(structure->get_name()));
   // move back to parent scope
   curr_scope = curr_scope->get_parent();
 
