@@ -347,6 +347,7 @@ public:
     : ident(ident), T(T), fields(std::move(fields)){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const override { return T; }
+  inline void set_type(const Type *T) { this->T = T; }
   inline std::string get_ident() { return ident; }
   
   /// Gets the fields of this initialization expression.

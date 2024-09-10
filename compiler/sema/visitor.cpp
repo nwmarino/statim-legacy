@@ -490,41 +490,34 @@ void PassVisitor::visit(InitExpr *e) {
   // check each field is valid
   for (const std::pair<std::string, Expr *> f : e->get_fields()) {
     // check that the field exists in the struct
+    const Type *real_type = nullptr;
+    bool found = false;
     for (const FieldDecl *fd : d->get_fields()) {
       if (fd->get_name() == f.first) {
+        real_type = fd->get_type();
+        found = true;
         break;
       }
+    }
+
+    if (!found) {
       panic("unknown field: " + f.first);
     }
 
-    // check that the type of the field is correct
-    if (!f.second->get_type()->is_builtin()) {
-      // type is a reference
-      if (const TypeRef *T = dynamic_cast<const TypeRef *>(f.second->get_type())) {
-        if (!top_scope) {
-          panic("scoping error: " + f.first);
-        }
-
-        StructDecl *struct_d = dynamic_cast<StructDecl *>(top_scope->get_decl(T->get_ident()));
-        if (!struct_d) {
-          panic("unresolved field type: " + T->get_ident());
-        }
-
-        // assign real type
-        if (const TypeRef *T = dynamic_cast<const TypeRef *>(f.second->get_type())) {
-          if (struct_d->get_type()) {
-            T->set_type(struct_d->get_type());
-          }
-        } else {
-          panic("unresolved field type in scope: " + f.first);
-        }
-      } else {
-        panic("unresolved field type in scope: " + f.first);
+    if (f.second->get_type()->is_builtin()) {
+      const PrimitiveType *pt = dynamic_cast<const PrimitiveType *>(f.second->get_type());
+      if (!pt->compare(real_type)) {
+        panic("type mismatch in struct initialization: " + f.first);
       }
+    } else if (f.second->get_type() != real_type) {
+      panic("type mismatch in struct initialization: " + f.first);
     }
 
-    f.second->pa ss(this);
+    f.second->pass(this);
   }
+
+  // assign real type
+  e->set_type(d->get_type());
 }
 
 

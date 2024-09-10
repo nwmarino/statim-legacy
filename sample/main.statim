@@ -13,7 +13,7 @@ struct LeBronJames {
 
 fn bar() -> LeBronJames { 
   return LeBronJames {
-    points: '1',
+    points: 1,
   }
 }
 
