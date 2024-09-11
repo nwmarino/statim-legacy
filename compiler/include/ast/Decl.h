@@ -220,6 +220,7 @@ public:
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const { return T; }
   inline void set_type(const Type *T) { this->T = T; }
+  inline int get_num_params() const { return params.size(); }
 
   /// Returns true if this function declaration has a body.
   inline bool has_body() const { return body != nullptr; }
@@ -236,8 +237,8 @@ public:
   /// Returns the parameters of this function declaration.
   inline const std::vector<ParamVarDecl *> get_params() const {
     std::vector<ParamVarDecl *> params = {};
-    for (ParamVarDecl *p : params) {
-      params.push_back(p);
+    for (const std::unique_ptr<ParamVarDecl> &p : this->params) {
+      params.push_back(p.get());
     }
     return params;
   }

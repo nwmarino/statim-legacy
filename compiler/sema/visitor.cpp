@@ -413,6 +413,7 @@ void PassVisitor::visit(ContinueStmt *s) {
 }
 
 
+/// This check verifies that a null expression is valid.
 void PassVisitor::visit(NullExpr *e) {
   if (e->get_type()) {
     panic("non-null type in null expression");
@@ -420,6 +421,7 @@ void PassVisitor::visit(NullExpr *e) {
 }
 
 
+/// This check verifies that a default expression is valid.
 void PassVisitor::visit(DefaultExpr *e) {
   if (e->get_type()) {
     panic("non-null type in default expression");
@@ -427,6 +429,7 @@ void PassVisitor::visit(DefaultExpr *e) {
 }
 
 
+/// This check verifies that a BooleanLiteral node is a boolean primitive.
 void PassVisitor::visit(BooleanLiteral *e) {
   if (!e->get_type()->is_bool()) {
     panic("non-boolean type in boolean literal");
@@ -434,6 +437,7 @@ void PassVisitor::visit(BooleanLiteral *e) {
 }
 
 
+/// This check verifies that an IntegerLiteral node is an integer primitive.
 void PassVisitor::visit(IntegerLiteral *e) {
   if (!e->get_type()->is_integer()) {
     panic("non-integer type in integer literal");
@@ -441,6 +445,7 @@ void PassVisitor::visit(IntegerLiteral *e) {
 }
 
 
+/// This check verifies that a FPLiteral node is a floating point primitive.
 void PassVisitor::visit(FPLiteral *e) {
   if (!e->get_type()->is_float()) {
     panic("non-float type in floating point literal");
@@ -448,6 +453,7 @@ void PassVisitor::visit(FPLiteral *e) {
 }
 
 
+/// This check verifies that a CharLiteral node is a character primitive.
 void PassVisitor::visit(CharLiteral *e) {
   if (!e->get_type()->is_integer()) {
     panic("non-integer type in character literal");
@@ -455,6 +461,7 @@ void PassVisitor::visit(CharLiteral *e) {
 }
 
 
+/// This check verifies that a StringLiteral node is a string primitive.
 void PassVisitor::visit(StringLiteral *e) {
   if (!e->get_type()->is_builtin()) {
     panic("non-primitive type in string literal");
@@ -504,6 +511,7 @@ void PassVisitor::visit(InitExpr *e) {
       panic("unknown field: " + f.first);
     }
 
+    f.second->pass(this);
     if (f.second->get_type()->is_builtin()) {
       const PrimitiveType *pt = dynamic_cast<const PrimitiveType *>(f.second->get_type());
       if (!pt->compare(real_type)) {
@@ -512,8 +520,6 @@ void PassVisitor::visit(InitExpr *e) {
     } else if (f.second->get_type() != real_type) {
       panic("type mismatch in struct initialization: " + f.first);
     }
-
-    f.second->pass(this);
   }
 
   // assign real type
@@ -521,8 +527,69 @@ void PassVisitor::visit(InitExpr *e) {
 }
 
 
+/// This check verifies that a function call is valid. It checks that the callee
+/// exists in the scope of the call, that all parameters are provided, and that
+/// the return type of the call matches the return type of the callee.
 void PassVisitor::visit(CallExpr *e) {
-  return;
+  // resolve function
+  const std::string fn_name = e->get_callee();
+  Decl *d = pkg_scope->get_decl(fn_name);
+  if (!d) {
+    panic("unresolved function: " + fn_name);
+  }
+
+  FunctionDecl *fn_d = dynamic_cast<FunctionDecl *>(d);
+  if (!fn_d) {
+    panic("expected function: " + fn_name);
+  }
+
+  if (e->get_num_args() != fn_d->get_num_params()) {
+    panic("function " + fn_name + " has " + std::to_string(fn_d->get_num_params()) + " parameters but " + \
+    std::to_string(e->get_num_args()) + " were provided.");
+  }
+
+  // type check all arguments
+  if (fn_d->has_params()) {
+    std::size_t pos = 0;
+    for (ParamVarDecl *param : fn_d->get_params()) {
+      param->pass(this);
+      Expr *arg = e->get_arg(pos);
+      if (!arg) {
+        panic("missing argument in function call: " + param->get_name());
+      }
+      arg->pass(this);
+
+      if (param->get_type()->is_builtin()) {
+        const PrimitiveType *pt = dynamic_cast<const PrimitiveType *>(param->get_type());
+        if (!pt->compare(arg->get_type())) {
+          panic("type mismatch in function call: " + param->get_name());
+        }
+      } else if (param->get_type() != arg->get_type()) {
+        panic("type mismatch in function call: " + param->get_name());
+      }
+
+      pos += 1;
+    }
+  }
+
+  // check if the function return is a type reference
+  if (const TypeRef *T = dynamic_cast<const TypeRef *>(fn_d->get_type())) {
+    // check if the referenced type exists
+    StructDecl *struct_d = dynamic_cast<StructDecl *>(pkg_scope->get_decl(T->get_ident()));
+    if (!struct_d) {
+      panic("unresolved return type: " + T->get_ident());
+    }
+
+    // assign real type
+    if (struct_d->get_type()) {
+      e->set_type(struct_d->get_type());
+      return;
+    }
+    panic("unresolved return type: " + T->get_ident());
+  }
+
+  // assign real type
+  e->set_type(fn_d->get_type());
 }
 
 

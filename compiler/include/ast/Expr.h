@@ -378,6 +378,17 @@ public:
   CallExpr(const std::string &callee, std::vector<std::unique_ptr<Expr>> args)
     : callee(callee), args(std::move(args)), T(nullptr){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline int get_num_args() const { return args.size(); }
+
+  /// Return the argument at position <n> embedded in this function call.
+  inline Expr *get_arg(std::size_t n) {
+    for (int i = 0; i < args.size(); i++) {
+      if (i == n) {
+        return args.at(i).get();
+      }
+    }
+    return nullptr;
+  }
 
   /// Returns the type of this function call expression. Returns `nullptr` if the callee is undefined yet.
   inline const Type* get_type() const override { return T; }
@@ -386,7 +397,7 @@ public:
   inline const std::string get_callee() const { return callee; }
 
   /// Sets the type of this function call expression.
-  inline void set_type(Type *T) { this->T = T; }
+  inline void set_type(const Type *T) { this->T = T; }
 
   /// Returns a string representation of this function call expression.
   const std::string to_string() override;

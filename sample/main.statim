@@ -4,17 +4,13 @@ fn main() {
 
 fn foo() -> void {
   let y: i64 = 2;
-}
-
-struct LeBronJames {
-  points: i32,
-}
-
-
-fn bar() -> LeBronJames { 
-  return LeBronJames {
-    points: 1,
+  let z: MyStruct = MyStruct {
+    A: 'a',
+    B: 10,
   }
 }
 
-
+struct MyStruct {
+  A: char,
+  B: i32,
+}

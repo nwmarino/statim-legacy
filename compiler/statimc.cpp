@@ -48,10 +48,12 @@ static std::vector<CFile> parse_files(std::vector<CFile> files, std::filesystem:
   }
 
   return files;
+  
 }
 
 
-/// Main entry point for the compiler.
+/// Main entry point for the compiler.1911
+
 int main(int argc, char *argv[]) {
   CFlags flags;
   parse_args(argc, argv, flags);
