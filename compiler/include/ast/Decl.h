@@ -536,6 +536,16 @@ public:
     return fields;
   }
 
+  /// Returns a field by its name, if it exists.
+  inline FieldDecl *get_field(const std::string &name) {
+    for (const std::unique_ptr<FieldDecl> &f : fields) {
+      if (f->get_name() == name) {
+        return f.get();
+      }
+    }
+    return nullptr;
+  }
+
   /// Determine if this struct implements a trait.
   inline bool does_impl(const std::string &trait) const {
     return std::find(impls.begin(), impls.end(), trait) != impls.end();

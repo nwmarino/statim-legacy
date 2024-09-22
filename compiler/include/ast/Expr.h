@@ -281,6 +281,7 @@ public:
     : ident(ident), T(T), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const override { return T; }
+  inline void set_type(const Type *T) { this->T = T; }
   const Metadata get_meta() const override { return meta; }
 
   /// Gets the identifier of this reference expression.
@@ -312,14 +313,17 @@ public:
   /// Returns the type of this binary expression. Returns `nullptr` if the operand types mismatch.
   inline const Type* get_type() const override { return T; }
 
+  /// Sets the type of this binary expression.
+  inline void set_type(const Type *T) { this->T = T; }
+
   /// Gets the operator of this binary expression.
   inline const BinaryOp get_op() const { return op; }
 
   /// Gets the left-hand side of this binary expression.
-  inline std::unique_ptr<Expr> get_lhs() { return std::move(lhs); }
+  inline Expr *get_lhs() { return lhs.get(); }
 
   /// Gets the right-hand side of this binary expression.
-  inline std::unique_ptr<Expr> get_rhs() { return std::move(rhs); }
+  inline Expr *get_rhs() { return rhs.get(); }
 
   /// Returns a string representation of this binary expression.
   const std::string to_string() override;
@@ -453,10 +457,10 @@ public:
   inline const Type* get_type() const override { return T; }
 
   /// Gets the base of this member access expression.
-  inline std::unique_ptr<Expr> get_base() { return std::move(base); }
+  inline Expr *get_base() const { return base.get(); }
 
   /// Sets the type of this member access expression.
-  inline void set_type(Type *T) { this->T = T; }
+  inline void set_type(const Type *T) { this->T = T; }
 
   /// Gets the member of this member access expression.
   inline const std::string get_member() const { return member; }

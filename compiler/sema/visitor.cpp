@@ -484,21 +484,40 @@ void PassVisitor::visit(StringLiteral *e) {
 /// type of the declaration reference, assuming the node is valid.
 void PassVisitor::visit(DeclRefExpr *e) {
   if (!e->get_type()->is_builtin()) {
-    // type is a reference
-    if (const TypeRef *T = dynamic_cast<const TypeRef *>(e->get_type())) {
-      StructDecl *struct_d = dynamic_cast<StructDecl *>(top_scope->get_decl(T->get_ident()));
-      if (!struct_d) {
-        panic("unresolved reference type: " + T->get_ident(), e->get_meta());
-      }
-
+    const TypeRef *T = dynamic_cast<const TypeRef *>(e->get_type());
+    if (!T) {
+      panic("unresolved reference type: " + e->get_ident(), e->get_meta());
     }
-    panic("unresolved reference type in scope: " + e->get_ident(), e->get_meta());
+
+    StructDecl *struct_d = dynamic_cast<StructDecl *>(top_scope->get_decl(T->get_ident()));
+    if (!struct_d) {
+      panic("unresolved reference type: " + T->get_ident(), e->get_meta());
+    }
+    
+    // assign real type
+    if (struct_d->get_type()) {
+      e->set_type(struct_d->get_type());
+      return;
+    }
   }
 }
 
 
 void PassVisitor::visit(BinaryExpr *e) {
-  return;
+  e->get_lhs()->pass(this);
+  e->get_rhs()->pass(this);
+
+  if (e->get_lhs()->get_type()->is_builtin() && e->get_rhs()->get_type()->is_builtin()) {
+    const PrimitiveType *pt_lhs = dynamic_cast<const PrimitiveType *>(e->get_lhs()->get_type());
+    const PrimitiveType *pt_rhs = dynamic_cast<const PrimitiveType *>(e->get_rhs()->get_type());
+    if (!pt_lhs->compare(pt_rhs)) {
+      panic("type mismatch in binary expression", e->get_meta());
+    }
+  } else if (e->get_lhs()->get_type() != e->get_rhs()->get_type()) {
+    panic("type mismatch in binary expression", e->get_meta());
+  }
+
+  e->set_type(e->get_lhs()->get_type());
 }
 
 
@@ -617,7 +636,41 @@ void PassVisitor::visit(CallExpr *e) {
 
 
 void PassVisitor::visit(MemberExpr *e) {
-  return;
+  e->get_base()->pass(this);
+
+  if (!e->get_base()) {
+    panic("member access on null expression", e->get_meta());
+  }
+
+  // resolve member
+  const Type *base_type = e->get_base()->get_type();
+  if (base_type->is_builtin()) {
+    panic("member access on non-struct type", e->get_meta());
+  }
+
+  const StructType *st = dynamic_cast<const StructType *>(base_type);
+  if (!st) {
+    panic("expected struct type", e->get_meta());
+  }
+
+  const std::string struct_name = st->get_name();
+  Decl *d = pkg_scope->get_decl(struct_name);
+  if (!d) {
+    panic("unresolved declaration type: " + struct_name, e->get_meta());
+  }
+
+  StructDecl *struct_d = dynamic_cast<StructDecl *>(d);
+  if (!struct_d) {
+    panic("expected struct: " + struct_name, e->get_meta());
+  }
+
+  FieldDecl *fd = struct_d->get_field(e->get_member());
+  if (!fd) {
+    panic("unresolved field: " + e->get_member(), e->get_meta());
+  }
+
+  // assign real type
+  e->set_type(fd->get_type());
 }
 
 
