@@ -444,7 +444,7 @@ static std::unique_ptr<Expr> parse_primary_expr(std::unique_ptr<ASTContext> &ctx
     return parse_boolean_expr(ctx);
   }
 
-  if (ctx->last().is_kw("null")) {
+  if (ctx->last().is_null()) {
     ctx->next();  // eat the `null` identifier
     return std::make_unique<NullExpr>(nullptr, ctx->last().meta);
   }
@@ -454,8 +454,7 @@ static std::unique_ptr<Expr> parse_primary_expr(std::unique_ptr<ASTContext> &ctx
   }
 
   return parse_unary_expr(ctx);
-
-  return warn_expr("unknown primary expression kind: " + std::to_string(ctx->last().lit_kind), ctx->last().meta);
+  //return warn_expr("unknown primary expression kind: " + std::to_string(ctx->last().lit_kind), ctx->last().meta);
 }
 
 
@@ -745,6 +744,11 @@ static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<ASTContext> &ctx) {
   ctx->next();  // eat type
 
   if (ctx->last().is_semi()) {
+    // prevent immutable empty declarations
+    if (!is_mutable) {
+      return warn_stmt("immutable declaration must be initialized", ctx->last().meta);
+    }
+
     std::unique_ptr<VarDecl> decl = std::make_unique<VarDecl>(name, ctx->resolve_type(type), is_mutable, is_rune, meta);
 
     // add declaration to parent scope

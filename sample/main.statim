@@ -1,15 +1,12 @@
-fn main() {
-  let x: i64 = 0;
-}
+fn main();
 
 fn foo() -> void {
-  let mut y: i64 = 2;
-  let z: MyStruct = MyStruct {
+  let mut my_struct: MyStruct = MyStruct {
     A: 'a',
     B: 10,
   }
 
-  z.A = 'b';
+  my_struct.A = 'b';
 }
 
 struct MyStruct {

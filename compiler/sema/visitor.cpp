@@ -62,7 +62,6 @@ void PassVisitor::visit(PackageUnit *u) {
 
   for (Decl *decl : u->get_decls()) {
     decl->pass(this);
-    std::cout << "Passed decl: " + decl->get_name() + '\n'; // debugging
   }
 }
 
@@ -254,7 +253,10 @@ void PassVisitor::visit(EnumVariantDecl *d) {
 /// This check verifies that a variable declaration has a valid type, and that
 /// its type matches with that of the assigned expression, if it is not empty.
 void PassVisitor::visit(VarDecl *d) {
-  d->get_expr()->pass(this);
+  if (d->has_expr()) {
+    d->get_expr()->pass(this);
+  }
+  
   if (!d->get_type()->is_builtin()) {
     // type is a reference
     if (const TypeRef *T = dynamic_cast<const TypeRef *>(d->get_type())) {
@@ -298,9 +300,11 @@ void PassVisitor::visit(DeclStmt *s) {
 /// This check verifies that a compound statement is valid. It passes on all
 /// statements within the compound statement.
 void PassVisitor::visit(CompoundStmt *s) {
+  top_scope = s->get_scope();
   for (Stmt *stmt : s->get_stmts()) {
     stmt->pass(this);
   }
+  top_scope = top_scope->get_parent();
 }
 
 
@@ -518,6 +522,45 @@ void PassVisitor::visit(BinaryExpr *e) {
   }
 
   e->set_type(e->get_lhs()->get_type());
+
+  if (is_assignment_op(e->get_op())) {
+    // check that the left hand side is a valid lvalue
+    if (DeclRefExpr *lhs = dynamic_cast<DeclRefExpr *>(e->get_lhs())) {
+      if (lhs->get_type()->is_builtin()) {
+        panic("assignment to builtin non-lvalue", e->get_meta());
+      }
+
+      // check that the left hand side is mutable
+      if (VarDecl *vd = dynamic_cast<VarDecl *>(top_scope->get_decl(lhs->get_ident()))) {
+        if (!vd->is_mut()) {
+          panic("attempted to reassign immutable variable", e->get_meta());
+        }
+      }
+    } else if (MemberExpr *lhs = dynamic_cast<MemberExpr *>(e->get_lhs())) {
+      if (lhs->get_base()->get_type()->is_builtin()) {
+        panic("assignment to builtin non-lvalue", e->get_meta());
+      }
+
+      // check that the left hand side base is mutable
+      if (DeclRefExpr *d = dynamic_cast<DeclRefExpr *>(lhs->get_base())) {
+        Decl *gd = top_scope->get_decl(d->get_ident());
+        if (!gd) {
+          panic("unresolved reference: " + d->get_ident(), d->get_meta());
+        }
+
+        VarDecl *vd = dynamic_cast<VarDecl *>(gd);
+        if (!vd) {
+          panic("attempted to reassign non-variable identifier: " + d->get_ident(), e->get_meta());
+        }
+        
+        if (!vd->is_mut()) {
+          panic("attempted to reassign immutable variable", e->get_meta());
+        }
+      }
+    } else {
+      panic("assignment to non-lvalue", e->get_meta());
+    }
+  }
 }
 
 

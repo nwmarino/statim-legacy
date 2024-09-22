@@ -85,6 +85,13 @@ typedef enum {
 } BinaryOp;
 
 
+/// Returns true if the given binary operator is a (re)assignment operator.
+static bool is_assignment_op(BinaryOp op) {
+  return op == BinaryOp::Assign || op == BinaryOp::AddAssign || op == BinaryOp::SubAssign || \
+    op == BinaryOp::StarAssign || op == BinaryOp::SlashAssign;
+}
+
+
 /// Base class for expressions; statements that may have a value and type.
 class Expr : public Stmt
 {

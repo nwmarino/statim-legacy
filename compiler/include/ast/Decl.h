@@ -170,7 +170,13 @@ public:
 
   /// Returns a string representation of this scope tree.
   [[nodiscard]]
-  const std::string to_string();
+  const std::string to_string() {
+    std::string result;
+    for (Decl *d : decls) {
+      result += d->to_string() + '\n';
+    }
+    return result;
+  }
 };
 
 

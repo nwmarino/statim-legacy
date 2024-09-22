@@ -266,6 +266,10 @@ struct Token {
   [[nodiscard]]
   inline bool is_str() const { return is_lit() && lit_kind && lit_kind == String; };
 
+  /// Determine if this token is a null literal or not.
+  [[nodiscard]]
+  inline bool is_null() const { return is_lit() && lit_kind && lit_kind == Null; };
+
   /// Determine if this token signifies the end of a file.
   [[nodiscard]]
   inline bool is_eof() const { return kind == Eof; };
