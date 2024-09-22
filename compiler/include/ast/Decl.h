@@ -25,6 +25,7 @@ public:
   virtual bool is_priv() const = 0;
   virtual void set_priv() = 0;
   virtual void set_pub() = 0;
+  virtual const Metadata get_meta() const = 0;
 };
 
 
@@ -37,6 +38,7 @@ private:
 public:
   virtual ~ScopedDecl() = default;
   virtual std::shared_ptr<Scope> get_scope() const = 0;
+  virtual const Metadata get_meta() const = 0;
 };
 
 
@@ -53,6 +55,7 @@ public:
   virtual void set_type(const Type *T) = 0;
   virtual const std::string get_name() const = 0;
   virtual const std::string to_string() = 0;
+  virtual const Metadata get_meta() const = 0;
 };
 
 
@@ -181,15 +184,18 @@ class ParamVarDecl final : public Decl
 private:
   const std::string name;
   const Type *T;
+  const Metadata meta;
 
 public:
-  ParamVarDecl(const std::string &name, Type *T) : name(name), T(T){};
+  ParamVarDecl(const std::string &name, Type *T, const Metadata &meta) 
+    : name(name), T(T), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const { return T; }
   inline void set_type(const Type *T) { this->T = T; }
   inline bool is_priv() const override { return false; }
   inline void set_priv() override {}
   inline void set_pub() override {}
+  const Metadata get_meta() const override { return meta; }
 
   /// Gets the name of this parameter.
   [[nodiscard]]
@@ -211,16 +217,20 @@ private:
   std::unique_ptr<Stmt> body;
   std::shared_ptr<Scope> scope;
   bool priv;
+  const Metadata meta;
 
 public:
-  FunctionDecl(const std::string &name, Type *T, std::vector<std::unique_ptr<ParamVarDecl>> params)
-    : name(name), T(T), params(std::move(params)), body(nullptr), priv(false) {};
-  FunctionDecl(const std::string &name, Type *T, std::vector<std::unique_ptr<ParamVarDecl>> params, std::unique_ptr<Stmt> body, std::shared_ptr<Scope> scope)
-    : name(name), T(T), params(std::move(params)), body(std::move(body)), scope(scope), priv(false) {};
+  FunctionDecl(const std::string &name, Type *T, std::vector<std::unique_ptr<ParamVarDecl>> params, 
+    const Metadata &meta) : name(name), T(T), params(std::move(params)), body(nullptr), priv(false), meta(meta){};
+  FunctionDecl(const std::string &name, Type *T, 
+    std::vector<std::unique_ptr<ParamVarDecl>> params, std::unique_ptr<Stmt> body, 
+    std::shared_ptr<Scope> scope, const Metadata &meta)
+    : name(name), T(T), params(std::move(params)), body(std::move(body)), scope(scope), priv(false), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const { return T; }
   inline void set_type(const Type *T) { this->T = T; }
   inline int get_num_params() const { return params.size(); }
+  const Metadata get_meta() const override { return meta; }
 
   /// Returns true if this function declaration has a body.
   inline bool has_body() const { return body != nullptr; }
@@ -274,12 +284,14 @@ private:
   const std::string name;
   std::vector<std::unique_ptr<FunctionDecl>> decls;
   bool priv;
+  const Metadata meta;
 
 public:
-  TraitDecl(const std::string &name) : name(name), decls(), priv(false){};
-  TraitDecl(const std::string &name, std::vector<std::unique_ptr<FunctionDecl>> decls)
-    : name(name), decls(std::move(decls)), priv(false){};
+  TraitDecl(const std::string &name, const Metadata &meta) : name(name), decls(), priv(false), meta(meta){};
+  TraitDecl(const std::string &name, std::vector<std::unique_ptr<FunctionDecl>> decls, const Metadata &meta)
+    : name(name), decls(std::move(decls)), priv(false), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  const Metadata get_meta() const override { return meta; }
 
   /// Gets the name of this trait declaration.
   [[nodiscard]]
@@ -319,13 +331,15 @@ class EnumVariantDecl final : public Decl
 {
 private:
   const std::string name;
+  const Metadata meta;
 
 public:
-  EnumVariantDecl(const std::string &name) : name(name) {};
+  EnumVariantDecl(const std::string &name, const Metadata &meta) : name(name), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline bool is_priv() const override { return false; }
   inline void set_priv() override {}
   inline void set_pub() override {}
+  const Metadata get_meta() const override { return meta; }
 
   /// Gets the name of this enum variant.
   [[nodiscard]]
@@ -345,14 +359,17 @@ private:
   std::vector<std::unique_ptr<EnumVariantDecl>> variants;
   const Type *T;
   bool priv;
+  const Metadata meta;
 
 public:
-  EnumDecl(const std::string &name) : name(name), variants(), priv(false){};
-  EnumDecl(const std::string &name, std::vector<std::unique_ptr<EnumVariantDecl>> variants)
-    : name(name), variants(std::move(variants)), priv(false){};
+  EnumDecl(const std::string &name, const Metadata &meta) 
+    : name(name), variants(), priv(false), meta(meta){};
+  EnumDecl(const std::string &name, std::vector<std::unique_ptr<EnumVariantDecl>> variants, const Metadata &meta)
+    : name(name), variants(std::move(variants)), priv(false), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const override { return T; }
   inline void set_type(const Type *T) override { this->T = T; }
+  const Metadata get_meta() const override { return meta; }
 
   /// Gets the name of this enum declaration.
   inline const std::string get_name() const override { return name; }
@@ -392,14 +409,18 @@ private:
   const std::string _struct;
   std::vector<std::unique_ptr<FunctionDecl>> methods;
   bool is_trait_impl;
+  const Metadata meta;
 
 public:
-  ImplDecl(const std::string &_trait, const std::string &_struct, std::vector<std::unique_ptr<FunctionDecl>> methods)
-    : _trait(_trait), _struct(_struct), methods(std::move(methods)), is_trait_impl(_trait == "" ? false : true) {};
+  ImplDecl(const std::string &_trait, const std::string &_struct, 
+    std::vector<std::unique_ptr<FunctionDecl>> methods, const Metadata &meta)
+    : _trait(_trait), _struct(_struct), methods(std::move(methods)), 
+    is_trait_impl(_trait == "" ? false : true), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline bool is_priv() const override { return false; }
   inline void set_priv() override {}
   inline void set_pub() override {}
+  const Metadata get_meta() const override { return meta; }
 
   /// Returns the methods of this implementation declaration.
   inline const std::vector<FunctionDecl *> get_methods() const {
@@ -435,12 +456,15 @@ private:
   const std::string name;
   const Type *T;
   bool priv;
+  const Metadata meta;
 
 public:
-  FieldDecl(const std::string &name, const Type *T) : name(name), T(T), priv(false) {};
+  FieldDecl(const std::string &name, const Type *T, const Metadata &meta) 
+    : name(name), T(T), priv(false), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const { return T; }
   inline void set_type(const Type *T) { this->T = T; }
+  const Metadata get_meta() const override { return meta; }
 
   /// Gets the name of this struct fields.
   inline const std::string get_name() const override { return name; }
@@ -469,13 +493,16 @@ private:
   std::shared_ptr<Scope> scope;
   std::vector<std::string> impls;
   bool priv;
+  const Metadata meta;
 
 public:
-  StructDecl(const std::string &name, std::vector<std::unique_ptr<FieldDecl>> fields, std::shared_ptr<Scope> scope)
-    : name(name), T(nullptr), fields(std::move(fields)), scope(scope), priv(false), impls() {};
+  StructDecl(const std::string &name, std::vector<std::unique_ptr<FieldDecl>> fields, 
+    std::shared_ptr<Scope> scope, const Metadata &meta) : name(name), T(nullptr), 
+    fields(std::move(fields)), scope(scope), priv(false), impls(), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const override { return T; }
   inline void set_type(const Type *T) override { this->T = T; }
+  const Metadata get_meta() const override { return meta; }
 
   /// Gets the name of this struct declaration.
   inline const std::string get_name() const override { return name; }
@@ -494,7 +521,10 @@ public:
 
   /// Determine if this struct type has a field by name.
   inline bool has_field(const std::string &name) const {
-    return std::find_if(fields.begin(), fields.end(), [&name](const std::unique_ptr<FieldDecl> &f) { return f->get_name() == name; }) != fields.end();
+    return std::find_if(
+      fields.begin(), 
+      fields.end(), 
+      [&name](const std::unique_ptr<FieldDecl> &f) { return f->get_name() == name; }) != fields.end();
   }
 
   /// Returns the fields of this struct declaration.
@@ -528,18 +558,20 @@ private:
   std::unique_ptr<Expr> expr;
   bool mut;
   bool rune;
+  const Metadata meta;
 
 public:
-  VarDecl(const std::string &name, const Type *T, std::unique_ptr<Expr> expr, bool mut, bool rune)
-    : name(name), T(T), expr(std::move(expr)), mut(mut), rune(rune){};
-  VarDecl(const std::string &name, const Type *T, bool mut, bool rune)
-    : name(name), T(T), expr(nullptr), mut(mut), rune(rune){};
+  VarDecl(const std::string &name, const Type *T, std::unique_ptr<Expr> expr, bool mut, bool rune, const Metadata &meta)
+    : name(name), T(T), expr(std::move(expr)), mut(mut), rune(rune), meta(meta){};
+  VarDecl(const std::string &name, const Type *T, bool mut, bool rune, const Metadata &meta)
+    : name(name), T(T), expr(nullptr), mut(mut), rune(rune), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const { return T; }
   inline void set_type(const Type *T) { this->T = T; }
   inline bool is_priv() const override { return false; }
   inline void set_priv() override {}
   inline void set_pub() override {}
+  const Metadata get_meta() const override { return meta; }
 
   /// Gets the name of this variable declaration.
   inline const std::string get_name() const override { return name; }

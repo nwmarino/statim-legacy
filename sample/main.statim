@@ -3,11 +3,13 @@ fn main() {
 }
 
 fn foo() -> void {
-  let y: i64 = 2;
+  let mut y: i64 = 2;
   let z: MyStruct = MyStruct {
     A: 'a',
     B: 10,
   }
+
+  z.A = 'b';
 }
 
 struct MyStruct {

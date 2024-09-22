@@ -179,8 +179,8 @@ typedef enum {
 /// tokenizer.
 struct Metadata {
   std::string filename;
-  std::size_t line_n;
-  std::size_t col_n;
+  unsigned int line_n;
+  unsigned int col_n;
 
   inline Metadata() : filename("unknown"), line_n(0), col_n(0) {};
 

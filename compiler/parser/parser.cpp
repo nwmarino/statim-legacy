@@ -122,9 +122,9 @@ static std::unique_ptr<Expr> parse_numerical_expr(std::unique_ptr<ASTContext> &c
   ctx->next();  // eat the literal
 
   if (token.is_int()) {
-    return std::make_unique<IntegerLiteral>(std::stoll(token.value), ctx->resolve_type("i64"));
+    return std::make_unique<IntegerLiteral>(std::stoll(token.value), ctx->resolve_type("i64"), token.meta);
   } else if (token.is_float()) {
-    return std::make_unique<FPLiteral>(std::stod(token.value), ctx->resolve_type("float"));
+    return std::make_unique<FPLiteral>(std::stod(token.value), ctx->resolve_type("float"), token.meta);
   }
 
   return warn_expr("unknown literal kind: " + std::to_string(token.kind), token.meta);
@@ -139,7 +139,7 @@ static std::unique_ptr<Expr> parse_character_expr(std::unique_ptr<ASTContext> &c
   ctx->next();  // eat the character or byte token
 
   if (token.is_char()) {
-    return std::make_unique<CharLiteral>(token.value[0], ctx->resolve_type("char"));
+    return std::make_unique<CharLiteral>(token.value[0], ctx->resolve_type("char"), token.meta);
   }
 
   return warn_expr("unknown character or byte kind: " + std::to_string(token.kind), ctx->last().meta);
@@ -154,7 +154,7 @@ static std::unique_ptr<Expr> parse_string_expr(std::unique_ptr<ASTContext> &ctx)
   ctx->next();  // eat the string or byte string token
 
   if (token.is_str()) {
-    return std::make_unique<StringLiteral>(token.value, ctx->resolve_type("str"));
+    return std::make_unique<StringLiteral>(token.value, ctx->resolve_type("str"), token.meta);
   }
 
   return warn_expr("unknown string or byte string kind: " + std::to_string(token.kind), ctx->last().meta);
@@ -165,21 +165,21 @@ static std::unique_ptr<Expr> parse_string_expr(std::unique_ptr<ASTContext> &ctx)
 ///
 /// Boolean expressions are either `true` or `false` identifiers.
 static std::unique_ptr<Expr> parse_boolean_expr(std::unique_ptr<ASTContext> &ctx) {
-  std::string value = ctx->last().value;
+  struct Token token = ctx->last();
   ctx->next();  // eat the boolean token
 
-  if (value != "true" && value != "false") {
-    return warn_expr("invalid boolean token: " + value, ctx->last().meta);
+  if (token.value != "true" && token.value != "false") {
+    return warn_expr("invalid boolean token: " + token.value, token.meta);
   }
 
-  return std::make_unique<BooleanLiteral>(value == "true", ctx->resolve_type("bool"));
+  return std::make_unique<BooleanLiteral>(token.value == "true", ctx->resolve_type("bool"), token.meta);
 }
 
 
 /// Parses a function call expression from the given context.
 ///
 /// Function call expressions are in the form `foo(...)`.
-static std::unique_ptr<Expr> parse_call_expr(std::unique_ptr<ASTContext> &ctx, const std::string &callee) {
+static std::unique_ptr<Expr> parse_call_expr(std::unique_ptr<ASTContext> &ctx, const std::string &callee, const Metadata &meta) {
   ctx->next();  // eat the open parenthesis
 
   std::vector<std::unique_ptr<Expr>> args;
@@ -202,12 +202,12 @@ static std::unique_ptr<Expr> parse_call_expr(std::unique_ptr<ASTContext> &ctx, c
   }
   ctx->next();  // eat the close parenthesis
 
-  return std::make_unique<CallExpr>(callee, std::move(args));
+  return std::make_unique<CallExpr>(callee, std::move(args), meta);
 }
 
 
 /// Parses a struct construction expression from the given context.
-static std::unique_ptr<Expr> parse_init_expr(std::unique_ptr<ASTContext> &ctx, const std::string &ident) {
+static std::unique_ptr<Expr> parse_init_expr(std::unique_ptr<ASTContext> &ctx, const std::string &ident, const Metadata &meta) {
   ctx->next();  // eat open brace
 
   std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields;
@@ -250,12 +250,13 @@ static std::unique_ptr<Expr> parse_init_expr(std::unique_ptr<ASTContext> &ctx, c
   }
   ctx->next();  // eat close brace
 
-  return std::make_unique<InitExpr>(ident, ctx->resolve_type(ident), std::move(fields));
+  return std::make_unique<InitExpr>(ident, ctx->resolve_type(ident), std::move(fields), meta);
 }
 
 
 /// Parses a struct function call expression from the given context.
-static std::unique_ptr<Expr> parse_member_call_expr(std::unique_ptr<ASTContext> &ctx, const std::string &base, const std::string &callee) {
+static std::unique_ptr<Expr> parse_member_call_expr(std::unique_ptr<ASTContext> &ctx, 
+  const std::string &base, const std::string &callee, const Metadata &base_meta, const Metadata &callee_meta) {
   ctx->next();  // eat the dot operator
 
   std::vector<std::unique_ptr<Expr>> args;
@@ -290,12 +291,14 @@ static std::unique_ptr<Expr> parse_member_call_expr(std::unique_ptr<ASTContext> 
     return warn_expr("expected struct type", ctx->last().meta);
   }
 
-  return std::make_unique<MemberCallExpr>(std::make_unique<DeclRefExpr>(base, str_decl->get_type()), callee, std::move(args));
+  return std::make_unique<MemberCallExpr>(
+    std::make_unique<DeclRefExpr>(base, str_decl->get_type(), base_meta), callee, std::move(args),
+    callee_meta);
 }
 
 
 /// Parses a struct member access expression from the given context.
-static std::unique_ptr<Expr> parse_member_expr(std::unique_ptr<ASTContext> &ctx, const std::string &base) {
+static std::unique_ptr<Expr> parse_member_expr(std::unique_ptr<ASTContext> &ctx, const std::string &base, const Metadata &meta) {
   ctx->next();  // eat the dot operator
 
   // verify that the base exists in this scope
@@ -315,10 +318,11 @@ static std::unique_ptr<Expr> parse_member_expr(std::unique_ptr<ASTContext> &ctx,
   }
 
   const std::string field = ctx->last().value;
+  const Metadata field_meta = ctx->last().meta;
   ctx->next();  // eat field name
 
   if (ctx->last().is_open_paren()) {
-    return parse_member_call_expr(ctx, base, field);
+    return parse_member_call_expr(ctx, base, field, meta, field_meta);
   }
 
   /*
@@ -328,14 +332,16 @@ static std::unique_ptr<Expr> parse_member_expr(std::unique_ptr<ASTContext> &ctx,
   }
   */
 
-  return std::make_unique<MemberExpr>(std::make_unique<DeclRefExpr>(base, str_decl->get_type()), field);
+  return std::make_unique<MemberExpr>(
+    std::make_unique<DeclRefExpr>(base, str_decl->get_type(), meta), field, field_meta);
 }
 
 
 /// Parses an array access expression from the given context.
 ///
 /// Array access expressions are in the form of `<expr>[<expr>]`.
-static std::unique_ptr<Expr> parse_array_access_expr(std::unique_ptr<ASTContext> &ctx, const std::string &base) {
+static std::unique_ptr<Expr> parse_array_access_expr(std::unique_ptr<ASTContext> &ctx, const std::string &base, const Metadata &meta) {
+  const Metadata access_meta = ctx->last().meta;
   ctx->next();  // eat open bracket
 
   std::unique_ptr<Expr> index = parse_expr(ctx);
@@ -360,7 +366,8 @@ static std::unique_ptr<Expr> parse_array_access_expr(std::unique_ptr<ASTContext>
     return warn_expr("expected array type", ctx->last().meta);
   }
 
-  return std::make_unique<ArrayAccessExpr>(std::make_unique<DeclRefExpr>(base, arr_decl->get_type()), std::move(index));
+  return std::make_unique<ArrayAccessExpr>(
+    std::make_unique<DeclRefExpr>(base, arr_decl->get_type(), meta), std::move(index), access_meta);
 }
 
 
@@ -368,31 +375,31 @@ static std::unique_ptr<Expr> parse_array_access_expr(std::unique_ptr<ASTContext>
 ///
 /// Identifiers are used to reference variables, function calls, etc.
 static std::unique_ptr<Expr> parse_identifier_expr(std::unique_ptr<ASTContext> &ctx) {
-  const std::string ident = ctx->last().value;
+  struct Token token = ctx->last();
   ctx->next();  // eat the identifier
 
   if (ctx->last().is_open_paren()) {
-    return parse_call_expr(ctx, ident);
+    return parse_call_expr(ctx, token.value, token.meta);
   } else if (ctx->last().is_dot()) {
-    return parse_member_expr(ctx, ident);
+    return parse_member_expr(ctx, token.value, token.meta);
   } else if (ctx->last().is_open_bracket()) {
-    return parse_array_access_expr(ctx, ident);
-  } else if (VarDecl *d = dynamic_cast<VarDecl *>(curr_scope->get_decl(ident))) {
-    return std::make_unique<DeclRefExpr>(ident, d->get_type());
-  } else if (ParamVarDecl *d = dynamic_cast<ParamVarDecl *>(curr_scope->get_decl(ident))) {
-    return std::make_unique<DeclRefExpr>(ident, d->get_type());
+    return parse_array_access_expr(ctx, token.value, token.meta);
+  } else if (VarDecl *d = dynamic_cast<VarDecl *>(curr_scope->get_decl(token.value))) {
+    return std::make_unique<DeclRefExpr>(token.value, d->get_type(), token.meta);
+  } else if (ParamVarDecl *d = dynamic_cast<ParamVarDecl *>(curr_scope->get_decl(token.value))) {
+    return std::make_unique<DeclRefExpr>(token.value, d->get_type(), token.meta);
   }
 
   if (ctx->last().is_open_brace()) {
-    return parse_init_expr(ctx, ident);
+    return parse_init_expr(ctx, token.value, token.meta);
   }
 
-  if (Decl *d = curr_scope->get_decl(ident)) {
+  if (Decl *d = curr_scope->get_decl(token.value)) {
     if (VarDecl *v = dynamic_cast<VarDecl *>(d)) {
-      return std::make_unique<DeclRefExpr>(ident, v->get_type());
+      return std::make_unique<DeclRefExpr>(token.value, v->get_type(), token.meta);
     }
   }
-  return std::make_unique<DeclRefExpr>(ident, nullptr);
+  return std::make_unique<DeclRefExpr>(token.value, nullptr, token.meta);
 }
 
 
@@ -413,7 +420,7 @@ static std::unique_ptr<Expr> parse_unary_expr(std::unique_ptr<ASTContext> &ctx) 
     return warn_expr("expected expression after unary operator", ctx->last().meta);
   }
 
-  return std::make_unique<UnaryExpr>(oper, std::move(base));
+  return std::make_unique<UnaryExpr>(oper, std::move(base), base->get_meta());
 }
 
 
@@ -439,7 +446,7 @@ static std::unique_ptr<Expr> parse_primary_expr(std::unique_ptr<ASTContext> &ctx
 
   if (ctx->last().is_kw("null")) {
     ctx->next();  // eat the `null` identifier
-    return std::make_unique<NullExpr>(nullptr);
+    return std::make_unique<NullExpr>(nullptr, ctx->last().meta);
   }
 
   if (ctx->last().is_ident()) {
@@ -484,7 +491,7 @@ static std::unique_ptr<Expr> parse_binary_expr(std::unique_ptr<ASTContext> &ctx,
       }
     }
 
-    base = std::make_unique<BinaryExpr>(oper, std::move(base), std::move(rval));
+    base = std::make_unique<BinaryExpr>(oper, std::move(base), std::move(rval), base->get_meta());
   }
 }
 
@@ -503,6 +510,7 @@ static std::unique_ptr<Expr> parse_expr(std::unique_ptr<ASTContext> &ctx) {
 ///
 /// Compound statements are a list of statements with a scope.
 static std::unique_ptr<Stmt> parse_compound_stmt(std::unique_ptr<ASTContext> &ctx) {
+  const Metadata meta = ctx->last().meta;
   ctx->next();  // eat open brace
 
   // declare new scope for the block
@@ -529,7 +537,7 @@ static std::unique_ptr<Stmt> parse_compound_stmt(std::unique_ptr<ASTContext> &ct
 
   // move back up to the parent scope
   curr_scope = curr_scope->get_parent();
-  return std::make_unique<CompoundStmt>(std::move(stmts), scope);
+  return std::make_unique<CompoundStmt>(std::move(stmts), scope, meta);
 }
 
 
@@ -537,18 +545,19 @@ static std::unique_ptr<Stmt> parse_compound_stmt(std::unique_ptr<ASTContext> &ct
 ///
 /// Return statements appear in the form `return <expr>`, where <expr> may be implicitly null.
 static std::unique_ptr<Stmt> parse_return_stmt(std::unique_ptr<ASTContext> &ctx) {
+  const Metadata meta = ctx->last().meta;
   ctx->next();  // eat return keyword
 
   if (ctx->last().is_semi()) {
-    return std::make_unique<ReturnStmt>(std::make_unique<NullExpr>(nullptr));
+    return std::make_unique<ReturnStmt>(std::make_unique<NullExpr>(nullptr, meta), meta);
   }
 
   std::unique_ptr<Expr> expr = parse_expr(ctx);
   if (!expr) {
-    return warn_stmt("expected expression after 'return'", ctx->last().meta);
+    return warn_stmt("expected expression after 'return'", meta);
   }
 
-  return std::make_unique<ReturnStmt>(std::move(expr));
+  return std::make_unique<ReturnStmt>(std::move(expr), meta);
 }
 
 
@@ -556,6 +565,7 @@ static std::unique_ptr<Stmt> parse_return_stmt(std::unique_ptr<ASTContext> &ctx)
 ///
 /// If statements appear in the form `if <expr> { <stmt> } else { <stmt> }`.
 static std::unique_ptr<Stmt> parse_if_stmt(std::unique_ptr<ASTContext> &ctx) {
+  const Metadata meta = ctx->last().meta;
   ctx->next();  // eat if keyword
 
   std::unique_ptr<Expr> cond = parse_expr(ctx);
@@ -576,10 +586,10 @@ static std::unique_ptr<Stmt> parse_if_stmt(std::unique_ptr<ASTContext> &ctx) {
       return warn_stmt("expected statement after 'else'", ctx->last().meta);
     }
 
-    return std::make_unique<IfStmt>(std::move(cond), std::move(then_body), std::move(else_body));
+    return std::make_unique<IfStmt>(std::move(cond), std::move(then_body), std::move(else_body), meta);
   }
 
-  return std::make_unique<IfStmt>(std::move(cond), std::move(then_body), nullptr);
+  return std::make_unique<IfStmt>(std::move(cond), std::move(then_body), nullptr, meta);
 }
 
 
@@ -587,6 +597,7 @@ static std::unique_ptr<Stmt> parse_if_stmt(std::unique_ptr<ASTContext> &ctx) {
 ///
 /// Until statements appear in the form `until <expr> { <stmt> }`.
 static std::unique_ptr<Stmt> parse_until_stmt(std::unique_ptr<ASTContext> &ctx) {
+  const Metadata meta = ctx->last().meta;
   ctx->next();  // eat until keyword
 
   std::unique_ptr<Expr> cond = parse_expr(ctx);
@@ -599,7 +610,7 @@ static std::unique_ptr<Stmt> parse_until_stmt(std::unique_ptr<ASTContext> &ctx) 
     return warn_stmt("expected statement after 'until' condition", ctx->last().meta);
   }
 
-  return std::make_unique<UntilStmt>(std::move(cond), std::move(body));
+  return std::make_unique<UntilStmt>(std::move(cond), std::move(body), meta);
 }
 
 
@@ -607,6 +618,7 @@ static std::unique_ptr<Stmt> parse_until_stmt(std::unique_ptr<ASTContext> &ctx) 
 ///
 /// Match statements appear in the form `match <expr> { case <expr> => <stmt>, ... }`.
 static std::unique_ptr<Stmt> parse_match_stmt(std::unique_ptr<ASTContext> &ctx) {
+  const Metadata meta = ctx->last().meta;
   ctx->next();  // eat match keyword
 
   std::unique_ptr<Expr> match_expr = parse_expr(ctx);
@@ -623,8 +635,9 @@ static std::unique_ptr<Stmt> parse_match_stmt(std::unique_ptr<ASTContext> &ctx) 
   while (!ctx->last().is_close_brace()) {
     std::unique_ptr<Expr> case_expr;
     if (ctx->last().is_ident() && ctx->last().value == "_") {
+      const Metadata default_meta = ctx->last().meta;
       ctx->next();  // eat default token
-      case_expr = std::make_unique<DefaultExpr>(nullptr);
+      case_expr = std::make_unique<DefaultExpr>(nullptr, default_meta);
     } else {
       case_expr = parse_expr(ctx);
     }
@@ -642,7 +655,7 @@ static std::unique_ptr<Stmt> parse_match_stmt(std::unique_ptr<ASTContext> &ctx) 
     if (!case_stmt) {
       return warn_stmt("expected statement after 'case' expression", ctx->last().meta);
     }
-    cases.push_back(std::make_unique<MatchCase>(std::move(case_expr), std::move(case_stmt)));
+    cases.push_back(std::make_unique<MatchCase>(std::move(case_expr), std::move(case_stmt), case_stmt->get_meta()));
     
     if (ctx->last().is_close_brace()) {
       break;
@@ -655,7 +668,7 @@ static std::unique_ptr<Stmt> parse_match_stmt(std::unique_ptr<ASTContext> &ctx) 
   }
   ctx->next();  // eat close brace
 
-  return std::make_unique<MatchStmt>(std::move(match_expr), std::move(cases));
+  return std::make_unique<MatchStmt>(std::move(match_expr), std::move(cases), meta);
 }
 
 
@@ -697,6 +710,7 @@ static std::unique_ptr<Stmt> parse_stmt(std::unique_ptr<ASTContext> &ctx) {
 ///
 /// Variable declarations are in the form of `let 'mut' <identifier> = <expr>;`.
 static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<ASTContext> &ctx) {
+  const Metadata decl_meta = ctx->last().meta;
   ctx->next();  // eat let keyword
 
   bool is_mutable = false;
@@ -710,6 +724,7 @@ static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<ASTContext> &ctx) {
   }
 
   const std::string name = ctx->last().value;
+  const Metadata meta = ctx->last().meta;
   ctx->next();  // eat variable name
 
   if (!ctx->last().is_colon()) {
@@ -730,11 +745,11 @@ static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<ASTContext> &ctx) {
   ctx->next();  // eat type
 
   if (ctx->last().is_semi()) {
-    std::unique_ptr<VarDecl> decl = std::make_unique<VarDecl>(name, ctx->resolve_type(type), is_mutable, is_rune);
+    std::unique_ptr<VarDecl> decl = std::make_unique<VarDecl>(name, ctx->resolve_type(type), is_mutable, is_rune, meta);
 
     // add declaration to parent scope
     curr_scope->add_decl(decl.get());
-    return std::make_unique<DeclStmt>(std::move(decl));
+    return std::make_unique<DeclStmt>(std::move(decl), decl_meta);
   } else if (!ctx->last().is_eq()) {
     return warn_stmt("expected ';'", ctx->last().meta);
   }
@@ -745,11 +760,11 @@ static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<ASTContext> &ctx) {
     return warn_stmt("expected expression after '='", ctx->last().meta);
   }
 
-  std::unique_ptr<VarDecl> decl = std::make_unique<VarDecl>(name, ctx->resolve_type(type), std::move(value), is_mutable, is_rune);
+  std::unique_ptr<VarDecl> decl = std::make_unique<VarDecl>(name, ctx->resolve_type(type), std::move(value), is_mutable, is_rune, meta);
 
   // add declaration to parent scope
   curr_scope->add_decl(decl.get());
-  return std::make_unique<DeclStmt>(std::move(decl));
+  return std::make_unique<DeclStmt>(std::move(decl), decl_meta);
 }
 
 
@@ -764,6 +779,7 @@ static std::unique_ptr<EnumDecl> parse_enum_decl(std::unique_ptr<ASTContext> &ct
   }
 
   const std::string name = ctx->last().value;
+  const Metadata meta = ctx->last().meta;
   ctx->next();  // eat enum name
 
   if (!ctx->last().is_open_brace()) {
@@ -778,6 +794,7 @@ static std::unique_ptr<EnumDecl> parse_enum_decl(std::unique_ptr<ASTContext> &ct
     }
 
     const std::string variant_name = ctx->last().value;
+    const Metadata variant_meta = ctx->last().meta;
     ctx->next();  // eat variant name
     
     // verify the variant does not already exist
@@ -787,7 +804,7 @@ static std::unique_ptr<EnumDecl> parse_enum_decl(std::unique_ptr<ASTContext> &ct
       }
     }
 
-    variants.push_back(std::make_unique<EnumVariantDecl>(variant_name));
+    variants.push_back(std::make_unique<EnumVariantDecl>(variant_name, variant_meta));
     if (ctx->last().is_close_brace()) {
       break;
     }
@@ -799,7 +816,7 @@ static std::unique_ptr<EnumDecl> parse_enum_decl(std::unique_ptr<ASTContext> &ct
   }
   ctx->next();  // eat close brace
 
-  std::unique_ptr<EnumDecl> enumeration = std::make_unique<EnumDecl>(name, std::move(variants));
+  std::unique_ptr<EnumDecl> enumeration = std::make_unique<EnumDecl>(name, std::move(variants), meta);
 
   // add declaration to parent scope
   curr_scope->add_decl(enumeration.get());
@@ -818,6 +835,7 @@ static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<ASTContext> &
   }
 
   const std::string name = ctx->last().value;
+  const Metadata meta = ctx->last().meta;
   ctx->next();  // eat function name
 
   if (!ctx->last().is_open_paren()) {
@@ -832,6 +850,7 @@ static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<ASTContext> &
     }
 
     const std::string param_name = ctx->last().value;
+    const Metadata param_meta = ctx->last().meta;
     ctx->next();  // eat param name
 
     if (!ctx->last().is_colon()) {
@@ -847,7 +866,7 @@ static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<ASTContext> &
     const std::string param_type = ctx->last().value;
     ctx->next();  // eat param type
 
-    std::unique_ptr<ParamVarDecl> param = std::make_unique<ParamVarDecl>(param_name, ctx->resolve_type(param_type));
+    std::unique_ptr<ParamVarDecl> param = std::make_unique<ParamVarDecl>(param_name, ctx->resolve_type(param_type), param_meta);
 
     if (curr_scope->get_decl(param_name)) {
       return warn_fn("parameter identifier already exists in scope: " + param_name, ctx->last().meta);
@@ -877,7 +896,7 @@ static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<ASTContext> &
 
   if (ctx->last().is_semi()) {
     ctx->next();  // eat semi
-    return std::make_unique<FunctionDecl>(name, ctx->resolve_type(ret_type), std::move(params));
+    return std::make_unique<FunctionDecl>(name, ctx->resolve_type(ret_type), std::move(params), meta);
   }
 
   if (!ctx->last().is_open_brace() ) {
@@ -893,7 +912,8 @@ static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<ASTContext> &
     return warn_fn("expected function body", ctx->last().meta);
   }
 
-  std::unique_ptr<FunctionDecl> function = std::make_unique<FunctionDecl>(name, ctx->resolve_type(ret_type), std::move(params), std::move(body), scope);
+  std::unique_ptr<FunctionDecl> function = std::make_unique<FunctionDecl>(
+    name, ctx->resolve_type(ret_type), std::move(params), std::move(body), scope, meta);
 
   // move back to parent scope
   curr_scope = curr_scope->get_parent();
@@ -915,6 +935,7 @@ static std::unique_ptr<TypeDecl> parse_struct_decl(std::unique_ptr<ASTContext> &
   }
 
   const std::string name = ctx->last().value;
+  const Metadata meta = ctx->last().meta;
   ctx->next();  // eat struct name
 
   if (!ctx->last().is_open_brace()) {
@@ -940,6 +961,7 @@ static std::unique_ptr<TypeDecl> parse_struct_decl(std::unique_ptr<ASTContext> &
     }
 
     const std::string field_name = ctx->last().value;
+    const Metadata field_meta = ctx->last().meta;
     ctx->next();  // eat field name
 
     if (!ctx->last().is_colon()) {
@@ -961,7 +983,8 @@ static std::unique_ptr<TypeDecl> parse_struct_decl(std::unique_ptr<ASTContext> &
       }
     }
 
-    std::unique_ptr<FieldDecl> field = std::make_unique<FieldDecl>(field_name, ctx->resolve_type(field_type));
+    std::unique_ptr<FieldDecl> field = std::make_unique<FieldDecl>(
+      field_name, ctx->resolve_type(field_type), field_meta);
     if (is_private) {
       field->set_priv();
     }
@@ -977,7 +1000,7 @@ static std::unique_ptr<TypeDecl> parse_struct_decl(std::unique_ptr<ASTContext> &
   }
   ctx->next();  // eat close brace
 
-  std::unique_ptr<StructDecl> structure = std::make_unique<StructDecl>(name, std::move(fields), scope);
+  std::unique_ptr<StructDecl> structure = std::make_unique<StructDecl>(name, std::move(fields), scope, meta);
   structure->set_type(new StructType(structure->get_name()));
   // move back to parent scope
   curr_scope = curr_scope->get_parent();
@@ -999,6 +1022,7 @@ static std::unique_ptr<TraitDecl> parse_trait_decl(std::unique_ptr<ASTContext> &
   }
 
   const std::string name = ctx->last().value;
+  const Metadata meta = ctx->last().meta;
   ctx->next();  // eat trait name
 
   if (!ctx->last().is_open_brace()) {
@@ -1025,7 +1049,7 @@ static std::unique_ptr<TraitDecl> parse_trait_decl(std::unique_ptr<ASTContext> &
   }
   ctx->next();  // eat close brace
 
-  std::unique_ptr<TraitDecl> trait = std::make_unique<TraitDecl>(name, std::move(methods));
+  std::unique_ptr<TraitDecl> trait = std::make_unique<TraitDecl>(name, std::move(methods), meta);
 
   // add trait declaration to parent scope
   curr_scope->add_decl(trait.get());
@@ -1045,6 +1069,7 @@ static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<ASTContext> &ct
 
   std::string target = ctx->last().value;
   std::string trait = "";
+  const Metadata meta = ctx->last().meta;
   ctx->next();  // eat first name
   if (ctx->last().is_kw("for")) {
     ctx->next();  // eat for keyword
@@ -1088,7 +1113,7 @@ static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<ASTContext> &ct
     methods.push_back(std::move(method));
   }
   ctx->next();  // eat close brace
-  return std::make_unique<ImplDecl>(trait, target, std::move(methods));
+  return std::make_unique<ImplDecl>(trait, target, std::move(methods), meta);
 }
 
 

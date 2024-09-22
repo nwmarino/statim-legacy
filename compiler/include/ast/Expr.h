@@ -93,6 +93,7 @@ public:
   virtual void pass(ASTVisitor *visitor) = 0;
   virtual const Type* get_type() const = 0;
   virtual const std::string to_string() = 0;
+  virtual const Metadata get_meta() const = 0;
 };
 
 
@@ -103,11 +104,13 @@ class NullExpr final : public Expr
 {
 private:
   const Type *T;
+  const Metadata meta;
 
 public:
-  NullExpr(Type *T) : T(T){};
+  NullExpr(const Type *T, const Metadata &meta) : T(T), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const override { return T; }
+  const Metadata get_meta() const override { return meta; }
 
   /// Returns a string representation of this null expression.
   const std::string to_string() override;
@@ -121,11 +124,13 @@ class DefaultExpr final : public Expr
 {
 private:
   const Type *T;
+  const Metadata meta;
 
 public:
-  DefaultExpr(const Type *T) : T(T){};
+  DefaultExpr(const Type *T, const Metadata &meta) : T(T), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const override { return T; }
+  const Metadata get_meta() const override { return meta; }
 
   /// Returns a string representation of this expression.
   const std::string to_string() override;
@@ -140,11 +145,14 @@ class BooleanLiteral final : public Expr
 private:
   const unsigned int value;
   const Type *T;
+  const Metadata meta;
 
 public:
-  BooleanLiteral(bool value, const Type *T) : value(value ? 1 : 0), T(T){};
+  BooleanLiteral(bool value, const Type *T, const Metadata &meta)
+    : value(value ? 1 : 0), T(T), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const override { return T; }
+  const Metadata get_meta() const override { return meta; }
 
   /// Gets the value of this boolean expression.
   inline bool get_value() const { return value; }
@@ -163,11 +171,14 @@ private:
   const long value;
   const bool signedness;
   const Type *T;
+  const Metadata meta;
 
 public:
-  IntegerLiteral(int value, const Type *T) : value(value), signedness(value < 0), T(T){};
+  IntegerLiteral(int value, const Type *T, const Metadata &meta) 
+    : value(value), signedness(value < 0), T(T), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const override { return T; }
+  const Metadata get_meta() const override { return meta; }
 
   /// Gets the value of this integer expression.
   inline int get_value() const { return value; }
@@ -188,11 +199,14 @@ class FPLiteral final : public Expr
 private:
   const double value;
   const Type *T;
+  const Metadata meta;
 
 public:
-  FPLiteral(double value, const Type *T) : value(value), T(T) {};
+  FPLiteral(double value, const Type *T, const Metadata &meta) \
+    : value(value), T(T), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const override { return T; }
+  const Metadata get_meta() const override { return meta; }
 
   /// Gets the value of this floating point expression.
   inline double get_value() const { return value; }
@@ -210,11 +224,14 @@ class CharLiteral final : public Expr
 private:
   const char value;
   const Type *T;
+  const Metadata meta;
 
 public:
-  CharLiteral(char value, const Type *T) : value(value), T(T){};
+  CharLiteral(char value, const Type *T, const Metadata &meta) 
+    : value(value), T(T), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const override { return T; }
+  const Metadata get_meta() const override { return meta; }
 
   /// Gets the value of this character expression.
   inline char get_value() const { return value; }
@@ -232,11 +249,14 @@ class StringLiteral final : public Expr
 private:
   const std::string value;
   const Type *T;
+  const Metadata meta;
 
 public:
-  StringLiteral(const std::string &value, const Type *T) : value(value), T(T){};
+  StringLiteral(const std::string &value, const Type *T, const Metadata &meta) 
+    : value(value), T(T), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const override { return T; }
+  const Metadata get_meta() const override { return meta; }
 
   /// Gets the value of this string expression.
   inline const std::string get_value() const { return value; }
@@ -254,11 +274,14 @@ class DeclRefExpr final : public Expr
 private:
   const std::string ident;
   const Type *T;
+  const Metadata meta;
 
 public:
-  DeclRefExpr(const std::string &ident, const Type *T) : ident(ident), T(T){};
+  DeclRefExpr(const std::string &ident, const Type *T, const Metadata &meta) 
+    : ident(ident), T(T), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const override { return T; }
+  const Metadata get_meta() const override { return meta; }
 
   /// Gets the identifier of this reference expression.
   inline const std::string get_ident() const { return ident; }
@@ -278,16 +301,13 @@ private:
   std::unique_ptr<Expr> lhs;
   std::unique_ptr<Expr> rhs;
   const Type *T;
+  const Metadata meta;
 
 public:
-  BinaryExpr(const BinaryOp op, std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs) : op(op), lhs(std::move(lhs)), rhs(std::move(rhs)) {
-    if (this->lhs && this->rhs) {
-      T = this->lhs->get_type() == this->rhs->get_type() ? this->lhs->get_type() : nullptr;
-    } else {
-      T = this->lhs->get_type();
-    }
-  }
+  BinaryExpr(const BinaryOp op, std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs, const Metadata &meta) 
+    : op(op), lhs(std::move(lhs)), rhs(std::move(rhs)), meta(meta), T(this->lhs->get_type()){}
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  const Metadata get_meta() const override { return meta; }
 
   /// Returns the type of this binary expression. Returns `nullptr` if the operand types mismatch.
   inline const Type* get_type() const override { return T; }
@@ -315,11 +335,14 @@ private:
   const UnaryOp op;
   std::unique_ptr<Expr> expr;
   const Type *T;
+  const Metadata meta;
 
 public:
-  UnaryExpr(const UnaryOp op, std::unique_ptr<Expr> expr) : op(op), expr(std::move(expr)), T(this->expr->get_type()){};
+  UnaryExpr(const UnaryOp op, std::unique_ptr<Expr> expr, const Metadata &meta) 
+    : op(op), expr(std::move(expr)), T(this->expr->get_type()), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const override { return T; }
+  const Metadata get_meta() const override { return meta; }
 
   /// Gets the operator of this unary expression.
   inline const UnaryOp get_op() const { return op; }
@@ -341,14 +364,17 @@ private:
   const std::string ident;
   const Type *T;
   std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields;
+  const Metadata meta;
 
 public:
-  InitExpr(const std::string &ident, const Type *T, std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields)
-    : ident(ident), T(T), fields(std::move(fields)){};
+  InitExpr(const std::string &ident, const Type *T, 
+    std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields, const Metadata &meta)
+    : ident(ident), T(T), fields(std::move(fields)), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const override { return T; }
   inline void set_type(const Type *T) { this->T = T; }
   inline std::string get_ident() { return ident; }
+  const Metadata get_meta() const override { return meta; }
   
   /// Gets the fields of this initialization expression.
   inline std::vector<std::pair<std::string, Expr *>> get_fields() {
@@ -373,12 +399,14 @@ protected:
   const std::string callee;
   std::vector<std::unique_ptr<Expr>> args;
   const Type* T;
+  const Metadata meta;
 
 public:
-  CallExpr(const std::string &callee, std::vector<std::unique_ptr<Expr>> args)
-    : callee(callee), args(std::move(args)), T(nullptr){};
+  CallExpr(const std::string &callee, std::vector<std::unique_ptr<Expr>> args, const Metadata &meta)
+    : callee(callee), args(std::move(args)), T(nullptr), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline int get_num_args() const { return args.size(); }
+  inline const Metadata get_meta() const override { return meta; }
 
   /// Return the argument at position <n> embedded in this function call.
   inline Expr *get_arg(std::size_t n) {
@@ -413,11 +441,13 @@ private:
   std::unique_ptr<Expr> base;
   const std::string member;
   const Type *T;
+  const Metadata meta;
 
 public:
-  MemberExpr(std::unique_ptr<Expr> base, const std::string &member)
-    : base(std::move(base)), member(member), T(nullptr){};
+  MemberExpr(std::unique_ptr<Expr> base, const std::string &member, const Metadata &meta)
+    : base(std::move(base)), member(member), T(this->base->get_type()), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  const Metadata get_meta() const override { return meta; }
 
   /// Returns the type of this member access expression. Returns `nullptr` if the member is undefined yet.
   inline const Type* get_type() const override { return T; }
@@ -445,9 +475,11 @@ private:
   std::unique_ptr<Expr> base;
 
 public:
-  MemberCallExpr(std::unique_ptr<Expr> base, const std::string &callee, std::vector<std::unique_ptr<Expr>> args)
-    : base(std::move(base)), CallExpr(callee, std::move(args)) {};
+  MemberCallExpr(std::unique_ptr<Expr> base, const std::string &callee,
+    std::vector<std::unique_ptr<Expr>> args, const Metadata &meta)
+    : base(std::move(base)), CallExpr(callee, std::move(args), meta) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  const Metadata get_meta() const override { return meta; }
 
   /// Gets the base of this member call expression.
   inline std::unique_ptr<Expr> get_base() { return std::move(base); }
@@ -468,12 +500,14 @@ class ArrayAccessExpr final : public Expr
 private:
   std::unique_ptr<Expr> base;
   std::unique_ptr<Expr> index;
+  const Metadata meta;
 
 public:
-  ArrayAccessExpr(std::unique_ptr<Expr> base, std::unique_ptr<Expr> index)
-    : base(std::move(base)), index(std::move(index)){};
+  ArrayAccessExpr(std::unique_ptr<Expr> base, std::unique_ptr<Expr> index, const Metadata &meta)
+    : base(std::move(base)), index(std::move(index)), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const override { return base->get_type(); }
+  const Metadata get_meta() const override { return meta; }
 
   /// Gets the base of this array access expression.
   inline std::unique_ptr<Expr> get_base() { return std::move(base); }

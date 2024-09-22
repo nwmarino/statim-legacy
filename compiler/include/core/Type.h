@@ -19,6 +19,7 @@ public:
   virtual bool is_float(void) const = 0;
   virtual bool is_builtin(void) const = 0;
   virtual bool is_matchable(void) const = 0;
+  virtual bool is_char(void) const = 0;
   virtual std::string to_string(void) const = 0;
 };
 
@@ -47,7 +48,8 @@ public:
   bool is_float(void) const override { return false; }
   bool is_builtin(void) const override { return false; }
   bool is_matchable(void) const override { return false; }
-  std::string to_string(void) const override { return ident + " referenced"; }
+  bool is_char(void) const override { return false; }
+  std::string to_string(void) const override { return ident + " ref"; }
 };
 
 
@@ -94,6 +96,7 @@ public:
   bool is_bool(void) const override { return get_kind() == __UINT1; }
   bool is_integer(void) const override { return get_kind() <= __INT64; }
   bool is_float(void) const override { return get_kind() == __FP32 || get_kind() == __FP64; }
+  bool is_char(void) const override { return get_kind() == __CHAR; }
   std::string to_string(void) const override {
     switch (get_kind()) {
       case __UINT1: return "bool";
@@ -122,6 +125,7 @@ public:
   bool is_float(void) const override { return false; }
   bool is_builtin(void) const override { return false; }
   bool is_matchable(void) const override { return false; }
+  bool is_char(void) const override { return false; }
 };
 
 

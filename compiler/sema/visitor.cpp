@@ -75,12 +75,12 @@ void PassVisitor::visit(FunctionDecl *d) {
   if (d->is_main()) {
     // check no params exist
     if (d->has_params()) {
-      panic("entry function 'main' cannot have parameters");
+      panic("entry function 'main' cannot have parameters", d->get_meta());
     }
 
     // check return type is void
     if (d->get_type()) {
-      panic("entry function 'main' must return void");
+      panic("entry function 'main' must return void", d->get_meta());
     }
 
     has_entry = true;
@@ -96,12 +96,12 @@ void PassVisitor::visit(FunctionDecl *d) {
   if (d->get_type() && !d->get_type()->is_builtin()) {
     const TypeRef *T = dynamic_cast<const TypeRef *>(d->get_type());
     if (!T) {
-      panic("unresolved return type: " + d->get_name());
+      panic("unresolved return type: " + d->get_name(), d->get_meta());
     }
 
     StructDecl *struct_d = dynamic_cast<StructDecl *>(d->get_scope()->get_decl(T->get_ident()));
     if (!struct_d) {
-      panic("unresolved return type: " + T->get_ident());
+      panic("unresolved return type: " + T->get_ident(), d->get_meta());
     }
 
     // assign real type
@@ -128,12 +128,12 @@ void PassVisitor::visit(ParamVarDecl *d) {
   // type is a reference
   if (const TypeRef *T = dynamic_cast<const TypeRef *>(d->get_type())) {
     if (!top_scope) {
-      panic("scoping error: " + d->get_name());
+      panic("scoping error: " + d->get_name(), d->get_meta());
     }
 
     StructDecl *struct_d = dynamic_cast<StructDecl *>(top_scope->get_decl(T->get_ident()));
     if (!struct_d) {
-      panic("unresolved parameter type: " + T->get_ident());
+      panic("unresolved parameter type: " + T->get_ident(), d->get_meta());
     }
 
     // assign real type
@@ -142,7 +142,7 @@ void PassVisitor::visit(ParamVarDecl *d) {
       return;
     }
   }
-  panic("unresolved parameter type in scope: " + d->get_name());
+  panic("unresolved parameter type in scope: " + d->get_name(), d->get_meta());
 }
 
 
@@ -166,12 +166,12 @@ void PassVisitor::visit(FieldDecl *d) {
   // type is a reference
   if (const TypeRef *T = dynamic_cast<const TypeRef *>(d->get_type())) {
     if (!top_scope) {
-      panic("scoping error: " + d->get_name());
+      panic("scoping error: " + d->get_name(), d->get_meta());
     }
 
     StructDecl *struct_d = dynamic_cast<StructDecl *>(top_scope->get_decl(T->get_ident()));
     if (!struct_d) {
-      panic("unresolved field type: " + T->get_ident());
+      panic("unresolved field type: " + T->get_ident(), d->get_meta());
     }
 
     // assign real type
@@ -180,10 +180,12 @@ void PassVisitor::visit(FieldDecl *d) {
       return;
     }
   }
-  panic("unresolved field type in scope: " + d->get_name());
+  panic("unresolved field type in scope: " + d->get_name(), d->get_meta());
 }
 
 
+/// This check verifies that a trait declaration is valid. It passes on all
+/// function declarations within the trait declaration.
 void PassVisitor::visit(TraitDecl *d) {
   for (FunctionDecl *fn : d->get_decls()) {
     fn->pass(this);
@@ -197,19 +199,19 @@ void PassVisitor::visit(TraitDecl *d) {
 void PassVisitor::visit(ImplDecl *d) {
   // check that the target struct exists
   if (!pkg_scope->get_decl(d->get_name())) {
-    panic("unresolved struct: " + d->get_name());
+    panic("unresolved struct: " + d->get_name(), d->get_meta());
   }
   
   if (d->is_trait()) {
     // check that the trait exists
     Decl *gen_d = pkg_scope->get_decl(d->trait());
     if (!gen_d) {
-      panic("unresolved trait: " + d->trait());
+      panic("unresolved trait: " + d->trait(), d->get_meta());
     }
 
     TraitDecl *trait_d = dynamic_cast<TraitDecl *>(gen_d);
     if (!trait_d) {
-      panic("expected trait: " + d->trait());
+      panic("expected trait: " + d->trait(), d->get_meta());
     }
 
     // ensure that all methods are implemented
@@ -223,7 +225,7 @@ void PassVisitor::visit(ImplDecl *d) {
       }
 
       if (!found) {
-        panic("missing trait implementation: " + fn->get_name());
+        panic("missing trait implementation: " + fn->get_name(), d->get_meta());
       }
     }
   }
@@ -234,6 +236,8 @@ void PassVisitor::visit(ImplDecl *d) {
 }
 
 
+/// This check verifies that an enum declaration is valid. It passes on
+/// all enum variants within the enum declaration.
 void PassVisitor::visit(EnumDecl *d) {
   for (EnumVariantDecl *ev : d->get_variants()) {
     ev->pass(this);
@@ -241,6 +245,7 @@ void PassVisitor::visit(EnumDecl *d) {
 }
 
 
+/// Empty pass on an enum variant declaration.
 void PassVisitor::visit(EnumVariantDecl *d) {
   return;
 }
@@ -254,12 +259,12 @@ void PassVisitor::visit(VarDecl *d) {
     // type is a reference
     if (const TypeRef *T = dynamic_cast<const TypeRef *>(d->get_type())) {
       if (!top_scope) {
-        panic("scoping error: " + d->get_name());
+        panic("scoping error: " + d->get_name(), d->get_meta());
       }
 
       StructDecl *struct_d = dynamic_cast<StructDecl *>(top_scope->get_decl(T->get_ident()));
       if (!struct_d) {
-        panic("unresolved variable type: " + T->get_ident());
+        panic("unresolved variable type: " + T->get_ident(), d->get_meta());
       }
 
       // assign real type
@@ -268,26 +273,30 @@ void PassVisitor::visit(VarDecl *d) {
         return;
       }
     } else {
-      panic("unresolved variable type in scope: " + d->get_name());
+      panic("unresolved variable type in scope: " + d->get_name(), d->get_meta());
     } 
   }
 
   const PrimitiveType *pt = dynamic_cast<const PrimitiveType *>(d->get_type());
   if (!pt) {
-    panic("unresolved variable type in scope: " + d->get_name());
+    panic("unresolved variable type in scope: " + d->get_name(), d->get_meta());
   }
 
   if (!pt->compare(d->get_expr()->get_type())) {
-    panic("type mismatch: " + d->get_name());
+    panic("type mismatch: " + d->get_name(), d->get_meta());
   }
 }
 
 
+/// This check verifies that a declaration statement is valid. It passes on the
+/// nested declaration.
 void PassVisitor::visit(DeclStmt *s) {
   s->get_decl()->pass(this);
 }
 
 
+/// This check verifies that a compound statement is valid. It passes on all
+/// statements within the compound statement.
 void PassVisitor::visit(CompoundStmt *s) {
   for (Stmt *stmt : s->get_stmts()) {
     stmt->pass(this);
@@ -300,7 +309,7 @@ void PassVisitor::visit(CompoundStmt *s) {
 /// bodies are valid.
 void PassVisitor::visit(IfStmt *s) {
   if (!s->get_cond()->get_type()->is_bool_evaluable()) {
-    panic("non-boolean condition in if statement");
+    panic("non-boolean condition in if statement", s->get_meta());
   }
 
   s->get_cond()->pass(this);
@@ -311,6 +320,8 @@ void PassVisitor::visit(IfStmt *s) {
 }
 
 
+/// This check verifies that a match case is valid. It passes on both the
+/// match expression and the match case.
 void PassVisitor::visit(MatchCase *s) {
   s->get_expr()->pass(this);
   s->get_body()->pass(this);
@@ -324,7 +335,7 @@ void PassVisitor::visit(MatchCase *s) {
 void PassVisitor::visit(MatchStmt *s) {
   s->get_expr()->pass(this);
   if (!s->get_expr()->get_type()->is_matchable()) {
-    panic("non-matchable expression in match statement");
+    panic("non-matchable expression in match statement", s->get_meta());
   }
 
   bool is_bool_match = false;
@@ -352,11 +363,11 @@ void PassVisitor::visit(MatchStmt *s) {
   }
 
   if (is_bool_match && (!has_true_case || !has_false_case)) {
-    panic("missing true or false case in boolean match statement");
+    panic("missing true or false case in boolean match statement", s->get_meta());
   }
 
   if (!has_default && !is_bool_match) {
-    panic("missing default case in match statement");
+    panic("missing default case in match statement", s->get_meta());
   }
 }
 
@@ -367,7 +378,7 @@ void PassVisitor::visit(UntilStmt *s) {
   s->get_cond()->pass(this);
 
   if (!s->get_cond()->get_type()->is_bool_evaluable()) {
-    panic("non-boolean condition in until statement");
+    panic("non-boolean condition in until statement", s->get_meta());
   }
 
   in_loop = true;
@@ -381,18 +392,18 @@ void PassVisitor::visit(UntilStmt *s) {
 void PassVisitor::visit(ReturnStmt *s) {
   // check that the return stmt is in a function scope
   if (!top_scope) {
-    panic("return statement outside of function scope");
+    panic("return statement outside of function scope", s->get_meta());
   }
 
   if (!s->get_expr() && !fn_ret_type) {
     return;
   } else if (s->get_expr() && !fn_ret_type) {
-    panic("return statement in void function");
+    panic("return statement in void function", s->get_meta());
   }
 
   s->get_expr()->pass(this);
   if (s->get_expr()->get_type() != fn_ret_type) {
-    panic("type mismatch in return statement");
+    panic("type mismatch in return statement", s->get_meta());
   }
 }
 
@@ -416,7 +427,7 @@ void PassVisitor::visit(ContinueStmt *s) {
 /// This check verifies that a null expression is valid.
 void PassVisitor::visit(NullExpr *e) {
   if (e->get_type()) {
-    panic("non-null type in null expression");
+    panic("non-null type in null expression", e->get_meta());
   }
 }
 
@@ -424,7 +435,7 @@ void PassVisitor::visit(NullExpr *e) {
 /// This check verifies that a default expression is valid.
 void PassVisitor::visit(DefaultExpr *e) {
   if (e->get_type()) {
-    panic("non-null type in default expression");
+    panic("non-null type in default expression", e->get_meta());
   }
 }
 
@@ -432,7 +443,7 @@ void PassVisitor::visit(DefaultExpr *e) {
 /// This check verifies that a BooleanLiteral node is a boolean primitive.
 void PassVisitor::visit(BooleanLiteral *e) {
   if (!e->get_type()->is_bool()) {
-    panic("non-boolean type in boolean literal");
+    panic("non-boolean type in boolean literal", e->get_meta());
   }
 }
 
@@ -440,7 +451,7 @@ void PassVisitor::visit(BooleanLiteral *e) {
 /// This check verifies that an IntegerLiteral node is an integer primitive.
 void PassVisitor::visit(IntegerLiteral *e) {
   if (!e->get_type()->is_integer()) {
-    panic("non-integer type in integer literal");
+    panic("non-integer type in integer literal", e->get_meta());
   }
 }
 
@@ -448,15 +459,15 @@ void PassVisitor::visit(IntegerLiteral *e) {
 /// This check verifies that a FPLiteral node is a floating point primitive.
 void PassVisitor::visit(FPLiteral *e) {
   if (!e->get_type()->is_float()) {
-    panic("non-float type in floating point literal");
+    panic("non-float type in floating point literal", e->get_meta());
   }
 }
 
 
 /// This check verifies that a CharLiteral node is a character primitive.
 void PassVisitor::visit(CharLiteral *e) {
-  if (!e->get_type()->is_integer()) {
-    panic("non-integer type in character literal");
+  if (!e->get_type()->is_char()) {
+    panic("non-integer type in character literal", e->get_meta());
   }
 }
 
@@ -464,13 +475,25 @@ void PassVisitor::visit(CharLiteral *e) {
 /// This check verifies that a StringLiteral node is a string primitive.
 void PassVisitor::visit(StringLiteral *e) {
   if (!e->get_type()->is_builtin()) {
-    panic("non-primitive type in string literal");
+    panic("non-primitive type in string literal", e->get_meta());
   }
 }
 
 
+/// This check verifies that a DeclRefExpr node is valid. It assigns the real
+/// type of the declaration reference, assuming the node is valid.
 void PassVisitor::visit(DeclRefExpr *e) {
-  return;
+  if (!e->get_type()->is_builtin()) {
+    // type is a reference
+    if (const TypeRef *T = dynamic_cast<const TypeRef *>(e->get_type())) {
+      StructDecl *struct_d = dynamic_cast<StructDecl *>(top_scope->get_decl(T->get_ident()));
+      if (!struct_d) {
+        panic("unresolved reference type: " + T->get_ident(), e->get_meta());
+      }
+
+    }
+    panic("unresolved reference type in scope: " + e->get_ident(), e->get_meta());
+  }
 }
 
 
