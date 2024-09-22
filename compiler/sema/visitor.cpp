@@ -543,10 +543,6 @@ void PassVisitor::visit(BinaryExpr *e) {
   if (is_assignment_op(e->get_op())) {
     // check that the left hand side is a valid lvalue
     if (DeclRefExpr *lhs = dynamic_cast<DeclRefExpr *>(e->get_lhs())) {
-      if (lhs->get_type()->is_builtin()) {
-        panic("assignment to builtin non-lvalue", e->get_meta());
-      }
-
       // check that the left hand side is mutable
       if (VarDecl *vd = dynamic_cast<VarDecl *>(top_scope->get_decl(lhs->get_ident()))) {
         if (!vd->is_mut()) {
@@ -554,10 +550,6 @@ void PassVisitor::visit(BinaryExpr *e) {
         }
       }
     } else if (MemberExpr *lhs = dynamic_cast<MemberExpr *>(e->get_lhs())) {
-      if (lhs->get_base()->get_type()->is_builtin()) {
-        panic("assignment to builtin non-lvalue", e->get_meta());
-      }
-
       // check that the left hand side base is mutable
       if (DeclRefExpr *d = dynamic_cast<DeclRefExpr *>(lhs->get_base())) {
         Decl *gd = top_scope->get_decl(d->get_ident());
@@ -581,8 +573,15 @@ void PassVisitor::visit(BinaryExpr *e) {
 }
 
 
+/// This check verifies that a unary expression is valid. It passes on the
+/// nested expression and assigns the true type of the unary expression.
 void PassVisitor::visit(UnaryExpr *e) {
-  return;
+  e->get_expr()->pass(this);
+  e->set_type(e->get_expr()->get_type());
+
+  if (e->is_bang() && !e->get_expr()->get_type()->is_bool()) {
+    panic("non-boolean type in bang expression", e->get_meta());
+  }
 }
 
 

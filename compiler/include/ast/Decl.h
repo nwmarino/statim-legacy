@@ -125,6 +125,11 @@ public:
   /// Get a declaration by its name, if it exists.
   [[nodiscard]]
   inline Decl *get_decl(const std::string &name) {
+    // check that the identifier is not reserved
+    if (is_reserved_ident(name)) {
+      return nullptr;
+    }
+
     for (Decl *d : decls) {
       if (d->get_name() == name) {
         return d;

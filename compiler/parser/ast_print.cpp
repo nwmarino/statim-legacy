@@ -302,6 +302,16 @@ const std::string UntilStmt::to_string() {
 }
 
 
+const std::string BreakStmt::to_string() {
+  return piping() + BOLD + MAGENTA + "BreakStmt" + RESET + '\n';
+}
+
+
+const std::string ContinueStmt::to_string() {
+  return piping() + BOLD + MAGENTA + "ContinueStmt" + RESET + '\n';
+}
+
+
 const std::string DefaultExpr::to_string() {
   return piping() + MAGENTA + "DefaultExpr" + GREEN + " '" + get_type()->to_string() + "' " + BOLD + CYAN + "_" + RESET + '\n';
 }

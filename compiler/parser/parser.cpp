@@ -677,27 +677,39 @@ static std::unique_ptr<Stmt> parse_stmt(std::unique_ptr<ASTContext> &ctx) {
     return parse_compound_stmt(ctx);
   }
 
-  if (!ctx->last().is_ident()) {
+  else if (!ctx->last().is_ident()) {
     return warn_stmt("unexpected token: " + ctx->last().value, ctx->last().meta);
   }
 
-  if (ctx->last().is_kw("if")) {
+  else if (ctx->last().is_kw("break")) {
+    const Metadata meta = ctx->last().meta;
+    ctx->next();  // eat break keyword
+    return std::make_unique<BreakStmt>(meta);
+  }
+
+  else if (ctx->last().is_kw("continue")) {
+    const Metadata meta = ctx->last().meta;
+    ctx->next();  // eat continue keyword
+    return std::make_unique<ContinueStmt>(meta);
+  }
+
+  else if (ctx->last().is_kw("if")) {
     return parse_if_stmt(ctx);
   }
 
-  if (ctx->last().is_kw("let")) {
+  else if (ctx->last().is_kw("let")) {
     return parse_var_decl(ctx);
   }
 
-  if (ctx->last().is_kw("match")) {
+  else if (ctx->last().is_kw("match")) {
     return parse_match_stmt(ctx);
   }
 
-  if (ctx->last().is_kw("return")) {
+  else if (ctx->last().is_kw("return")) {
     return parse_return_stmt(ctx);
   }
 
-  if (ctx->last().is_kw("until")) {
+  else if (ctx->last().is_kw("until")) {
     return parse_until_stmt(ctx);
   }
 

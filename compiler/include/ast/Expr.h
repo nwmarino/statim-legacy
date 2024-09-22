@@ -353,13 +353,23 @@ public:
     : op(op), expr(std::move(expr)), T(this->expr->get_type()), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const override { return T; }
+  inline void set_type(const Type *T) { this->T = T; }
   const Metadata get_meta() const override { return meta; }
 
   /// Gets the operator of this unary expression.
   inline const UnaryOp get_op() const { return op; }
 
+  /// Returns true if this unary expression is a bang operator.
+  inline bool is_bang() const { return op == UnaryOp::Bang; }
+
+  /// Returns true if this unary expression is a rune operator.
+  inline bool is_rune() const { return op == UnaryOp::Rune; }
+
+  /// Returns true if this unary expression is a reference operator.
+  inline bool is_ref() const { return op == UnaryOp::Ref; }
+
   /// Gets the expr of this unary expression.
-  inline std::unique_ptr<Expr> get_expr() { return std::move(expr); }
+  inline Expr *get_expr() { return expr.get(); }
 
   /// Returns a string representation of this unary expression.
   const std::string to_string() override;

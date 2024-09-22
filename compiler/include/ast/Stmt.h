@@ -200,4 +200,40 @@ public:
   const std::string to_string() override;
 };
 
+
+/// BreakStmt - Represents a break statement.
+///
+/// Break statements are used to exit a loop statement prematurely.
+class BreakStmt final : public Stmt
+{
+private:
+  const Metadata meta;
+
+public:
+  BreakStmt(const Metadata &meta) : meta(meta){};
+  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  const Metadata get_meta() const override { return meta; }
+
+  /// Returns a string representation of this break statement.
+  const std::string to_string() override;
+};
+
+
+/// ContinueStmt - Represents a continue statement.
+///
+/// Continue statements are used to skip the current iteration of a loop statement.
+class ContinueStmt final : public Stmt
+{
+private:
+  const Metadata meta;
+
+public:
+  ContinueStmt(const Metadata &meta) : meta(meta){};
+  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  const Metadata get_meta() const override { return meta; }
+
+  /// Returns a string representation of this continue statement.
+  const std::string to_string() override;
+};
+
 #endif  // STMT_STATIMC_H
