@@ -197,8 +197,13 @@ void PassVisitor::visit(TraitDecl *d) {
 /// implemented to the target struct.
 void PassVisitor::visit(ImplDecl *d) {
   // check that the target struct exists
-  if (!pkg_scope->get_decl(d->get_name())) {
-    panic("unresolved struct: " + d->get_name(), d->get_meta());
+  Decl *decl = pkg_scope->get_decl(d->get_name());
+  if (!decl) {
+    panic("unresolved decl: " + d->get_name(), d->get_meta());
+  }
+  StructDecl *struct_d = dynamic_cast<StructDecl *>(decl);
+  if (!struct_d) {
+    panic("expected struct: " + d->get_name(), d->get_meta());
   }
   
   if (d->is_trait()) {
@@ -231,6 +236,9 @@ void PassVisitor::visit(ImplDecl *d) {
 
   for (FunctionDecl *fn : d->get_methods()) {
     fn->pass(this);
+
+    // add the function to the struct scope
+    struct_d->get_scope()->add_decl(fn);
   }
 }
 
@@ -406,7 +414,12 @@ void PassVisitor::visit(ReturnStmt *s) {
   }
 
   s->get_expr()->pass(this);
-  if (s->get_expr()->get_type() != fn_ret_type) {
+  if (fn_ret_type->is_builtin()) {
+    const PrimitiveType *pt = dynamic_cast<const PrimitiveType *>(fn_ret_type);
+    if (!pt->compare(s->get_expr()->get_type())) {
+      panic("type mismatch in return statement", s->get_meta());
+    }
+  } else if (s->get_expr()->get_type() != fn_ret_type) {
     panic("type mismatch in return statement", s->get_meta());
   }
 }
@@ -507,6 +520,10 @@ void PassVisitor::visit(DeclRefExpr *e) {
 }
 
 
+/// This check verifies that a BinaryExpr node is valid. It checks that both
+/// the left and right hand sides of the expression are valid, and that their
+/// types match. It also checks that the left hand side is a valid lvalue if
+/// the operator is an assignment operator.
 void PassVisitor::visit(BinaryExpr *e) {
   e->get_lhs()->pass(this);
   e->get_rhs()->pass(this);
@@ -678,6 +695,8 @@ void PassVisitor::visit(CallExpr *e) {
 }
 
 
+/// This check verifies that a member access expression is valid. It checks that
+/// the base expression is a struct, and that the member exists in the struct.
 void PassVisitor::visit(MemberExpr *e) {
   e->get_base()->pass(this);
 
@@ -718,7 +737,95 @@ void PassVisitor::visit(MemberExpr *e) {
 
 
 void PassVisitor::visit(MemberCallExpr *e) {
-  return;
+  e->get_base()->pass(this);
+
+  // resolve base expression
+  DeclRefExpr *base_expr = dynamic_cast<DeclRefExpr *>(e->get_base());
+  if (!base_expr) {
+    panic("expected lvalue base to be of a struct type", e->get_meta());
+  }
+
+  // resolve reference declaration
+  Decl *base_d = top_scope->get_decl(base_expr->get_ident());
+  if (!base_d) {
+    panic("unresolved reference: " + base_expr->get_ident(), e->get_meta());
+  }
+  VarDecl *vd = dynamic_cast<VarDecl *>(base_d);
+  if (!vd) {
+    panic("expected variable reference", e->get_meta());
+  }
+
+  // resolve struct type
+  const StructType *st = dynamic_cast<const StructType *>(vd->get_type());
+  if (!st) {
+    panic("expected struct type", e->get_meta());
+  }
+  Decl *d = pkg_scope->get_decl(st->get_name());
+  if (!d) {
+    panic("unresolved struct type: " + st->get_name(), e->get_meta());
+  }
+  StructDecl *struct_d = dynamic_cast<StructDecl *>(d);
+  if (!struct_d) {
+    panic("expected struct type", e->get_meta());
+  }
+
+  Decl *md = struct_d->get_scope()->get_decl(e->get_callee());
+  if (!md) {
+    panic("unresolved method: " + e->get_callee(), e->get_meta());
+  }
+
+  FunctionDecl *method_decl = dynamic_cast<FunctionDecl *>(md);
+  if (!method_decl) {
+    panic("expected function: " + e->get_callee());
+  }
+
+  if (e->get_num_args() != method_decl->get_num_params()) {
+    panic("function " + e->get_callee() + " has " + std::to_string(method_decl->get_num_params()) + " parameters but " + \
+    std::to_string(e->get_num_args()) + " were provided.");
+  }
+
+  // type check all arguments
+  if (method_decl->has_params()) {
+    std::size_t pos = 0;
+    for (ParamVarDecl *param : method_decl->get_params()) {
+      param->pass(this);
+      Expr *arg = e->get_arg(pos);
+      if (!arg) {
+        panic("missing argument in function call: " + param->get_name());
+      }
+      arg->pass(this);
+
+      if (param->get_type()->is_builtin()) {
+        const PrimitiveType *pt = dynamic_cast<const PrimitiveType *>(param->get_type());
+        if (!pt->compare(arg->get_type())) {
+          panic("type mismatch in function call: " + param->get_name());
+        }
+      } else if (param->get_type() != arg->get_type()) {
+        panic("type mismatch in function call: " + param->get_name());
+      }
+
+      pos += 1;
+    }
+  }
+
+  // check if the function return is a type reference
+  if (const TypeRef *T = dynamic_cast<const TypeRef *>(method_decl->get_type())) {
+    // check if the referenced type exists
+    StructDecl *struct_d = dynamic_cast<StructDecl *>(pkg_scope->get_decl(T->get_ident()));
+    if (!struct_d) {
+      panic("unresolved return type: " + T->get_ident());
+    }
+
+    // assign real type
+    if (struct_d->get_type()) {
+      e->set_type(struct_d->get_type());
+      return;
+    }
+    panic("unresolved return type: " + T->get_ident());
+  }
+
+  // assign real type
+  e->set_type(method_decl->get_type());
 }
 
 

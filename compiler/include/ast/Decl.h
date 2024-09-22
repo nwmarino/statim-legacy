@@ -437,6 +437,16 @@ public:
     return methods;
   }
 
+  /// Returns a method by its name, if it exists.
+  inline FunctionDecl *get_method(const std::string &name) {
+    for (const std::unique_ptr<FunctionDecl> &m : methods) {
+      if (m->get_name() == name) {
+        return m.get();
+      }
+    }
+    return nullptr;
+  }
+
   /// Returns the name of the trait this declaration implements, or an empty string otherwise.
   inline const std::string trait() const { return is_trait() ? _trait : ""; }
 

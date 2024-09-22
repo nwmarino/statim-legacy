@@ -1,15 +1,21 @@
 fn main();
 
 fn foo() -> void {
-  let mut my_struct: MyStruct = MyStruct {
+  let my_struct: MyStruct = MyStruct {
     A: 'a',
     B: 10,
   }
 
-  my_struct.A = 'b';
+  let y: i64 = my_struct.dat();
 }
 
 struct MyStruct {
   A: char,
   B: i32,
+}
+
+impl MyStruct {
+  fn dat() -> i32 {
+    return 5;
+  }
 }

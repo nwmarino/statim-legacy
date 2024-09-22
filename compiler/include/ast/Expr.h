@@ -493,7 +493,7 @@ public:
   const Metadata get_meta() const override { return meta; }
 
   /// Gets the base of this member call expression.
-  inline std::unique_ptr<Expr> get_base() { return std::move(base); }
+  inline Expr *get_base() { return base.get(); }
 
   /// Gets the callee of this member call expression.
   inline const std::string get_callee() const { return callee; }
