@@ -189,9 +189,19 @@ public:
   /// Returns a string representation of this scope tree.
   [[nodiscard]]
   const std::string to_string() {
-    std::string result;
+    std::string result = "Scope\n";
     for (NamedDecl *d : decls) {
-      result += d->to_string() + '\n';
+      result += d->get_name() + '\n';
+    }
+    return result;
+  }
+
+  /// Returns a string respresentation of this scope tree with an identifier.
+  [[nodiscard]]
+  const std::string to_string(const std::string &id) {
+    std::string result = "Scope: " + id + '\n';
+    for (NamedDecl *d : decls) {
+      result += d->get_name() + '\n';
     }
     return result;
   }
@@ -238,10 +248,10 @@ private:
 
 public:
   FunctionDecl(const std::string &name, Type *T, std::vector<std::unique_ptr<ParamVarDecl>> params, const Metadata &meta) 
-    : NamedDecl(name), ScopedDecl(nullptr), T(T), meta(meta), params(std::move(params)), body(nullptr), priv(false) {};
+    : NamedDecl(name), ScopedDecl(nullptr), T(T), meta(meta), params(std::move(params)), body(nullptr), priv(name == "main" ? true : false) {};
   FunctionDecl(const std::string &name, Type *T, std::vector<std::unique_ptr<ParamVarDecl>> params, std::unique_ptr<Stmt> body, 
     std::shared_ptr<Scope> scope, const Metadata &meta)
-    : NamedDecl(name), ScopedDecl(scope), T(T), meta(meta), params(std::move(params)), body(std::move(body)), priv(false) {};
+    : NamedDecl(name), ScopedDecl(scope), T(T), meta(meta), params(std::move(params)), body(std::move(body)), priv(name == "main" ? true : false) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const { return T; }
   inline void set_type(const Type *T) { this->T = T; }

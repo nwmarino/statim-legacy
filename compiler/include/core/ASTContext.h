@@ -44,6 +44,7 @@ private:
   struct Token _last;
   struct Token _last_two;
   std::string _file;
+  bool _add_next_to_scope;
   std::map<const std::string, Type *> type_table;
 
 public:
@@ -61,6 +62,11 @@ public:
   inline std::string file(void) const { return _file; }
   /// Moves to the next input file and consumes the previous.
   void next_file(void);
+  /// Returns true if the next named declaration should be added to the parent scope.
+  [[nodiscard]]
+  inline bool add_next_to_scope(void) const { return _add_next_to_scope; }
+  /// Declare that the next should be added to the parent scope, or not.
+  void set_add_next_to_scope(bool add);
   /// Resolves a type by name. Returns a `TypeRef` object if the type is not found.
   [[nodiscard]]
   Type* resolve_type(const std::string &name);

@@ -371,9 +371,10 @@ const std::string UnaryExpr::to_string() {
 
 
 const std::string CallExpr::to_string() {
-  std::string result = piping() + MAGENTA + "CallExpr" + GREEN + " '" + get_type()->to_string() + "' " + BLUE + '\'' + callee + '\'' + RESET + '\n';
+  std::string result = get_type() ? piping() + MAGENTA + "CallExpr" + GREEN + " '" + get_type()->to_string() + "' " + BLUE + '\'' + callee + '\'' + RESET + '\n' \
+    : piping() + MAGENTA + "CallExpr" + GREEN + " 'unknown' " + BLUE + '\'' + callee + '\'' + RESET + '\n';
   indent++;
-  at_last_child = false;
+  at_last_child = args.empty() ? true : false;
   for (std::unique_ptr<Expr> const &arg : args) {
     at_last_child = arg == args.back();
     result += arg->to_string();
@@ -423,9 +424,10 @@ const std::string MemberExpr::to_string() {
 
 
 const std::string MemberCallExpr::to_string() {
-  std::string result = piping() + MAGENTA + "MemberCallExpr" + GREEN + " '" + get_type()->to_string() + "' " + BLUE + '\'' + callee + '\'' + RESET + '\n';
+  std::string result = get_type() ? piping() + MAGENTA + "MemberCallExpr" + GREEN + " '" + get_type()->to_string() + "' " + BLUE + '\'' + callee + '\'' + RESET + '\n' \
+    : piping() + MAGENTA + "MemberCallExpr" + GREEN + " 'unknown' " + BLUE + '\'' + callee + '\'' + RESET + '\n';
   indent++;
-  at_last_child = false;
+  at_last_child = args.empty() ? true : false;
   result += base->to_string();
   for (std::unique_ptr<Expr> const &arg : args) {
     at_last_child = arg == args.back();

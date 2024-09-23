@@ -933,9 +933,12 @@ static std::unique_ptr<NamedDecl> parse_fn_decl(std::unique_ptr<ASTContext> &ctx
 
   // move back to parent scope
   curr_scope = curr_scope->get_parent();
+
+  if (ctx->add_next_to_scope()) {
+    // add function declaration to parent scope
+    curr_scope->add_decl(function.get());
+  }
   
-  // add function declaration to parent scope
-  curr_scope->add_decl(function.get());
   return function;
 }
 
@@ -1114,7 +1117,9 @@ static std::unique_ptr<Decl> parse_impl_decl(std::unique_ptr<ASTContext> &ctx) {
       ctx->next();  // eat priv keyword
     }
 
+    ctx->set_add_next_to_scope(false);
     std::unique_ptr<NamedDecl> method = parse_fn_decl(ctx);
+    
     if (!method) {
       return warn_impl("expected method in impl declaration", ctx->last().meta);
     }
@@ -1132,6 +1137,7 @@ static std::unique_ptr<Decl> parse_impl_decl(std::unique_ptr<ASTContext> &ctx) {
     methods.push_back(std::move(std::unique_ptr<FunctionDecl>(dynamic_cast<FunctionDecl *>(method.release()))));
   }
   ctx->next();  // eat close brace
+  ctx->set_add_next_to_scope(true);
   return std::make_unique<ImplDecl>(trait, target, std::move(methods), meta);
 }
 

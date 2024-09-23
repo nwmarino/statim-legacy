@@ -48,7 +48,6 @@ static std::vector<CFile> parse_files(std::vector<CFile> files, std::filesystem:
   }
 
   return files;
-  
 }
 
 
@@ -67,6 +66,10 @@ int main(int argc, char *argv[]) {
 
   std::unique_ptr<ASTVisitor> visitor = std::make_unique<PassVisitor>();
   crate->pass(visitor.get());
+
+  for (PackageUnit *pkg : crate->get_packages()) {
+    std::cout << pkg->get_scope()->to_string(pkg->get_name()) << '\n';
+  }
 
   std::cout << crate->to_string();
 }
