@@ -1,12 +1,12 @@
+pkg util;
+
 fn main() {
-  let mut i: i32 = 0;
-  until i == 5 {
-    i += 1;
-    if i == 3 {
-      continue;
-    }
-    break;
+  let my_struct: MyStruct = MyStruct {
+    A: 'a',
+    B: 1,
   }
+
+  let x: char = my_struct.util();
 }
 
 struct MyStruct {
@@ -14,8 +14,3 @@ struct MyStruct {
   B: i32,
 }
 
-impl MyStruct {
-  fn dat() -> i32 {
-    return 5;
-  }
-}

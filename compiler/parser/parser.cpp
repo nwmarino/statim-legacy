@@ -787,7 +787,7 @@ static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<ASTContext> &ctx) {
 /// Parses an enum declaration from the given context.
 ///
 /// Enum declarations are in the form of `enum <identifier> { <variants> }`.
-static std::unique_ptr<EnumDecl> parse_enum_decl(std::unique_ptr<ASTContext> &ctx) {
+static std::unique_ptr<TypeDecl> parse_enum_decl(std::unique_ptr<ASTContext> &ctx) {
   ctx->next();  // eat enum keyword
 
   if (!ctx->last().is_ident()) {
@@ -843,7 +843,7 @@ static std::unique_ptr<EnumDecl> parse_enum_decl(std::unique_ptr<ASTContext> &ct
 /// Parses a function declaration from the given context.
 ///
 /// Function declarations are in the form of `fn <identifier>(<args>) -> <return_ty> { <body> }`.
-static std::unique_ptr<FunctionDecl> parse_fn_decl(std::unique_ptr<ASTContext> &ctx) {
+static std::unique_ptr<NamedDecl> parse_fn_decl(std::unique_ptr<ASTContext> &ctx) {
   ctx->next();  // eat fn keyword
 
   if (!ctx->last().is_ident()) {
@@ -1022,7 +1022,7 @@ static std::unique_ptr<TypeDecl> parse_struct_decl(std::unique_ptr<ASTContext> &
   curr_scope = curr_scope->get_parent();
 
   // add struct declaration to parent scope
-  curr_scope->add_decl(static_cast<TypeDecl *>(structure.get()));
+  curr_scope->add_decl(structure.get());
   return structure;
 }
 
@@ -1030,7 +1030,7 @@ static std::unique_ptr<TypeDecl> parse_struct_decl(std::unique_ptr<ASTContext> &
 /// Parses a trait declaration from the given context.
 ///
 /// Trait declarations are in the form of `trait <identifier> { <methods> }`.
-static std::unique_ptr<TraitDecl> parse_trait_decl(std::unique_ptr<ASTContext> &ctx) {
+static std::unique_ptr<NamedDecl> parse_trait_decl(std::unique_ptr<ASTContext> &ctx) {
   ctx->next();  // eat trait keyword
 
   if (!ctx->last().is_ident()) {
@@ -1052,16 +1052,18 @@ static std::unique_ptr<TraitDecl> parse_trait_decl(std::unique_ptr<ASTContext> &
       return warn_trait("method cannot be declared private in trait '" + name + "'", ctx->last().meta);
     }
 
-    std::unique_ptr<FunctionDecl> method = parse_fn_decl(ctx);
+    std::unique_ptr<NamedDecl> method = parse_fn_decl(ctx);
     if (!method) {
       return warn_trait("expected method in trait declaration", ctx->last().meta);
-    } 
+    }
 
-    if (method->has_body()) {
+    std::unique_ptr<FunctionDecl> fn = std::unique_ptr<FunctionDecl>(dynamic_cast<FunctionDecl *>(method.release()));
+
+    if (fn->has_body()) {
       return warn_trait("method '" + method->get_name() + "' cannot have a body in trait declaration", ctx->last().meta);
     }
 
-    methods.push_back(std::move(method));
+    methods.push_back(std::move(fn));
   }
   ctx->next();  // eat close brace
 
@@ -1076,7 +1078,7 @@ static std::unique_ptr<TraitDecl> parse_trait_decl(std::unique_ptr<ASTContext> &
 /// Parses an impl declaration from the given context.
 ///
 /// Impl declarations are in the form of `impl <struct> { <methods> }` or `impl <trait> for <struct> { <methods> }`.
-static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<ASTContext> &ctx) {
+static std::unique_ptr<Decl> parse_impl_decl(std::unique_ptr<ASTContext> &ctx) {
   ctx->next();  // eat impl keyword
 
   if (!ctx->last().is_ident()) {
@@ -1112,10 +1114,11 @@ static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<ASTContext> &ct
       ctx->next();  // eat priv keyword
     }
 
-    std::unique_ptr<FunctionDecl> method = parse_fn_decl(ctx);
+    std::unique_ptr<NamedDecl> method = parse_fn_decl(ctx);
     if (!method) {
       return warn_impl("expected method in impl declaration", ctx->last().meta);
     }
+
     // check that method was not already implemented
     for (const std::unique_ptr<FunctionDecl> &m : methods) {
       if (m->get_name() == method->get_name()) {
@@ -1126,7 +1129,7 @@ static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<ASTContext> &ct
     if (is_private) {
       method->set_priv();
     }
-    methods.push_back(std::move(method));
+    methods.push_back(std::move(std::unique_ptr<FunctionDecl>(dynamic_cast<FunctionDecl *>(method.release()))));
   }
   ctx->next();  // eat close brace
   return std::make_unique<ImplDecl>(trait, target, std::move(methods), meta);
@@ -1139,7 +1142,7 @@ static std::unique_ptr<ImplDecl> parse_impl_decl(std::unique_ptr<ASTContext> &ct
 static std::unique_ptr<Decl> parse_decl(std::unique_ptr<ASTContext> &ctx, bool is_private) {
   if (ctx->last().is_kw("fn")) {
     if (is_private) {
-      if (std::unique_ptr<FunctionDecl> decl = parse_fn_decl(ctx)) {
+      if (std::unique_ptr<NamedDecl> decl = parse_fn_decl(ctx)) {
         decl->set_priv();
         return decl;
       }
@@ -1161,7 +1164,7 @@ static std::unique_ptr<Decl> parse_decl(std::unique_ptr<ASTContext> &ctx, bool i
 
   if (ctx->last().is_kw("trait")) {
     if (is_private) {
-      if (std::unique_ptr<TraitDecl> decl = parse_trait_decl(ctx)) {
+      if (std::unique_ptr<NamedDecl> decl = parse_trait_decl(ctx)) {
         decl->set_priv();
         return decl;
       }
@@ -1179,7 +1182,7 @@ static std::unique_ptr<Decl> parse_decl(std::unique_ptr<ASTContext> &ctx, bool i
 
   if (ctx->last().is_kw("enum")) {
     if (is_private) {
-      if (std::unique_ptr<EnumDecl> decl = parse_enum_decl(ctx)) {
+      if (std::unique_ptr<TypeDecl> decl = parse_enum_decl(ctx)) {
         decl->set_priv();
         return decl;
       }
@@ -1244,9 +1247,11 @@ static std::unique_ptr<PackageUnit> parse_pkg(std::unique_ptr<ASTContext> &ctx) 
     if (!decl) {
       panic("expected declaration or import", ctx->last().meta);
     }
-
+    /*
     // add declaration to package scope
-    curr_scope->add_decl(decl.get());
+    if (NamedDecl *d = dynamic_cast<NamedDecl *>(decl.get())) {
+      curr_scope->add_decl(d);
+    }*/
     decls.push_back(std::move(decl));
   }
 
@@ -1274,7 +1279,7 @@ static std::unique_ptr<CrateUnit> parse_crate(std::unique_ptr<ASTContext> &ctx) 
       panic("expected package", ctx->last().meta);
     }
     packages.push_back(std::move(pkg));
-  } while (!ctx->last().is_eof());
+  } while (ctx->last().is_eof());
 
   return std::make_unique<CrateUnit>(std::move(packages));
 }

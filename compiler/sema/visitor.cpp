@@ -9,7 +9,7 @@
 #include "../include/core/Logger.h"
 #include "../include/sema/ASTVisitor.h"
 
-static std::vector<std::string> pkg_ids = {};
+static std::vector<PackageUnit *> pkgs = {};
 static bool has_entry = false;
 static bool in_loop = false;
 static std::shared_ptr<Scope> pkg_scope = nullptr;
@@ -19,13 +19,15 @@ static const Type *fn_ret_type = nullptr;
 /// This check verifies that a crate unit is valid. It checks that all packages
 /// are unique and that the entry function 'main' exists.
 void PassVisitor::visit(CrateUnit *u) {
-  std::vector <PackageUnit *> pkgs = u->get_packages();
-  for (PackageUnit *pkg : pkgs) {
+  for (PackageUnit *pkg : u->get_packages()) {
     // check the package name is not duplicated
-    if (std::find(pkg_ids.begin(), pkg_ids.end(), pkg->get_name()) != pkg_ids.end()) {
-      panic("duplicate package: " + pkg->get_name());
+    for (PackageUnit *p : pkgs) {
+      if (p->get_name() == pkg->get_name()) {
+        panic("duplicate package: " + pkg->get_name());
+      }
     }
-    pkg_ids.push_back(pkg->get_name());
+
+    pkgs.push_back(pkg);
   }
 
   for (PackageUnit *pkg : u->get_packages()) {
@@ -48,17 +50,45 @@ void PassVisitor::visit(PackageUnit *u) {
 
   // check all imports exist and that no dupes exist
   for (const std::string &import : imports) {
-    if (std::find(pkg_ids.begin(), pkg_ids.end(), import) == pkg_ids.end()) {
-      panic("unresolved import: " + import);
+    if (import == u->get_name()) {
+      panic("circular import: " + import);
+    }
+
+    bool found = false;
+    for (const PackageUnit *pkg : pkgs) {
+      if (pkg->get_name() == import) {
+        found = true;
+      }
+    }
+
+    if (!found) {
+      panic("unresolved import: " + import + " in package: " + u->get_name());
     }
 
     if (std::count(imports.begin(), imports.end(), import) > 1) {
-      panic("duplicate import: " + import);
+      panic("duplicate import: " + import + " in package: " + u->get_name());
     }
   }
 
   // import scope trees
 
+  // TODO: check for duplicate decls
+  for (const std::string &import : imports) {
+    // get the pkg scope tree
+    for (PackageUnit *pkg : pkgs) {
+      if (pkg->get_name() == import) {
+        for (Decl *decl : pkg->get_decls()) {
+          if (decl->is_priv()) {
+            continue;
+          }
+
+          if (NamedDecl *nd = dynamic_cast<NamedDecl *>(decl)) {
+            u->get_scope()->add_decl(nd);
+          }
+        }
+      }
+    }
+  }
 
   for (Decl *decl : u->get_decls()) {
     decl->pass(this);
@@ -197,13 +227,13 @@ void PassVisitor::visit(TraitDecl *d) {
 /// implemented to the target struct.
 void PassVisitor::visit(ImplDecl *d) {
   // check that the target struct exists
-  Decl *decl = pkg_scope->get_decl(d->get_name());
+  NamedDecl *decl = pkg_scope->get_decl(d->get_struct_name());
   if (!decl) {
-    panic("unresolved decl: " + d->get_name(), d->get_meta());
+    panic("unresolved decl: " + d->get_struct_name(), d->get_meta());
   }
   StructDecl *struct_d = dynamic_cast<StructDecl *>(decl);
   if (!struct_d) {
-    panic("expected struct: " + d->get_name(), d->get_meta());
+    panic("unresolved struct target: " + d->get_struct_name(), d->get_meta());
   }
   
   if (d->is_trait()) {
@@ -735,6 +765,8 @@ void PassVisitor::visit(MemberExpr *e) {
 }
 
 
+/// This check verifies that a member call expression is valid. It checks that
+/// the base expression is a struct, and that the methods exists in the struct.
 void PassVisitor::visit(MemberCallExpr *e) {
   e->get_base()->pass(this);
 

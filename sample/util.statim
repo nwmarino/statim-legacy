@@ -1,0 +1,7 @@
+pkg main;
+
+impl MyStruct {
+    fn util() -> char {
+        return 'c';
+    }
+}

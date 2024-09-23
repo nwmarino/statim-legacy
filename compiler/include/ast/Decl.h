@@ -11,8 +11,7 @@
 
 #include "Expr.h"
 #include "../sema/ASTVisitor.h"
-
-class Stmt;
+#include "../token/Token.h"
 
 /// Base class for all AST declarations.
 class Decl
@@ -20,42 +19,51 @@ class Decl
 public:
   virtual ~Decl() = default;
   virtual void pass(ASTVisitor *visitor) = 0;
-  virtual const std::string get_name() const = 0;
-  virtual const std::string to_string() = 0;
+  virtual const Metadata get_meta() const = 0;
   virtual bool is_priv() const = 0;
   virtual void set_priv() = 0;
   virtual void set_pub() = 0;
-  virtual const Metadata get_meta() const = 0;
+  virtual const std::string to_string() = 0;
 };
 
 
 /// ScopedDecl - Base class for declarations with that contain a scope.
 class ScopedDecl : public Decl
 {
-private:
+protected:
   std::shared_ptr<Scope> scope;
 
 public:
-  virtual ~ScopedDecl() = default;
-  virtual std::shared_ptr<Scope> get_scope() const = 0;
-  virtual const Metadata get_meta() const = 0;
+  ScopedDecl(std::shared_ptr<Scope> scope) : scope(scope) {};
+  std::shared_ptr<Scope> get_scope() const { return scope; }
+};
+
+
+/// NamedDecl - Base class for declarations with a name.
+class NamedDecl : public Decl
+{
+protected:
+  const std::string name;
+
+public:
+  NamedDecl(const std::string &name) : name(name) {};
+  inline const std::string get_name() const { return name; }
 };
 
 
 /// TypeDecl - Base class for type declarations.
-class TypeDecl : public Decl
+///
+/// A type declaration is a declaration that creates a type, like a struct.
+/// This should not be mistaken for declarations that are typed, like variables.
+class TypeDecl : public NamedDecl
 {
-private:
+protected:
   const Type *T;
 
 public:
-  virtual ~TypeDecl() = default;
-  virtual void pass(ASTVisitor *visitor) = 0;
-  virtual const Type* get_type() const = 0;
-  virtual void set_type(const Type *T) = 0;
-  virtual const std::string get_name() const = 0;
-  virtual const std::string to_string() = 0;
-  virtual const Metadata get_meta() const = 0;
+  TypeDecl(const std::string &name, const Type *T) : NamedDecl(name), T(T) {};
+  inline const Type* get_type() const { return T; }
+  inline void set_type(const Type *T) { this->T = T; }
 };
 
 
@@ -95,16 +103,17 @@ class Scope final
 private:
   std::shared_ptr<Scope> parent;
   struct ScopeContext ctx;
-  std::vector<Decl *> decls;
+  std::vector<NamedDecl *> decls;
 
 public:
-  Scope(std::shared_ptr<Scope> parent, struct ScopeContext ctx) : parent(parent), ctx(ctx), decls() {};
+  Scope(std::shared_ptr<Scope> parent, struct ScopeContext ctx) 
+    : parent(parent), ctx(ctx), decls(){};
 
   /// Add a declaration to this scope.
-  inline void add_decl(Decl *d) { decls.push_back(d); }
+  inline void add_decl(NamedDecl *d) { decls.push_back(d); }
 
   /// Delete a declaration from this scope.
-  inline void del_decl(Decl *d) { decls.erase(std::remove(decls.begin(), decls.end(), d), decls.end()); }
+  inline void del_decl(NamedDecl *d) { decls.erase(std::remove(decls.begin(), decls.end(), d), decls.end()); }
 
   /// Get the direct parent scope, if it exists.
   [[nodiscard]]
@@ -124,13 +133,13 @@ public:
 
   /// Get a declaration by its name, if it exists.
   [[nodiscard]]
-  inline Decl *get_decl(const std::string &name) {
+  inline NamedDecl *get_decl(const std::string &name) {
     // check that the identifier is not reserved
     if (is_reserved_ident(name)) {
       return nullptr;
     }
 
-    for (Decl *d : decls) {
+    for (NamedDecl *d : decls) { 
       if (d->get_name() == name) {
         return d;
       }
@@ -140,6 +149,10 @@ public:
     }
     return nullptr;
   }
+
+  /// Get all declarations in this scope.
+  [[nodiscard]]
+  inline const std::vector<NamedDecl *> get_decls() const { return decls; }
   
   /// Determine if this scope belongs to a crate.
   [[nodiscard]]
@@ -177,7 +190,7 @@ public:
   [[nodiscard]]
   const std::string to_string() {
     std::string result;
-    for (Decl *d : decls) {
+    for (NamedDecl *d : decls) {
       result += d->to_string() + '\n';
     }
     return result;
@@ -190,27 +203,22 @@ public:
 /// Functions hold a list of parameters and a body.
 
 /// Class for function parameters.
-class ParamVarDecl final : public Decl
+class ParamVarDecl final : public NamedDecl
 {
 private:
-  const std::string name;
   const Type *T;
   const Metadata meta;
 
 public:
   ParamVarDecl(const std::string &name, Type *T, const Metadata &meta) 
-    : name(name), T(T), meta(meta){};
+    : NamedDecl(name), T(T), meta(meta) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline const Metadata get_meta() const override { return meta; }
   inline const Type* get_type() const { return T; }
   inline void set_type(const Type *T) { this->T = T; }
   inline bool is_priv() const override { return false; }
   inline void set_priv() override {}
   inline void set_pub() override {}
-  const Metadata get_meta() const override { return meta; }
-
-  /// Gets the name of this parameter.
-  [[nodiscard]]
-  inline const std::string get_name() const override { return name; }
 
   /// Returns a string representation of this parameter.
   [[nodiscard]]
@@ -219,38 +227,32 @@ public:
 
 
 /// Class for function definitions and declarations.
-class FunctionDecl final : public ScopedDecl
+class FunctionDecl final : public NamedDecl, public ScopedDecl
 {
 private:
-  const std::string name;
   const Type *T;
+  const Metadata meta;
   std::vector<std::unique_ptr<ParamVarDecl>> params;
   std::unique_ptr<Stmt> body;
-  std::shared_ptr<Scope> scope;
   bool priv;
-  const Metadata meta;
 
 public:
-  FunctionDecl(const std::string &name, Type *T, std::vector<std::unique_ptr<ParamVarDecl>> params, 
-    const Metadata &meta) : name(name), T(T), params(std::move(params)), body(nullptr), priv(false), meta(meta){};
-  FunctionDecl(const std::string &name, Type *T, 
-    std::vector<std::unique_ptr<ParamVarDecl>> params, std::unique_ptr<Stmt> body, 
+  FunctionDecl(const std::string &name, Type *T, std::vector<std::unique_ptr<ParamVarDecl>> params, const Metadata &meta) 
+    : NamedDecl(name), ScopedDecl(nullptr), T(T), meta(meta), params(std::move(params)), body(nullptr), priv(false) {};
+  FunctionDecl(const std::string &name, Type *T, std::vector<std::unique_ptr<ParamVarDecl>> params, std::unique_ptr<Stmt> body, 
     std::shared_ptr<Scope> scope, const Metadata &meta)
-    : name(name), T(T), params(std::move(params)), body(std::move(body)), scope(scope), priv(false), meta(meta){};
+    : NamedDecl(name), ScopedDecl(scope), T(T), meta(meta), params(std::move(params)), body(std::move(body)), priv(false) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const { return T; }
   inline void set_type(const Type *T) { this->T = T; }
   inline int get_num_params() const { return params.size(); }
-  const Metadata get_meta() const override { return meta; }
+  inline const Metadata get_meta() const override { return meta; }
 
   /// Returns true if this function declaration has a body.
   inline bool has_body() const { return body != nullptr; }
 
   /// Returns true if this is the entry function main.
   inline bool is_main() const { return name == "main"; }
-
-  /// Gets the name of this function declaration.
-  inline const std::string get_name() const override { return name; }
 
   /// Returns true if the function has a parameters, and false otherwise.
   inline bool has_params() const { return !params.empty(); }
@@ -266,9 +268,6 @@ public:
 
   /// Returns the body of this function declaration.
   inline Stmt *get_body() const { return body.get(); }
-
-  /// Get the scope of this function declaration.
-  inline std::shared_ptr<Scope> get_scope() const override { return scope; }
 
   /// Returns true if this function declaration is private.
   inline bool is_priv() const override { return priv; }
@@ -289,25 +288,20 @@ public:
 /// Trait declarations hold a list of function prototypes.
 
 /// Class for trait declarations.
-class TraitDecl final : public Decl
+class TraitDecl final : public NamedDecl
 {
 private:
-  const std::string name;
   std::vector<std::unique_ptr<FunctionDecl>> decls;
-  bool priv;
   const Metadata meta;
+  bool priv;
 
 public:
-  TraitDecl(const std::string &name, const Metadata &meta) : name(name), decls(), priv(false), meta(meta){};
+  TraitDecl(const std::string &name, const Metadata &meta) : NamedDecl(name), decls(), meta(meta), priv(false) {};
   TraitDecl(const std::string &name, std::vector<std::unique_ptr<FunctionDecl>> decls, const Metadata &meta)
-    : name(name), decls(std::move(decls)), priv(false), meta(meta){};
+    : NamedDecl(name), decls(std::move(decls)), meta(meta), priv(false) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  const Metadata get_meta() const override { return meta; }
-
-  /// Gets the name of this trait declaration.
-  [[nodiscard]]
-  inline const std::string get_name() const override { return name; }
-
+  inline const Metadata get_meta() const override { return meta; }
+  
   // Returns the expected method behaviour of this trait declaration.
   [[nodiscard]]
   inline const std::vector<FunctionDecl *> get_decls() const {
@@ -338,23 +332,18 @@ public:
 /// Enums hold a list of variants which are expanded into constants.
 
 /// Class for enum variants.
-class EnumVariantDecl final : public Decl
+class EnumVariantDecl final : public NamedDecl
 {
 private:
-  const std::string name;
   const Metadata meta;
 
 public:
-  EnumVariantDecl(const std::string &name, const Metadata &meta) : name(name), meta(meta){};
+  EnumVariantDecl(const std::string &name, const Metadata &meta) : NamedDecl(name), meta(meta) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline bool is_priv() const override { return false; }
   inline void set_priv() override {}
   inline void set_pub() override {}
-  const Metadata get_meta() const override { return meta; }
-
-  /// Gets the name of this enum variant.
-  [[nodiscard]]
-  inline const std::string get_name() const override { return name; }
+  inline const Metadata get_meta() const override { return meta; }
 
   /// Returns a string representation of this enum variant.
   [[nodiscard]]
@@ -366,24 +355,17 @@ public:
 class EnumDecl final : public TypeDecl
 {
 private:
-  const std::string name;
   std::vector<std::unique_ptr<EnumVariantDecl>> variants;
-  const Type *T;
-  bool priv;
   const Metadata meta;
+  bool priv;
 
 public:
   EnumDecl(const std::string &name, const Metadata &meta) 
-    : name(name), variants(), priv(false), meta(meta){};
+    : TypeDecl(name, nullptr), variants(), meta(meta), priv(false) {};
   EnumDecl(const std::string &name, std::vector<std::unique_ptr<EnumVariantDecl>> variants, const Metadata &meta)
-    : name(name), variants(std::move(variants)), priv(false), meta(meta){};
+    : TypeDecl(name, nullptr), variants(std::move(variants)), meta(meta), priv(false) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  inline const Type* get_type() const override { return T; }
-  inline void set_type(const Type *T) override { this->T = T; }
-  const Metadata get_meta() const override { return meta; }
-
-  /// Gets the name of this enum declaration.
-  inline const std::string get_name() const override { return name; }
+  inline const Metadata get_meta() const override { return meta; }
 
   /// Gets the variants of this enum declaration.
   inline const std::vector<EnumVariantDecl *> get_variants() const {
@@ -431,7 +413,7 @@ public:
   inline bool is_priv() const override { return false; }
   inline void set_priv() override {}
   inline void set_pub() override {}
-  const Metadata get_meta() const override { return meta; }
+  inline const Metadata get_meta() const override { return meta; }
 
   /// Returns the methods of this implementation declaration.
   inline const std::vector<FunctionDecl *> get_methods() const {
@@ -456,7 +438,7 @@ public:
   inline const std::string trait() const { return is_trait() ? _trait : ""; }
 
   /// Gets the name of the target struct of this implementation declaration.
-  inline const std::string get_name() const override { return _struct; }
+  inline const std::string get_struct_name() const { return _struct; }
 
   /// Returns true if this is a trait implementation.
   inline bool is_trait() const { return is_trait_impl; }
@@ -471,24 +453,20 @@ public:
 /// Structs hold a list of fields and methods.
 
 /// Class for struct fields.
-class FieldDecl final : public Decl
+class FieldDecl final : public NamedDecl
 {
 private:
-  const std::string name;
   const Type *T;
-  bool priv;
   const Metadata meta;
+  bool priv;
 
 public:
   FieldDecl(const std::string &name, const Type *T, const Metadata &meta) 
-    : name(name), T(T), priv(false), meta(meta){};
+    : NamedDecl(name), T(T), meta(meta), priv(false) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const { return T; }
   inline void set_type(const Type *T) { this->T = T; }
-  const Metadata get_meta() const override { return meta; }
-
-  /// Gets the name of this struct fields.
-  inline const std::string get_name() const override { return name; }
+  inline const Metadata get_meta() const override { return meta; }
 
   /// Returns true if this function declaration is private.
   inline bool is_priv() const override { return priv; }
@@ -508,8 +486,6 @@ public:
 class StructDecl final : public ScopedDecl, public TypeDecl
 {
 private:
-  const std::string name;
-  const Type *T;
   std::vector<std::unique_ptr<FieldDecl>> fields;
   std::shared_ptr<Scope> scope;
   std::vector<std::string> impls;
@@ -517,16 +493,10 @@ private:
   const Metadata meta;
 
 public:
-  StructDecl(const std::string &name, std::vector<std::unique_ptr<FieldDecl>> fields, 
-    std::shared_ptr<Scope> scope, const Metadata &meta) : name(name), T(nullptr), 
-    fields(std::move(fields)), scope(scope), priv(false), impls(), meta(meta){};
+  StructDecl(const std::string &name, std::vector<std::unique_ptr<FieldDecl>> fields, std::shared_ptr<Scope> scope, const Metadata &meta)
+    : ScopedDecl(scope), TypeDecl(name, nullptr), fields(std::move(fields)), priv(false), impls(), meta(meta) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  inline const Type* get_type() const override { return T; }
-  inline void set_type(const Type *T) override { this->T = T; }
-  const Metadata get_meta() const override { return meta; }
-
-  /// Gets the name of this struct declaration.
-  inline const std::string get_name() const override { return name; }
+  inline const Metadata get_meta() const override { return meta; }
 
   /// Returns true if this function declaration is private.
   inline bool is_priv() const override { return priv; }
@@ -536,9 +506,6 @@ public:
 
   // Set this function declaration as public.
   inline void set_pub() override { priv = false; }
-
-  /// Get the scope of this struct declaration.
-  inline std::shared_ptr<Scope> get_scope() const override { return scope; }
 
   /// Determine if this struct type has a field by name.
   inline bool has_field(const std::string &name) const {
@@ -581,31 +548,28 @@ public:
 
 
 /// Class for variable declarations.
-class VarDecl final : public Decl
+class VarDecl final : public NamedDecl
 {
 private:
-  const std::string name;
   const Type *T;
   std::unique_ptr<Expr> expr;
+  const Metadata meta;
   bool mut;
   bool rune;
-  const Metadata meta;
+  
 
 public:
   VarDecl(const std::string &name, const Type *T, std::unique_ptr<Expr> expr, bool mut, bool rune, const Metadata &meta)
-    : name(name), T(T), expr(std::move(expr)), mut(mut), rune(rune), meta(meta){};
+    : NamedDecl(name), T(T), expr(std::move(expr)), meta(meta), mut(mut), rune(rune) {};
   VarDecl(const std::string &name, const Type *T, bool mut, bool rune, const Metadata &meta)
-    : name(name), T(T), expr(nullptr), mut(mut), rune(rune), meta(meta){};
+    : NamedDecl(name), T(T), expr(nullptr), meta(meta), mut(mut), rune(rune) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const { return T; }
   inline void set_type(const Type *T) { this->T = T; }
   inline bool is_priv() const override { return false; }
   inline void set_priv() override {}
   inline void set_pub() override {}
-  const Metadata get_meta() const override { return meta; }
-
-  /// Gets the name of this variable declaration.
-  inline const std::string get_name() const override { return name; }
+  inline const Metadata get_meta() const override { return meta; }
 
   /// Returns true if this variable declaration has an expression.
   inline bool has_expr() const { return expr != nullptr; }
