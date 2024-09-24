@@ -760,6 +760,10 @@ void PassVisitor::visit(MemberExpr *e) {
     panic("unresolved field: " + e->get_member(), e->get_meta());
   }
 
+  if (fd->is_priv() && top_scope != struct_d->get_scope()) {
+    panic("attempted to access private field: " + e->get_member(), e->get_meta());
+  }
+
   // assign real type
   e->set_type(fd->get_type());
 }
@@ -808,6 +812,10 @@ void PassVisitor::visit(MemberCallExpr *e) {
   FunctionDecl *method_decl = dynamic_cast<FunctionDecl *>(md);
   if (!method_decl) {
     panic("expected function: " + e->get_callee());
+  }
+
+  if (method_decl->is_priv() && top_scope != struct_d->get_scope()) {
+    panic("attempted to access private method: " + e->get_callee(), e->get_meta());
   }
 
   if (e->get_num_args() != method_decl->get_num_params()) {
