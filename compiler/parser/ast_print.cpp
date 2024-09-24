@@ -447,3 +447,9 @@ const std::string ArrayAccessExpr::to_string() {
   result += index->to_string();
   return result;
 }
+
+
+const std::string ThisExpr::to_string() {
+  return get_type() ? piping() + MAGENTA + "ThisExpr" + GREEN + " '" + get_type()->to_string() + "' " + BOLD + CYAN + "this" + RESET + '\n' \
+    : piping() + MAGENTA + "ThisExpr" + GREEN + " 'unknown' " + BOLD + CYAN + "this" + RESET + '\n';
+}

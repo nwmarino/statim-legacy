@@ -3,7 +3,7 @@
 #include "../include/core/Utils.h"
 
 ASTContext::ASTContext(struct CFlags flags, std::vector<struct CFile> input)
-: flags(flags), input(input), _last(Token(Eof)), _last_two(Token(Eof)), _add_next_to_scope(true), type_table({}) {
+: flags(flags), input(input), _last(Token(Eof)), _last_two(Token(Eof)), _add_next_to_scope(true), _top_impl(""), type_table({}) {
   // load built-in types
   type_table["bool"] = new PrimitiveType(PrimitiveType::__UINT1);
   type_table["uint"] = new PrimitiveType(PrimitiveType::__UINT32);
@@ -33,6 +33,11 @@ void ASTContext::next_file(void) {
 
 void ASTContext::set_add_next_to_scope(bool add) {
   this->_add_next_to_scope = add;
+}
+
+
+void ASTContext::set_top_impl(const std::string &name) {
+  this->_top_impl = name;
 }
 
 

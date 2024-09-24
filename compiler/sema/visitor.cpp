@@ -13,6 +13,7 @@ static std::vector<PackageUnit *> pkgs = {};
 static bool has_entry = false;
 static bool in_loop = false;
 static std::shared_ptr<Scope> pkg_scope = nullptr;
+static std::shared_ptr<Scope> impl_scope = nullptr;
 static std::shared_ptr<Scope> top_scope = nullptr;
 static const Type *fn_ret_type = nullptr;
 
@@ -264,12 +265,14 @@ void PassVisitor::visit(ImplDecl *d) {
     }
   }
 
+  impl_scope = struct_d->get_scope();
   for (FunctionDecl *fn : d->get_methods()) {
     fn->pass(this);
 
     // add the function to the struct scope
     struct_d->get_scope()->add_decl(fn);
   }
+  impl_scope = nullptr;
 }
 
 
@@ -760,7 +763,7 @@ void PassVisitor::visit(MemberExpr *e) {
     panic("unresolved field: " + e->get_member(), e->get_meta());
   }
 
-  if (fd->is_priv() && top_scope != struct_d->get_scope()) {
+  if (fd->is_priv() && impl_scope != struct_d->get_scope()) {
     panic("attempted to access private field: " + e->get_member(), e->get_meta());
   }
 
@@ -814,7 +817,7 @@ void PassVisitor::visit(MemberCallExpr *e) {
     panic("expected function: " + e->get_callee());
   }
 
-  if (method_decl->is_priv() && top_scope != struct_d->get_scope()) {
+  if (method_decl->is_priv() && impl_scope != struct_d->get_scope()) {
     panic("attempted to access private method: " + e->get_callee(), e->get_meta());
   }
 
@@ -870,4 +873,26 @@ void PassVisitor::visit(MemberCallExpr *e) {
 
 void PassVisitor::visit(ArrayAccessExpr *e) {
   return;
+}
+
+
+/// This check resolves the real type of a this expression.
+void PassVisitor::visit(ThisExpr *e) {
+  if (!top_scope) {
+    panic("this expression outside of struct scope", e->get_meta());
+  }
+
+  const TypeRef *RT = dynamic_cast<const TypeRef *>(e->get_type());
+  if (!RT) {
+    panic("unresolved 'this' type", e->get_meta());
+  }
+
+  StructDecl *struct_d = dynamic_cast<StructDecl *>(top_scope->get_decl(RT->get_ident()));
+  if (!struct_d) {
+    panic("unresolved 'this' type", e->get_meta());
+  }
+
+  if (struct_d->get_type()) {
+    e->set_type(struct_d->get_type());
+  }
 }

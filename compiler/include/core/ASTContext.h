@@ -45,6 +45,7 @@ private:
   struct Token _last_two;
   std::string _file;
   bool _add_next_to_scope;
+  std::string _top_impl;
   std::map<const std::string, Type *> type_table;
 
 public:
@@ -67,6 +68,11 @@ public:
   inline bool add_next_to_scope(void) const { return _add_next_to_scope; }
   /// Declare that the next should be added to the parent scope, or not.
   void set_add_next_to_scope(bool add);
+  /// Returns the name of the current top-level implementation, and an empty string if there is none.
+  [[nodiscard]]
+  inline std::string top_impl(void) const { return _top_impl; }
+  /// Sets the name of the current top-level implementation.
+  void set_top_impl(const std::string &name);
   /// Resolves a type by name. Returns a `TypeRef` object if the type is not found.
   [[nodiscard]]
   Type* resolve_type(const std::string &name);

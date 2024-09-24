@@ -287,8 +287,18 @@ static std::unique_ptr<Expr> parse_member_call_expr(std::unique_ptr<ASTContext> 
   }
 
   VarDecl *str_decl = dynamic_cast<VarDecl *>(d);
-  if (!str_decl) {
+  if (!str_decl && base != "this") {
     return warn_expr("expected struct type", ctx->last().meta);
+  }
+
+  if (base == "this") {
+    if (ctx->top_impl() == "") {
+      return warn_expr("'this' reference invalid outside impl", ctx->last().meta);
+    }
+    
+    return std::make_unique<MemberCallExpr>(
+      std::make_unique<ThisExpr>(ctx->resolve_type(ctx->top_impl()), base_meta), callee, std::move(args),
+      callee_meta);
   }
 
   return std::make_unique<MemberCallExpr>(
@@ -302,14 +312,15 @@ static std::unique_ptr<Expr> parse_member_expr(std::unique_ptr<ASTContext> &ctx,
   ctx->next();  // eat the dot operator
 
   // verify that the base exists in this scope
+
   Decl *d = curr_scope->get_decl(base);
-  if (!d) {
+  if (!d && base != "this") {
     return warn_expr("unresolved identifier: " + base, ctx->last().meta);
   }
 
   // verify that the base is a struct
   VarDecl *str_decl = dynamic_cast<VarDecl *>(d);
-  if (!str_decl) {
+  if (!str_decl && base != "this") {
     return warn_expr("expected struct type", ctx->last().meta);
   }
 
@@ -331,6 +342,16 @@ static std::unique_ptr<Expr> parse_member_expr(std::unique_ptr<ASTContext> &ctx,
     return warn_expr("unresolved field: " + field, ctx->last().meta);
   }
   */
+
+  if (base == "this") {
+    if (ctx->top_impl() == "") {
+      return warn_expr("'this' reference invalid outside impl", ctx->last().meta);
+    }
+
+    return std::make_unique<MemberExpr>(
+      std::make_unique<ThisExpr>(ctx->resolve_type(ctx->top_impl()), meta), field, field_meta
+    );
+  }
 
   return std::make_unique<MemberExpr>(
     std::make_unique<DeclRefExpr>(base, str_decl->get_type(), meta), field, field_meta);
@@ -1109,6 +1130,7 @@ static std::unique_ptr<Decl> parse_impl_decl(std::unique_ptr<ASTContext> &ctx) {
   }
   ctx->next();  // eat open brace
 
+  ctx->set_top_impl(target);
   std::vector<std::unique_ptr<FunctionDecl>> methods;
   while (!ctx->last().is_close_brace()) {
     bool is_private = false;
@@ -1137,6 +1159,7 @@ static std::unique_ptr<Decl> parse_impl_decl(std::unique_ptr<ASTContext> &ctx) {
     methods.push_back(std::move(std::unique_ptr<FunctionDecl>(dynamic_cast<FunctionDecl *>(method.release()))));
   }
   ctx->next();  // eat close brace
+  ctx->set_top_impl("");
   ctx->set_add_next_to_scope(true);
   return std::make_unique<ImplDecl>(trait, target, std::move(methods), meta);
 }

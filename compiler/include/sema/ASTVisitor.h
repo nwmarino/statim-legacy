@@ -47,6 +47,7 @@ class CallExpr;
 class MemberExpr;
 class MemberCallExpr;
 class ArrayAccessExpr;
+class ThisExpr;
 
 /// ASTVisitor - Base class to all ASt visitors.
 ///
@@ -96,6 +97,7 @@ public:
   virtual void visit(MemberExpr *e) = 0;
   virtual void visit(MemberCallExpr *e) = 0;
   virtual void visit(ArrayAccessExpr *e) = 0;
+  virtual void visit(ThisExpr *e) = 0;
 };
 
 
@@ -145,6 +147,7 @@ public:
   void visit(MemberExpr *e) override;
   void visit(MemberCallExpr *e) override;
   void visit(ArrayAccessExpr *e) override;
+  void visit(ThisExpr *e) override;
 };
 
 #endif  // ASTVISITOR_STATIMC_H

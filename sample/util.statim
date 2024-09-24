@@ -5,7 +5,8 @@ priv trait CanFoo {
 }
 
 impl MyStruct {
-    fn util() -> char {
-        return 'c';
+    fn util() -> bool {
+        this.C = true;
+        return this.C;
     }
 }

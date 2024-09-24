@@ -7,7 +7,7 @@ fn main() {
     C: false,
   }
 
-  let x: char = my_struct.util();
+  let x: bool = my_struct.util();
   //let y: bool = my_struct.C;
 }
 

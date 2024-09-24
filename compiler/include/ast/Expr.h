@@ -540,4 +540,24 @@ public:
   const std::string to_string() override;
 };
 
+/// ThisExpr - Represents a reference to the current instance.
+///
+/// @example `this`
+class ThisExpr final : public Expr
+{
+private:
+  const Type *T;
+  const Metadata meta;
+
+public:
+  ThisExpr(const Type *T, const Metadata &meta) : T(T), meta(meta){};
+  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  inline const Type* get_type() const override { return T; }
+  inline void set_type(const Type *T) { this->T = T; }
+  const Metadata get_meta() const override { return meta; }
+
+  /// Returns a string representation of this reference expression.
+  const std::string to_string() override;
+};
+
 #endif  // EXPR_STATIMC_H
