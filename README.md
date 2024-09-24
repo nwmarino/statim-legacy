@@ -26,7 +26,6 @@
 | `char` | base character | `'s'`, `'t'`, `'a'`, `'T'`, `'i'`, `'m'`
 | `str` | character sequence | `"staTim"` 
 | `#Type` | rune (ptr) | ...
-| `Array[T]` | fixed array of T | `[1, 2, 3]`, `['a', 'b', 'c']`
 
 ### Variables
 
@@ -145,18 +144,6 @@ let mut Leaf: #Tree = Tree {
 let mut Root: #Tree = Tree {
   child: @Leaf
 }
-```
-
-### Arrays
-
-Define an array using `Array[T; n]`:
-```
-let mut numbers: Array[i32; 1];
-```
-Read/write elements at an index `i`:
-```
-numbers[0] = 0;
-let x: i32 = numbers[0];
 ```
 
 ### Packages

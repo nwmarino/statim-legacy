@@ -513,33 +513,6 @@ public:
 };
 
 
-/// ArrayAccessExpr - Represents an array access expression.
-///
-/// @example `foo[0]`, `bar[1]`
-class ArrayAccessExpr final : public Expr
-{
-private:
-  std::unique_ptr<Expr> base;
-  std::unique_ptr<Expr> index;
-  const Metadata meta;
-
-public:
-  ArrayAccessExpr(std::unique_ptr<Expr> base, std::unique_ptr<Expr> index, const Metadata &meta)
-    : base(std::move(base)), index(std::move(index)), meta(meta){};
-  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  inline const Type* get_type() const override { return base->get_type(); }
-  const Metadata get_meta() const override { return meta; }
-
-  /// Gets the base of this array access expression.
-  inline std::unique_ptr<Expr> get_base() { return std::move(base); }
-
-  /// Gets the index of this array access expression.
-  inline std::unique_ptr<Expr> get_index() { return std::move(index); }
-
-  /// Returns a string representation of this array access expression.
-  const std::string to_string() override;
-};
-
 /// ThisExpr - Represents a reference to the current instance.
 ///
 /// @example `this`

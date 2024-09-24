@@ -358,40 +358,6 @@ static std::unique_ptr<Expr> parse_member_expr(std::unique_ptr<ASTContext> &ctx,
 }
 
 
-/// Parses an array access expression from the given context.
-///
-/// Array access expressions are in the form of `<expr>[<expr>]`.
-static std::unique_ptr<Expr> parse_array_access_expr(std::unique_ptr<ASTContext> &ctx, const std::string &base, const Metadata &meta) {
-  const Metadata access_meta = ctx->last().meta;
-  ctx->next();  // eat open bracket
-
-  std::unique_ptr<Expr> index = parse_expr(ctx);
-  if (!index) {
-    return warn_expr("expected expression in array access", ctx->last().meta);
-  }
-
-  if (!ctx->last().is_close_bracket()) {
-    return warn_expr("expected ']'", ctx->last().meta);
-  }
-  ctx->next();  // eat close bracket
-
-  // verify that the base exists in this scope
-  Decl *d = curr_scope->get_decl(base);
-  if (!d) {
-    return warn_expr("unresolved identifier: " + base, ctx->last().meta);
-  }
-
-  // verify that the base is an array
-  VarDecl *arr_decl = dynamic_cast<VarDecl *>(d);
-  if (!arr_decl) {
-    return warn_expr("expected array type", ctx->last().meta);
-  }
-
-  return std::make_unique<ArrayAccessExpr>(
-    std::make_unique<DeclRefExpr>(base, arr_decl->get_type(), meta), std::move(index), access_meta);
-}
-
-
 /// Parses an identifier expression from the given context.
 ///
 /// Identifiers are used to reference variables, function calls, etc.
@@ -403,8 +369,6 @@ static std::unique_ptr<Expr> parse_identifier_expr(std::unique_ptr<ASTContext> &
     return parse_call_expr(ctx, token.value, token.meta);
   } else if (ctx->last().is_dot()) {
     return parse_member_expr(ctx, token.value, token.meta);
-  } else if (ctx->last().is_open_bracket()) {
-    return parse_array_access_expr(ctx, token.value, token.meta);
   } else if (VarDecl *d = dynamic_cast<VarDecl *>(curr_scope->get_decl(token.value))) {
     return std::make_unique<DeclRefExpr>(token.value, d->get_type(), token.meta);
   } else if (ParamVarDecl *d = dynamic_cast<ParamVarDecl *>(curr_scope->get_decl(token.value))) {

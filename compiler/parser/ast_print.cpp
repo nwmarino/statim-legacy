@@ -438,17 +438,6 @@ const std::string MemberCallExpr::to_string() {
 }
 
 
-const std::string ArrayAccessExpr::to_string() {
-  std::string result = piping() + MAGENTA + "ArrayAccessExpr" + GREEN + " '" + get_type()->to_string() + "' " + BLUE + "[]" + RESET + '\n';
-  indent++;
-  at_last_child = false;
-  result += base->to_string();
-  at_last_child = true;
-  result += index->to_string();
-  return result;
-}
-
-
 const std::string ThisExpr::to_string() {
   return get_type() ? piping() + MAGENTA + "ThisExpr" + GREEN + " '" + get_type()->to_string() + "' " + BOLD + CYAN + "this" + RESET + '\n' \
     : piping() + MAGENTA + "ThisExpr" + GREEN + " 'unknown' " + BOLD + CYAN + "this" + RESET + '\n';

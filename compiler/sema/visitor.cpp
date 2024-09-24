@@ -884,11 +884,6 @@ void PassVisitor::visit(MemberCallExpr *e) {
 }
 
 
-void PassVisitor::visit(ArrayAccessExpr *e) {
-  return;
-}
-
-
 /// This check resolves the real type of a this expression.
 void PassVisitor::visit(ThisExpr *e) {
   if (!top_scope) {
