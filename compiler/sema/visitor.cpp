@@ -184,6 +184,9 @@ void PassVisitor::visit(StructDecl *d) {
     field->pass(this);
   }
   top_scope = nullptr;
+
+  // debug
+  //std::cout << d->get_scope()->to_string(d->get_name()) << '\n';
 }
 
 
@@ -265,12 +268,14 @@ void PassVisitor::visit(ImplDecl *d) {
     }
   }
 
+  for (FunctionDecl *fn : d->get_methods()) {
+    // add the function to the struct scope
+    struct_d->get_scope()->add_decl(fn);
+  }
+
   impl_scope = struct_d->get_scope();
   for (FunctionDecl *fn : d->get_methods()) {
     fn->pass(this);
-
-    // add the function to the struct scope
-    struct_d->get_scope()->add_decl(fn);
   }
   impl_scope = nullptr;
 }
@@ -730,39 +735,44 @@ void PassVisitor::visit(CallExpr *e) {
 /// This check verifies that a member access expression is valid. It checks that
 /// the base expression is a struct, and that the member exists in the struct.
 void PassVisitor::visit(MemberExpr *e) {
-  e->get_base()->pass(this);
-
+  // null base validation
   if (!e->get_base()) {
     panic("member access on null expression", e->get_meta());
   }
+  e->get_base()->pass(this);
 
-  // resolve member
+  // resolve base type
   const Type *base_type = e->get_base()->get_type();
   if (base_type->is_builtin()) {
     panic("member access on non-struct type", e->get_meta());
   }
 
+  // resolve struct type from base type
   const StructType *st = dynamic_cast<const StructType *>(base_type);
   if (!st) {
     panic("expected struct type", e->get_meta());
   }
 
+  // resolve generic struct declaration from package scope
   const std::string struct_name = st->get_name();
   Decl *d = pkg_scope->get_decl(struct_name);
   if (!d) {
     panic("unresolved declaration type: " + struct_name, e->get_meta());
   }
 
+  // resolve specific struct declaration from package scope
   StructDecl *struct_d = dynamic_cast<StructDecl *>(d);
   if (!struct_d) {
     panic("expected struct: " + struct_name, e->get_meta());
   }
 
+  // resolve target field declaration from struct scope
   FieldDecl *fd = struct_d->get_field(e->get_member());
   if (!fd) {
     panic("unresolved field: " + e->get_member(), e->get_meta());
   }
 
+  // access level check
   if (fd->is_priv() && impl_scope != struct_d->get_scope()) {
     panic("attempted to access private field: " + e->get_member(), e->get_meta());
   }
@@ -775,52 +785,55 @@ void PassVisitor::visit(MemberExpr *e) {
 /// This check verifies that a member call expression is valid. It checks that
 /// the base expression is a struct, and that the methods exists in the struct.
 void PassVisitor::visit(MemberCallExpr *e) {
+  // null base validation
+  if (!e->get_base()) {
+    panic("member access on null expression", e->get_meta());
+  }
   e->get_base()->pass(this);
 
-  // resolve base expression
-  DeclRefExpr *base_expr = dynamic_cast<DeclRefExpr *>(e->get_base());
-  if (!base_expr) {
-    panic("expected lvalue base to be of a struct type", e->get_meta());
+  // resolve base type
+  const Type *base_type = e->get_base()->get_type();
+  if (base_type->is_builtin()) {
+    panic("member access on non-struct type", e->get_meta());
   }
 
-  // resolve reference declaration
-  Decl *base_d = top_scope->get_decl(base_expr->get_ident());
-  if (!base_d) {
-    panic("unresolved reference: " + base_expr->get_ident(), e->get_meta());
-  }
-  VarDecl *vd = dynamic_cast<VarDecl *>(base_d);
-  if (!vd) {
-    panic("expected variable reference", e->get_meta());
-  }
-
-  // resolve struct type
-  const StructType *st = dynamic_cast<const StructType *>(vd->get_type());
+  // resolve struct type from base type
+  const StructType *st = dynamic_cast<const StructType *>(base_type);
   if (!st) {
     panic("expected struct type", e->get_meta());
   }
-  Decl *d = pkg_scope->get_decl(st->get_name());
+
+  // resolve generic struct declaration from package scope
+  const std::string struct_name = st->get_name();
+  Decl *d = pkg_scope->get_decl(struct_name);
   if (!d) {
-    panic("unresolved struct type: " + st->get_name(), e->get_meta());
-  }
-  StructDecl *struct_d = dynamic_cast<StructDecl *>(d);
-  if (!struct_d) {
-    panic("expected struct type", e->get_meta());
+    panic("unresolved declaration type: " + struct_name, e->get_meta());
   }
 
-  Decl *md = struct_d->get_scope()->get_decl(e->get_callee());
+  // resolve specific struct declaration from package scope
+  StructDecl *struct_d = dynamic_cast<StructDecl *>(d);
+  if (!struct_d) {
+    panic("expected struct: " + struct_name, e->get_meta());
+  }
+
+  // resolve target generic declaration from struct scope
+  NamedDecl *md = struct_d->get_scope()->get_decl(e->get_callee());
   if (!md) {
     panic("unresolved method: " + e->get_callee(), e->get_meta());
   }
 
+  // resolve target specific method declaration from struct scope
   FunctionDecl *method_decl = dynamic_cast<FunctionDecl *>(md);
   if (!method_decl) {
     panic("expected function: " + e->get_callee());
   }
 
+  // access level check
   if (method_decl->is_priv() && impl_scope != struct_d->get_scope()) {
     panic("attempted to access private method: " + e->get_callee(), e->get_meta());
   }
 
+  // param count check
   if (e->get_num_args() != method_decl->get_num_params()) {
     panic("function " + e->get_callee() + " has " + std::to_string(method_decl->get_num_params()) + " parameters but " + \
     std::to_string(e->get_num_args()) + " were provided.");

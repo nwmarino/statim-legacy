@@ -282,7 +282,7 @@ static std::unique_ptr<Expr> parse_member_call_expr(std::unique_ptr<ASTContext> 
   ctx->next();  // eat the close parenthesis
 
   Decl *d = curr_scope->get_decl(base);
-  if (!d) {
+  if (!d && base != "this") {
     return warn_expr("unresolved identifier: " + base, ctx->last().meta);
   }
 
@@ -295,7 +295,7 @@ static std::unique_ptr<Expr> parse_member_call_expr(std::unique_ptr<ASTContext> 
     if (ctx->top_impl() == "") {
       return warn_expr("'this' reference invalid outside impl", ctx->last().meta);
     }
-    
+
     return std::make_unique<MemberCallExpr>(
       std::make_unique<ThisExpr>(ctx->resolve_type(ctx->top_impl()), base_meta), callee, std::move(args),
       callee_meta);

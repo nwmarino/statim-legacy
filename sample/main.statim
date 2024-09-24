@@ -8,7 +8,6 @@ fn main() {
   }
 
   let x: bool = my_struct.util();
-  //let y: bool = my_struct.C;
 }
 
 struct MyStruct {
