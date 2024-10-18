@@ -1,60 +1,53 @@
+
 # statimc: phase zero
+
+### Operations
 
 | Operator | Precedence | Usage 
 |----------|------------|------
 | `=` `+=`, `-=`, `*=`, `/=` | 1 | Assignment
 | `&&`, `\|\|` | 2 | Logical Comparison
-| `==`, `!=` | 4 | Equality Comparison
-| `<`, `<=`, `>`, `>=` | 5 | Inequalities
-| `+`, `-` | 7 | Additive Ops
-| `*`, `/` | 8 | Multiplicative Ops
-| `!`, `#`, `@` | 9 | Unary (not, hash, ref)
-| `f()`, `.` | 10 | Calls, Member Access
+| `==`, `!=` | 3 | Equality Comparison
+| `<`, `<=`, `>`, `>=` | 4 | Inequalities
+| `+`, `-` | 5 | Additive Ops
+| `*`, `/` | 6 | Multiplicative Ops
+| `!`, `#`, `@` | 7 | Unary (not, hash, ref)
+| `f()`, `.` | 8 | Calls, Member Access
 
-### Primitive Types
+### Types
 
-`bool` boolean value (false, true)
-
-`unsigned` 64-bit unsigned integer.
-
-`i32` 32-bit signed integer.
-
-`i64` 64-bit signed integer.
-
-`float` floating point value.
-
-`char` singular character.
-
-`str` character sequence.
-
-`#Type` rune type.
-> For example, a rune `A` struct: `let a: #A = A { ... };`
+| Symbol | Type | Example Literal
+|--------|------|----------------
+| `bool` | boolean | `true`, `false`
+| `uint` | unsigned integer (32-bit) | `0`, `1`, `2147483648`
+| `i32`  | signed integer (32-bit) | `-1`, `0`, `2147483648`
+| `i64`  | signed integer (64-bit) | `9.223372e+18`
+| `float` | floating point (32/64-bit) | `0.25`, `3.14`
+| `char` | base character | `'s'`, `'t'`, `'a'`, `'T'`, `'i'`, `'m'`
+| `str` | character sequence | `"staTim"` 
+| `#Type` | rune (ptr) | ...
 
 ### Variables
 
 Variable assignments using `let`, and mutable with `mut`:
-```rs
+```
+// mutable decl
 let mut x: i32;
 x = 5;
 
-// immutable declaration
+// immutable decl
 let y: i32 = 5;
 ```
-
-- [x] Parsing
-- [ ] Passed
-- [ ] Lowering
-- [ ] Codegen
 
 ### Control Flow
 
 If then/else then statements using `if`, `else`:
 
 ```rs
-if expression {
+if expr {
   ...
 }
-else if expression {
+else if expr {
   ...
 }
 else {
@@ -62,26 +55,16 @@ else {
 }
 ```
 
-- [x] Parsing
-- [ ] Passed
-- [ ] Lowering
-- [ ] Codegen
-
 Pattern matching using `match`:
 
 ```rs
-match expression {
+match expr {
   x => ...,
   y => { ... },
   z => ...,
   _ => { ... }
 }
 ```
-
-- [x] Parsing
-- [ ] Passed
-- [ ] Lowering
-- [ ] Codegen
 
 ### Looping instructions
 
@@ -93,105 +76,91 @@ until expression {
 }
 ```
 
-- [x] Parsing
-- [ ] Passed
-- [ ] Lowering
-- [ ] Codegen
-
 ### User-defined Types
 
 Define a type using `struct`:
-```rs
-struct Dog {
-  name: str,
-  breed: str,
+```
+struct Shark {
+  type: str,
+  age: uint,
 }
 ```
-
-- [x] Parsing
-- [ ] Passed
-- [ ] Lowering
-- [ ] Codegen
-
 Construct defined types using initializer expressions:
-```rs
-let mut pet: Dog = Dog {
-  name: "Max",
-  breed: "Golden Retriever",
+```
+let mut fishy: Shark = Shark {
+  type: "Great White",
+  age: 5,
 }
 ```
-
-- [x] Parsing
-- [ ] Passed
-- [ ] Lowering
-- [ ] Codegen
-
 Define common behaviours using `trait`:
-```rs
-trait MakeNoise {
-  fn woof() -> str;
+```
+trait CanSwim {
+  fn swim() -> void;
 }
 ```
-
-- [x] Parsing
-- [ ] Passed
-- [ ] Lowering
-- [ ] Codegen
-
 Implement methods to a struct using `impl`:
-```rs
-impl Dog {
-  fn walk() {
+```
+impl Shark {
+  fn bite() -> bool {
     ...
   }
 }
 ```
-
-Also, implement traits to a struct using `impl`:
-```rs
-impl MakeNoise for Dog {
-  fn woof() -> str { 
+Implement common behaviour to a struct using `impl`:
+```
+impl CanSwim for Shark {
+  fn swim() -> str { 
     ...
   }
 }
 ```
-
-- [x] Parsing
-- [ ] Passed
-- [ ] Lowering
-- [ ] Codegen
-
 Declare an enumerated type using `enum`:
-```rs
-enum Token {
+```
+enum Operation {
   Plus,
   Minus,
   ...
 }
 ```
+Declare a variable of an `enum` type:
+```
+let op: Operation = Operation::Plus;
+```
 
-- [x] Parsing
-- [ ] Passed
-- [ ] Lowering
-- [ ] Codegen
+### Runes (unimplemented)
 
-### Packages
+Declare a rune with the `#` hash unary, and reference its position with `@` ref unary:
+```
+struct Tree {
+  child: #Tree
+}
 
-Import another source file using `pkg NAME`.
+...
 
-- [x] Parsing
-- [ ] Passed
-- [ ] Lowering
-- [ ] Codegen
+let mut Leaf: #Tree = Tree {
+  child: null
+}
 
-Keep top-level declarations private to their package using the `priv` keyword:
-```rs
-priv fn secret_function() -> void {
-  ...
+let mut Root: #Tree = Tree {
+  child: @Leaf
 }
 ```
 
-- [x] Parsing
-- [ ] Passed
-- [ ] Lowering
-- [ ] Codegen
+### Packages
+
+Import another source file using `pkg`:
+```
+pkg file;
+...
+```
+Import packages from other programs and libraries:
+```
+pkg prog::file;
+...
+```
+Keep declarations private to their parent scope using the `priv` keyword:
+```
+priv fn secret_function() -> bool {
+  ...
+}
+```

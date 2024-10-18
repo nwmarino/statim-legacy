@@ -1,12 +1,59 @@
 #ifndef STATIMC_TOKEN_H
 #define STATIMC_TOKEN_H
 
-/// Recognized token and token information.
+/// Recognized lexmmes and token information.
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #include <string>
 
-/// An enum of common lexemmes.
+static const std::string RESERVED[] = {
+  "bool",
+  "break",
+  "char",
+  "continue",
+  "else",
+  "enum",
+  "false",
+  "float",
+  "fn",
+  "for",
+  "i32",
+  "i64",
+  "if",
+  "impl",
+  "let",
+  "match",
+  "mut",
+  "null",
+  "pkg",
+  "priv",
+  "return",
+  "str",
+  "struct",
+  "this",
+  "trait",
+  "true",
+  "uint",
+  "until",
+  "void",
+};
+
+
+/// Determine if a string is a reserved keyword.
+[[nodiscard]]
+inline bool is_reserved_ident(const std::string &value) {
+  for (const std::string &kw : RESERVED) {
+    if (kw == value) return true;
+  }
+  return false;
+};
+
+
+/// TokenKind - Enumeration of recognized token kinds.
+///
+/// This enum represents the different kinds of tokens that can be
+/// recognized by the tokenizer. Each kind of token is used to
+/// determine the kind of lexeme that was recognized in the source code.
 typedef enum {
   /// // line comments.
   LineComment,
@@ -98,10 +145,12 @@ typedef enum {
   Eof
 } TokenKind;
 
-// An enum of recognized literal types.
-typedef enum {
-  /// Constant Literals:
 
+/// LiteralKind - Enumeration of recognized literal kinds.
+///
+/// This enum represents the different kinds of literals that can be
+/// recognized by the tokenizer.
+typedef enum {
   /// null
   Null,
 
@@ -114,31 +163,33 @@ typedef enum {
   /// 1.0, 1.0005, 0.0005
   Float,
 
-  /// 'a', ';', '\\'
+  /// 'a', 'b', 'c'
   Char,
 
   /// "hello", "world"
   String,
 } LiteralKind;
 
-/// Metadata about a token.
+
+/// Metadata - Locational information about a token.
+///
+/// This struct contains information about the filename, line number,
+/// and column number of a token. This information is used for error
+/// reporting and debugging purposes. Metadata is instantiated by the
+/// tokenizer.
 struct Metadata {
   std::string filename;
-  std::size_t line_n;
-  std::size_t col_n;
+  unsigned int line_n;
+  unsigned int col_n;
 
-  /// Default constructor.
   inline Metadata() : filename("unknown"), line_n(0), col_n(0) {};
 
-  /// Constructor for basic token metadata.
   inline Metadata(const std::string &filename, const std::size_t line_n, const std::size_t col_n)
     : filename(filename), line_n(line_n), col_n(col_n) {};
 
-  /// Copy constructor.
   inline Metadata(const Metadata &meta)
     : filename(meta.filename), line_n(meta.line_n), col_n(meta.col_n) {};
 
-  /// Assignment operator.
   inline Metadata &operator=(const Metadata &meta) {
     filename = meta.filename;
     line_n = meta.line_n;
@@ -147,7 +198,13 @@ struct Metadata {
   }
 };
 
-/// A token representing a single lexeme.
+
+/// Token - A recognized lexeme.
+///
+/// This struct represents a recognized lexeme in the source code.
+/// It contains information about the kind of token, metadata about
+/// the token, the value of the token, and the kind of literal if
+/// the token is a literal. Tokens are instantiated by the tokenizer.
 struct Token {
   TokenKind kind;
   struct Metadata meta;
@@ -209,13 +266,20 @@ struct Token {
   [[nodiscard]]
   inline bool is_str() const { return is_lit() && lit_kind && lit_kind == String; };
 
+  /// Determine if this token is a null literal or not.
+  [[nodiscard]]
+  inline bool is_null() const { return is_lit() && lit_kind == Null; };
+
   /// Determine if this token signifies the end of a file.
   [[nodiscard]]
   inline bool is_eof() const { return kind == Eof; };
 
-  /// Determine if this token is keyword or not.
   [[nodiscard]]
-  inline bool is_kw(const std::string &value) const { return is_ident() && this->value == value; };
+  inline bool is_kw() const { return is_ident() && is_reserved_ident(this->value);};
+
+  /// Determine if this token is a keyword of a certain type or not.
+  [[nodiscard]]
+  inline bool is_kw(const std::string &value) const { return is_kw() && this->value == value; };
 
   /// Determine if this token is an opening brace or not.
   [[nodiscard]]
@@ -232,6 +296,22 @@ struct Token {
   /// Determine if this token is a closing parenthesis or not.
   [[nodiscard]]
   inline bool is_close_paren() const { return kind == CloseParen; };
+
+  /// Determine if this token is an opening bracket or not.
+  [[nodiscard]]
+  inline bool is_open_bracket() const { return kind == OpenBracket; };
+
+  /// Determine if this token is a closing bracket or not.
+  [[nodiscard]]
+  inline bool is_close_bracket() const { return kind == CloseBracket; };
+
+  /// Determine if this token is a less than or not.
+  [[nodiscard]]
+  inline bool is_less_than() const { return kind == LessThan; };
+
+  /// Determine if this token is a greater than or not.
+  [[nodiscard]]
+  inline bool is_greater_than() const { return kind == GreaterThan; };
 
   /// Determine if this token is a semi or not.
   [[nodiscard]]

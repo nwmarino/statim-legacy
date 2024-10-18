@@ -94,6 +94,16 @@ inline std::unique_ptr<Decl> warn_decl(std::string msg, const struct Metadata &d
 }
 
 
+/// Warn about a type declaration parsing error.
+/// @param msg  The error message.
+/// @param data Metadata about the bad input.
+/// @return     nullptr
+inline std::unique_ptr<TypeDecl> warn_tydecl(std::string msg, const struct Metadata &data) {
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  return nullptr;
+}
+
+
 /// Warn about a function parsing error.
 /// @param msg  The error message.
 /// @param data Metadata about the bad input.
@@ -149,6 +159,16 @@ inline std::unique_ptr<ImplDecl> warn_impl(std::string msg, const struct Metadat
 /// @param data Metadata about the bad input.
 /// @return     nullptr
 inline std::unique_ptr<Unit> warn_unit(std::string msg, const struct Metadata &data) {
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  return nullptr;
+}
+
+
+/// Warn about a package unit parsing error.
+/// @param msg  The error message.
+/// @param data Metadata about the bad input.
+/// @return     nullptr
+inline std::unique_ptr<PackageUnit> warn_pkg(std::string msg, const struct Metadata &data) {
   fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
