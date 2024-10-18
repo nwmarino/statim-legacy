@@ -1,17 +1,13 @@
-fn main() {
-  let x: AnEnum = AnEnum::A;
-
-  let y: AnEnum = x;
-
-  let mut num: i64 = 2;
-
-  if num == x {
-    num += 1;
+fn fib(n: i64) -> i64 {
+  if n == 0 {
+    return 0;
+  } else if n == 1 || n == 2 {
+    return 1;
+  } else {
+    return fib(n - 1) + fib(n - 2);
   }
 }
 
-enum AnEnum {
-  A,
-  B,
-  C,
+fn main() {
+  fib(5);
 }

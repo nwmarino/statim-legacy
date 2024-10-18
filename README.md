@@ -127,7 +127,7 @@ Declare a variable of an `enum` type:
 let op: Operation = Operation::Plus;
 ```
 
-### Runes
+### Runes (unimplemented)
 
 Declare a rune with the `#` hash unary, and reference its position with `@` ref unary:
 ```
@@ -153,7 +153,7 @@ Import another source file using `pkg`:
 pkg file;
 ...
 ```
-Import packages from other programs:
+Import packages from other programs and libraries:
 ```
 pkg prog::file;
 ...
