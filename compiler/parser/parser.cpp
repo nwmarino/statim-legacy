@@ -1236,7 +1236,13 @@ static std::unique_ptr<PackageUnit> parse_pkg(std::unique_ptr<ASTContext> &ctx) 
     if (NamedDecl *d = dynamic_cast<NamedDecl *>(decl.get())) {
       curr_scope->add_decl(d);
     }*/
-    decls.push_back(std::move(decl));
+
+    // add type defining declaration to front of list
+    if (TypeDecl *d = dynamic_cast<TypeDecl *>(decl.get())) {
+      decls.insert(decls.begin(), std::move(decl));
+    } else {
+      decls.push_back(std::move(decl));
+    }
   }
 
   // clear scope
