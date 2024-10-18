@@ -117,6 +117,7 @@ public:
   NullExpr(const Type *T, const Metadata &meta) : T(T), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const override { return T; }
+  inline void set_type(const Type *T) { this->T = T; }
   const Metadata get_meta() const override { return meta; }
 
   /// Returns a string representation of this null expression.
@@ -399,6 +400,9 @@ public:
   inline void set_type(const Type *T) { this->T = T; }
   inline std::string get_ident() { return ident; }
   const Metadata get_meta() const override { return meta; }
+  const void add_implicit_null(const std::string &field, std::unique_ptr<NullExpr> null_expr) {
+    fields.push_back(std::make_pair(field, std::move(null_expr)));
+  }
   
   /// Gets the fields of this initialization expression.
   inline std::vector<std::pair<std::string, Expr *>> get_fields() {

@@ -93,7 +93,8 @@ void PassVisitor::visit(PackageUnit *u) {
 
   for (Decl *decl : u->get_decls()) {
     decl->pass(this);
-    std::cout << decl->to_string() << '\n';
+    // debug
+    //std::cout << decl->to_string() << '\n';
   }
 }
 
@@ -636,6 +637,8 @@ void PassVisitor::visit(InitExpr *e) {
     // check that the field exists in the struct
     const Type *real_type = nullptr;
     bool found = false;
+
+    // check that all fields exist in the struct
     for (FieldDecl *fd : d->get_fields()) {
       if (fd->get_name() == f.first) {
         real_type = fd->get_type();
@@ -647,17 +650,42 @@ void PassVisitor::visit(InitExpr *e) {
     if (!found) {
       panic("unknown field: " + f.first);
     }
-    
+
+    f.second->pass(this);
+    // handle null initialization
+    if (!f.second->get_type()) {
+      NullExpr *ne = dynamic_cast<NullExpr *>(f.second);
+      if (!ne) {
+        panic("null initialization mismatch in struct initialization: " + f.first, f.second->get_meta());
+      }
+
+      ne->set_type(real_type);
+    }
+
     if (f.second->get_type()->is_builtin()) {
       const PrimitiveType *pt = dynamic_cast<const PrimitiveType *>(f.second->get_type());
       if (!pt->compare(real_type)) {
-        panic("type mismatch in struct initialization: " + f.first, f.second->get_meta());
+        panic("built-in type mismatch in struct initialization: " + f.first, f.second->get_meta());
       }
     } else if (f.second->get_type() != real_type) {
-      panic("type mismatch in struct initialization: " + f.first, f.second->get_meta());
+      panic("source defined type mismatch in struct initialization: " + f.first, f.second->get_meta());
+    }
+  }
+
+  // implicitly state uninitialized fields as null
+  for (FieldDecl *fd : d->get_fields()) {
+    bool found = false;
+    for (const std::pair<std::string, Expr *> f : e->get_fields()) {
+      if (fd->get_name() == f.first) {
+        found = true;
+        break;
+      }
     }
 
-    f.second->pass(this);
+    if (!found) {
+      std::unique_ptr<NullExpr> ne = std::make_unique<NullExpr>(fd->get_type(), e->get_meta());
+      e->add_implicit_null(fd->get_name(), std::move(ne));
+    }
   }
 
   // assign real type
