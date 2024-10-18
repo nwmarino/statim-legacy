@@ -255,32 +255,27 @@ static std::unique_ptr<Expr> parse_init_expr(std::unique_ptr<ASTContext> &ctx, c
 
 
 /// Parses a struct function call expression from the given context.
-static std::unique_ptr<Expr> parse_member_call_expr(std::unique_ptr<ASTContext> &ctx, 
-  const std::string &base, const std::string &callee, const Metadata &base_meta, const Metadata &callee_meta) {
-  ctx->next();  // eat the dot operator
+static std::unique_ptr<Expr> parse_member_call_expr(std::unique_ptr<ASTContext> &ctx, std::unique_ptr<Expr> base, const std::string &callee, const Metadata &callee_meta) {
+  ctx->next(); // (
 
+  // parse arguments
   std::vector<std::unique_ptr<Expr>> args;
   while (!ctx->last().is_close_paren()) {
-    std::unique_ptr<Expr> arg = parse_expr(ctx);
-    if (!arg) {
-      warn_expr("expected expression in function call", ctx->last().meta);
-      return nullptr;
-    }
-    args.push_back(std::move(arg));
-
-    if (ctx->last().is_close_paren()) {
-      break;
+    if (std::unique_ptr<Expr> arg = parse_expr(ctx)) {
+      args.push_back(std::move(arg));
+    } else {
+      return warn_expr("expected expression in function call", ctx->last().meta);
     }
 
-    if (!ctx->last().is_comma()) {
-      warn_expr("expected ','", ctx->last().meta);
-      return nullptr;
+    if (ctx->last().is_comma()) {
+      ctx->next(); // ,
+    } else if (!ctx->last().is_close_paren()) {
+      return warn_expr("expected ','", ctx->last().meta);
     }
-
-    ctx->next();  // eat comma
   }
-  ctx->next();  // eat the close parenthesis
-
+  ctx->next(); // )
+  return std::make_unique<MemberCallExpr>(std::move(base), callee, std::move(args), callee_meta);
+  /*
   Decl *d = curr_scope->get_decl(base);
   if (!d && base != "this") {
     return warn_expr("unresolved identifier: " + base, ctx->last().meta);
@@ -304,57 +299,43 @@ static std::unique_ptr<Expr> parse_member_call_expr(std::unique_ptr<ASTContext> 
   return std::make_unique<MemberCallExpr>(
     std::make_unique<DeclRefExpr>(base, str_decl->get_type(), base_meta), callee, std::move(args),
     callee_meta);
+    */
 }
 
 
 /// Parses a struct member access expression from the given context.
-static std::unique_ptr<Expr> parse_member_expr(std::unique_ptr<ASTContext> &ctx, const std::string &base, const Metadata &meta) {
-  ctx->next();  // eat the dot operator
+static std::unique_ptr<Expr> parse_member_expr(std::unique_ptr<ASTContext> &ctx, std::unique_ptr<Expr> base) {
+  ctx->next(); // .
 
-  // verify that the base exists in this scope
-
-  Decl *d = curr_scope->get_decl(base);
-  if (!d && base != "this") {
-    return warn_expr("unresolved identifier: " + base, ctx->last().meta);
+  // verify that the base exists in this scope, if the base is not a member access
+  if (DeclRefExpr *dre_base = dynamic_cast<DeclRefExpr *>(base.get())) {
+    // verify the base references a variable declaration
+    VarDecl *str_decl = dynamic_cast<VarDecl *>(curr_scope->get_decl(dre_base->get_ident()));
+    if (!str_decl) {
+      return warn_expr("expected struct type: " + dre_base->get_ident(), ctx->last().meta);
+    }
   }
-
-  // verify that the base is a struct
-  VarDecl *str_decl = dynamic_cast<VarDecl *>(d);
-  if (!str_decl && base != "this") {
-    return warn_expr("expected struct type", ctx->last().meta);
-  }
-
+  
+  // check that the token proceeding the dot is an identifier
   if (!ctx->last().is_ident()) {
     return warn_expr("expected identifier after '.'", ctx->last().meta);
   }
 
-  const std::string field = ctx->last().value;
-  const Metadata field_meta = ctx->last().meta;
-  ctx->next();  // eat field name
+  const std::string member = ctx->last().value;
+  const Metadata member_meta = ctx->last().meta;
+  ctx->next(); // member identifier
 
+  // check if the member access is a method call
   if (ctx->last().is_open_paren()) {
-    return parse_member_call_expr(ctx, base, field, meta, field_meta);
+    return parse_member_call_expr(ctx, std::move(base), member, member_meta);
   }
 
-  /*
-  // verify that the field exists in the struct
-  if (!str_decl->has_field(field)) {
-    return warn_expr("unresolved field: " + field, ctx->last().meta);
-  }
-  */
-
-  if (base == "this") {
-    if (ctx->top_impl() == "") {
-      return warn_expr("'this' reference invalid outside impl", ctx->last().meta);
-    }
-
-    return std::make_unique<MemberExpr>(
-      std::make_unique<ThisExpr>(ctx->resolve_type(ctx->top_impl()), meta), field, field_meta
-    );
+  // check if the member access is a nested member access
+  if (ctx->last().is_dot()) {
+    return parse_member_expr(ctx, std::make_unique<MemberExpr>(std::move(base), member, member_meta));
   }
 
-  return std::make_unique<MemberExpr>(
-    std::make_unique<DeclRefExpr>(base, str_decl->get_type(), meta), field, field_meta);
+  return std::make_unique<MemberExpr>(std::move(base), member, member_meta);
 }
 
 
@@ -362,13 +343,23 @@ static std::unique_ptr<Expr> parse_member_expr(std::unique_ptr<ASTContext> &ctx,
 ///
 /// Identifiers are used to reference variables, function calls, etc.
 static std::unique_ptr<Expr> parse_identifier_expr(std::unique_ptr<ASTContext> &ctx) {
-  struct Token token = ctx->last();
+  Token token = ctx->last();
   ctx->next();  // eat the identifier
 
   if (ctx->last().is_open_paren()) {
     return parse_call_expr(ctx, token.value, token.meta);
   } else if (ctx->last().is_dot()) {
-    return parse_member_expr(ctx, token.value, token.meta);
+    if (token.is_kw("this")) {
+      if (ctx->top_impl().empty()) {
+        return warn_expr("'this' reference outside impl", ctx->last().meta);
+      }
+      return parse_member_expr(ctx, std::make_unique<ThisExpr>(ctx->resolve_type(ctx->top_impl()), token.meta));
+    }
+    if (VarDecl *vd = dynamic_cast<VarDecl *>(curr_scope->get_decl(token.value))) {
+      return parse_member_expr(ctx, std::make_unique<DeclRefExpr>(token.value, vd->get_type(), token.meta));
+    }
+    return warn_expr("expected struct type: " + token.value, token.meta);
+    
   } else if (VarDecl *d = dynamic_cast<VarDecl *>(curr_scope->get_decl(token.value))) {
     return std::make_unique<DeclRefExpr>(token.value, d->get_type(), token.meta);
   } else if (ParamVarDecl *d = dynamic_cast<ParamVarDecl *>(curr_scope->get_decl(token.value))) {

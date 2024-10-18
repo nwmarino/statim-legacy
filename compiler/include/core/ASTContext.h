@@ -19,6 +19,7 @@ struct CFlags {
   bool debug;
   bool emit_llvm_ir;
   bool emit_asm;
+  bool pass_one;
 };
 
 
@@ -46,6 +47,7 @@ private:
   std::string _file;
   bool _add_next_to_scope;
   std::string _top_impl;
+  bool _past_base;
   std::map<const std::string, Type *> type_table;
 
 public:
@@ -73,6 +75,11 @@ public:
   inline std::string top_impl(void) const { return _top_impl; }
   /// Sets the name of the current top-level implementation.
   void set_top_impl(const std::string &name);
+  /// Returns true if the parser has past a base identifier. Used to parse chained member expressions.
+  [[nodiscard]]
+  inline bool past_base(void) const { return _past_base; }
+  /// Sets the past base flag.
+  void set_past_base(bool past);
   /// Resolves a type by name. Returns a `TypeRef` object if the type is not found.
   [[nodiscard]]
   Type* resolve_type(const std::string &name);

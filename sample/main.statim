@@ -1,18 +1,23 @@
-pkg util;
+struct MyStruct {
+  A: char,
+  B: i32,
+  priv C: bool,
+  D: MyStruct,
+}
 
 fn main() {
   let my_struct: MyStruct = MyStruct {
     A: 'a',
     B: 1,
     C: false,
+    D: MyStruct {
+      A: 'b',
+      B: 2,
+      C: true,
+    }
   }
 
-  let x: bool = my_struct.util();
+  let y: i32 = my_struct.D.B;
 }
 
-struct MyStruct {
-  A: char,
-  B: i32,
-  priv C: bool,
-}
 

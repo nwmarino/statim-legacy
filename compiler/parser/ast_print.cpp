@@ -372,7 +372,7 @@ const std::string UnaryExpr::to_string() {
 
 const std::string CallExpr::to_string() {
   std::string result = get_type() ? piping() + MAGENTA + "CallExpr" + GREEN + " '" + get_type()->to_string() + "' " + BLUE + '\'' + callee + '\'' + RESET + '\n' \
-    : piping() + MAGENTA + "CallExpr" + GREEN + " 'unknown' " + BLUE + '\'' + callee + '\'' + RESET + '\n';
+    : piping() + MAGENTA + "CallExpr " + BLUE + '\'' + callee + '\'' + RESET + '\n';
   indent++;
   at_last_child = args.empty() ? true : false;
   for (std::unique_ptr<Expr> const &arg : args) {
@@ -414,7 +414,8 @@ const std::string InitExpr::to_string() {
 
 
 const std::string MemberExpr::to_string() {
-  std::string result = piping() + MAGENTA + "MemberExpr" + GREEN + " '" + get_type()->to_string() + "' " + BLUE + '\'' + get_member() + '\'' + RESET + '\n';
+  std::string result = get_type() ? piping() + MAGENTA + "MemberExpr" + GREEN + " '" + get_type()->to_string() + "' " + BLUE + '\'' + get_member() + '\'' + RESET + '\n' \
+    : piping() + MAGENTA + "MemberExpr " + BLUE + '\'' + get_member() + '\'' + RESET + '\n';
   indent++;
   at_last_child = true;
   result += base->to_string();
@@ -425,7 +426,7 @@ const std::string MemberExpr::to_string() {
 
 const std::string MemberCallExpr::to_string() {
   std::string result = get_type() ? piping() + MAGENTA + "MemberCallExpr" + GREEN + " '" + get_type()->to_string() + "' " + BLUE + '\'' + callee + '\'' + RESET + '\n' \
-    : piping() + MAGENTA + "MemberCallExpr" + GREEN + " 'unknown' " + BLUE + '\'' + callee + '\'' + RESET + '\n';
+    : piping() + MAGENTA + "MemberCallExpr " + BLUE + '\'' + callee + '\'' + RESET + '\n';
   indent++;
   at_last_child = args.empty() ? true : false;
   result += base->to_string();

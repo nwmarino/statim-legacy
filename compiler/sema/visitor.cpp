@@ -93,6 +93,7 @@ void PassVisitor::visit(PackageUnit *u) {
 
   for (Decl *decl : u->get_decls()) {
     decl->pass(this);
+    std::cout << decl->to_string() << '\n';
   }
 }
 
@@ -184,9 +185,6 @@ void PassVisitor::visit(StructDecl *d) {
     field->pass(this);
   }
   top_scope = nullptr;
-
-  // debug
-  //std::cout << d->get_scope()->to_string(d->get_name()) << '\n';
 }
 
 
@@ -638,7 +636,7 @@ void PassVisitor::visit(InitExpr *e) {
     // check that the field exists in the struct
     const Type *real_type = nullptr;
     bool found = false;
-    for (const FieldDecl *fd : d->get_fields()) {
+    for (FieldDecl *fd : d->get_fields()) {
       if (fd->get_name() == f.first) {
         real_type = fd->get_type();
         found = true;
@@ -649,16 +647,17 @@ void PassVisitor::visit(InitExpr *e) {
     if (!found) {
       panic("unknown field: " + f.first);
     }
-
-    f.second->pass(this);
+    
     if (f.second->get_type()->is_builtin()) {
       const PrimitiveType *pt = dynamic_cast<const PrimitiveType *>(f.second->get_type());
       if (!pt->compare(real_type)) {
-        panic("type mismatch in struct initialization: " + f.first);
+        panic("type mismatch in struct initialization: " + f.first, f.second->get_meta());
       }
     } else if (f.second->get_type() != real_type) {
-      panic("type mismatch in struct initialization: " + f.first);
+      panic("type mismatch in struct initialization: " + f.first, f.second->get_meta());
     }
+
+    f.second->pass(this);
   }
 
   // assign real type
@@ -741,14 +740,12 @@ void PassVisitor::visit(MemberExpr *e) {
   }
   e->get_base()->pass(this);
 
-  // resolve base type
-  const Type *base_type = e->get_base()->get_type();
-  if (base_type->is_builtin()) {
+  if (e->get_base()->get_type()->is_builtin()) {
     panic("member access on non-struct type", e->get_meta());
   }
 
   // resolve struct type from base type
-  const StructType *st = dynamic_cast<const StructType *>(base_type);
+  const StructType *st = dynamic_cast<const StructType *>(e->get_base()->get_type());
   if (!st) {
     panic("expected struct type", e->get_meta());
   }

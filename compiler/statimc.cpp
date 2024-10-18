@@ -27,6 +27,8 @@ static void parse_args(int argc, char *argv[], CFlags &flags) {
   for (int i = 1; i < argc; i++) {
     if (std::string(argv[i]) == "-S") {
       flags.emit_asm = true;
+    } else if (std::string(argv[i]) == "-P1") {
+      flags.pass_one = true;
     }
   }
 }
@@ -66,10 +68,6 @@ int main(int argc, char *argv[]) {
 
   std::unique_ptr<ASTVisitor> visitor = std::make_unique<PassVisitor>();
   crate->pass(visitor.get());
-
-  for (PackageUnit *pkg : crate->get_packages()) {
-    std::cout << pkg->get_scope()->to_string(pkg->get_name()) << '\n';
-  }
 
   std::cout << crate->to_string();
 }

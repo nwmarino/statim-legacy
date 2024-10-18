@@ -41,6 +41,11 @@ void ASTContext::set_top_impl(const std::string &name) {
 }
 
 
+void ASTContext::set_past_base(bool past) {
+  this->_past_base = past;
+}
+
+
 Type* ASTContext::resolve_type(const std::string &name) {
   if (name == "void") { 
     return nullptr;

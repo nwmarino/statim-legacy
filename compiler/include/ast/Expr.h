@@ -294,6 +294,9 @@ public:
   /// Gets the identifier of this reference expression.
   inline const std::string get_ident() const { return ident; }
 
+  /// Returns true if the expression refers to a `this` instance, and false otherwise.
+  inline bool is_this() const { return ident == "this"; }
+
   /// Returns a string representation of this reference expression.
   const std::string to_string() override;
 };
@@ -466,7 +469,7 @@ private:
 
 public:
   MemberExpr(std::unique_ptr<Expr> base, const std::string &member, const Metadata &meta)
-    : base(std::move(base)), member(member), T(this->base->get_type()), meta(meta){};
+    : base(std::move(base)), member(member), T(nullptr), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   const Metadata get_meta() const override { return meta; }
 
@@ -501,7 +504,7 @@ public:
     : base(std::move(base)), CallExpr(callee, std::move(args), meta) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   const Metadata get_meta() const override { return meta; }
-
+  
   /// Gets the base of this member call expression.
   inline Expr *get_base() { return base.get(); }
 
