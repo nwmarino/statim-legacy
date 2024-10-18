@@ -364,6 +364,18 @@ static std::unique_ptr<Expr> parse_identifier_expr(std::unique_ptr<ASTContext> &
     return std::make_unique<DeclRefExpr>(token.value, d->get_type(), token.meta);
   } else if (ParamVarDecl *d = dynamic_cast<ParamVarDecl *>(curr_scope->get_decl(token.value))) {
     return std::make_unique<DeclRefExpr>(token.value, d->get_type(), token.meta);
+  } else if (EnumDecl *d = dynamic_cast<EnumDecl *>(curr_scope->get_decl(token.value))) {
+    if (ctx->last().is_path()) {
+      ctx->next();
+      if (!ctx->last().is_ident()) {
+        return warn_expr("expected identifier after '::'", ctx->last().meta);
+      }
+      const std::string enum_variant = ctx->last().value;
+      ctx->next();
+
+      return std::make_unique<DeclRefExpr>(enum_variant, ctx->resolve_type(d->get_name()), token.meta, true);
+    }
+    return warn_expr("expected enum variant after enum reference", ctx->last().meta);
   }
 
   if (ctx->last().is_open_brace()) {
@@ -809,6 +821,7 @@ static std::unique_ptr<TypeDecl> parse_enum_decl(std::unique_ptr<ASTContext> &ct
   ctx->next();  // eat close brace
 
   std::unique_ptr<EnumDecl> enumeration = std::make_unique<EnumDecl>(name, std::move(variants), meta);
+  enumeration->set_type(new EnumType(enumeration->get_name()));
 
   // add declaration to parent scope
   curr_scope->add_decl(enumeration.get());
@@ -1231,11 +1244,6 @@ static std::unique_ptr<PackageUnit> parse_pkg(std::unique_ptr<ASTContext> &ctx) 
     if (!decl) {
       panic("expected declaration or import", ctx->last().meta);
     }
-    /*
-    // add declaration to package scope
-    if (NamedDecl *d = dynamic_cast<NamedDecl *>(decl.get())) {
-      curr_scope->add_decl(d);
-    }*/
 
     // add type defining declaration to front of list
     if (TypeDecl *d = dynamic_cast<TypeDecl *>(decl.get())) {

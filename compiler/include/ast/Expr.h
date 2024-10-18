@@ -283,14 +283,23 @@ private:
   const std::string ident;
   const Type *T;
   const Metadata meta;
+  const bool nested;
 
 public:
   DeclRefExpr(const std::string &ident, const Type *T, const Metadata &meta) 
-    : ident(ident), T(T), meta(meta){};
+    : ident(ident), T(T), meta(meta), nested(false){};
+    DeclRefExpr(const std::string &ident, const Type *T, const Metadata &meta, const bool is_nested) 
+    : ident(ident), T(T), meta(meta), nested(is_nested){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
   inline const Type* get_type() const override { return T; }
   inline void set_type(const Type *T) { this->T = T; }
   const Metadata get_meta() const override { return meta; }
+
+
+  /// Returns true if this reference expression is nested, and false otherwise.
+  ///
+  /// This is used for enum variant references.
+  inline bool is_nested(void) const { return nested; }
 
   /// Gets the identifier of this reference expression.
   inline const std::string get_ident() const { return ident; }

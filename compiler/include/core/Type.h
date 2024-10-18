@@ -20,6 +20,7 @@ public:
   virtual bool is_builtin(void) const = 0;
   virtual bool is_matchable(void) const = 0;
   virtual bool is_char(void) const = 0;
+  virtual bool is_ref(void) const = 0;
   virtual std::string to_string(void) const = 0;
 };
 
@@ -49,6 +50,7 @@ public:
   bool is_builtin(void) const override { return false; }
   bool is_matchable(void) const override { return false; }
   bool is_char(void) const override { return false; }
+  bool is_ref(void) const override { return true; }
   std::string to_string(void) const override { return ident + " ref"; }
 };
 
@@ -74,6 +76,7 @@ public:
   bool is_void(void) const override { return false; }
   bool is_builtin(void) const override { return true; }
   bool is_matchable(void) const override { return true; }
+  bool is_ref(void) const override { return false; }
 
 private:
   const PrimitiveKind __kind;
@@ -126,6 +129,9 @@ public:
   bool is_builtin(void) const override { return false; }
   bool is_matchable(void) const override { return false; }
   bool is_char(void) const override { return false; }
+  bool is_ref(void) const override { return false; }
+  virtual bool is_enum(void) const = 0;
+  virtual bool is_struct(void) const = 0;
 };
 
 
@@ -145,6 +151,10 @@ public:
   bool is_builtin(void) const override { return false; }
   bool is_valid_element(void) const;
   std::string to_string(void) const override { return __type->to_string() + "[" + std::to_string(__len) + "]"; }
+  
+  // later, need to implement is_enum and is_struct in terms of element
+  bool is_enum(void) const override { return false; }
+  bool is_struct(void) const override { return false;; }
 };
 
 
@@ -163,6 +173,10 @@ public:
   bool is_builtin(void) const override { return false; }
   bool is_valid_element(void) const;
   std::string to_string(void) const override { return '#' + __type->to_string(); }
+
+  // later, need to implement is_enum and is_struct in terms of element
+  bool is_enum(void) const override { return false; }
+  bool is_struct(void) const override { return false; }
 };
 
 
@@ -181,6 +195,29 @@ public:
   bool is_builtin(void) const override { return false; }
   const std::string get_name(void) const { return __struct_name; }
   std::string to_string(void) const override { return __struct_name; }
+  bool is_enum(void) const override { return false; }
+  bool is_struct(void) const override { return true; }
+};
+
+
+/// EnumType - Represents an enum type.
+///
+/// This class represents an enum type in the intermediate representation.
+/// All defined enum types are represented by this class.
+class EnumType final : public DefinedType
+{
+private:
+  const std::string __enum_name;
+
+public:
+  /// @param name The name of the enum.
+  EnumType(const std::string &name) : __enum_name(name){};
+  bool is_builtin(void) const override { return false; }
+  bool is_integer(void) const override { return true; }
+  const std::string get_name(void) const { return __enum_name; }
+  std::string to_string(void) const override { return __enum_name; }
+  bool is_enum(void) const override { return true; }
+  bool is_struct(void) const override { return false; }
 };
 
 #endif  // TYPE_STATIMC_H

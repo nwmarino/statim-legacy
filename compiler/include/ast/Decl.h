@@ -58,12 +58,12 @@ public:
 class TypeDecl : public NamedDecl
 {
 protected:
-  const Type *T;
+  const DefinedType *T;
 
 public:
-  TypeDecl(const std::string &name, const Type *T) : NamedDecl(name), T(T) {};
-  inline const Type* get_type() const { return T; }
-  inline void set_type(const Type *T) { this->T = T; }
+  TypeDecl(const std::string &name, const DefinedType *T) : NamedDecl(name), T(T) {};
+  inline const DefinedType* get_type() const { return T; }
+  inline void set_type(const DefinedType *T) { this->T = T; }
 };
 
 

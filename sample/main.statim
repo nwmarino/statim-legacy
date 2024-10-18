@@ -1,35 +1,17 @@
+enum AnEnum {
+  A,
+  B,
+  C,
+}
+
 fn main() {
-  let my_struct: MyStruct = MyStruct {
-    A: 'a',
-    B: 1,
-    C: false,
-    D: MyStruct {
-      A: 'b',
-      B: 2,
-    }
-  }
+  let x: AnEnum = AnEnum::A;
 
-  let y: i32 = my_struct.D.B;
+  let y: AnEnum = x;
 
-  let zz: AltStruct = AltStruct {
-    A: MyStruct {
-      A: 'c',
-      B: 3,
-      C: false,
-    }
+  let mut num: i64 = 2;
+
+  if num == x {
+    num += 1;
   }
 }
-
-struct AltStruct {
-  A: MyStruct,
-}
-
-struct MyStruct {
-  A: char,
-  B: i32,
-  priv C: bool,
-  D: MyStruct,
-}
-
-
-

@@ -309,15 +309,20 @@ void PassVisitor::visit(VarDecl *d) {
         panic("scoping error: " + d->get_name(), d->get_meta());
       }
 
-      StructDecl *struct_d = dynamic_cast<StructDecl *>(top_scope->get_decl(T->get_ident()));
-      if (!struct_d) {
+      if (StructDecl *struct_d = dynamic_cast<StructDecl *>(top_scope->get_decl(T->get_ident()))) {
+        // assign real type
+        if (struct_d->get_type()) {
+          d->set_type(struct_d->get_type());
+          return;
+        }
+      } else if (EnumDecl *enum_d = dynamic_cast<EnumDecl *>(top_scope->get_decl(T->get_ident()))){
+        // assign real type
+        if (enum_d->get_type()) {
+          d->set_type(enum_d->get_type());
+          return;
+        }
+      } else {
         panic("unresolved variable type: " + T->get_ident(), d->get_meta());
-      }
-
-      // assign real type
-      if (struct_d->get_type()) {
-        d->set_type(struct_d->get_type());
-        return;
       }
     } else {
       panic("unresolved variable type in scope: " + d->get_name(), d->get_meta());
@@ -540,17 +545,40 @@ void PassVisitor::visit(DeclRefExpr *e) {
   if (!e->get_type()->is_builtin()) {
     const TypeRef *T = dynamic_cast<const TypeRef *>(e->get_type());
     if (!T) {
-      panic("unresolved reference type: " + e->get_ident(), e->get_meta());
+      panic("unresolved type reference: " + e->get_ident(), e->get_meta());
     }
 
-    StructDecl *struct_d = dynamic_cast<StructDecl *>(top_scope->get_decl(T->get_ident()));
-    if (!struct_d) {
-      panic("unresolved reference type: " + T->get_ident(), e->get_meta());
+    TypeDecl *type_d = dynamic_cast<TypeDecl *>(top_scope->get_decl(T->get_ident()));
+    if (type_d->get_type()->is_struct()) {
+      StructDecl *struct_d = dynamic_cast<StructDecl *>(top_scope->get_decl(T->get_ident()));
+      if (!struct_d) {
+        panic("unresolved struct type reference: " + T->get_ident(), e->get_meta());
+      }
+    } else if (type_d->get_type()->is_enum()) {
+      EnumDecl *enum_d = dynamic_cast<EnumDecl *>(top_scope->get_decl(T->get_ident()));
+      if (!enum_d) {
+        panic("unresolved enum type reference: " + T->get_ident(), e->get_meta());
+      }
+
+      if (e->is_nested()) {
+        // check that the enum variant exists
+        bool found = false;
+        for (EnumVariantDecl *ev : enum_d->get_variants()) {
+          if (ev->get_name() == e->get_ident()) {
+            found = true;
+            break;
+          }
+        }
+
+        if (!found) {
+          panic("unresolved enum variant reference: " + e->get_ident(), e->get_meta());
+        }
+      }
     }
     
     // assign real type
-    if (struct_d->get_type()) {
-      e->set_type(struct_d->get_type());
+    if (type_d->get_type()) {
+      e->set_type(type_d->get_type());
       return;
     }
   }
@@ -569,10 +597,12 @@ void PassVisitor::visit(BinaryExpr *e) {
     const PrimitiveType *pt_lhs = dynamic_cast<const PrimitiveType *>(e->get_lhs()->get_type());
     const PrimitiveType *pt_rhs = dynamic_cast<const PrimitiveType *>(e->get_rhs()->get_type());
     if (!pt_lhs->compare(pt_rhs)) {
+      panic("built-in type mismatch in binary expression", e->get_meta());
+    }    
+  } else if (e->get_lhs()->get_type() != e->get_rhs()->get_type()) {
+    if (!e->get_lhs()->get_type()->is_integer() || !e->get_rhs()->get_type()->is_integer()) {
       panic("type mismatch in binary expression", e->get_meta());
     }
-  } else if (e->get_lhs()->get_type() != e->get_rhs()->get_type()) {
-    panic("type mismatch in binary expression", e->get_meta());
   }
 
   e->set_type(e->get_lhs()->get_type());
