@@ -364,18 +364,15 @@ static std::unique_ptr<Expr> parse_identifier_expr(std::unique_ptr<ASTContext> &
     return std::make_unique<DeclRefExpr>(token.value, d->get_type(), token.meta);
   } else if (ParamVarDecl *d = dynamic_cast<ParamVarDecl *>(curr_scope->get_decl(token.value))) {
     return std::make_unique<DeclRefExpr>(token.value, d->get_type(), token.meta);
-  } else if (EnumDecl *d = dynamic_cast<EnumDecl *>(curr_scope->get_decl(token.value))) {
-    if (ctx->last().is_path()) {
-      ctx->next();
-      if (!ctx->last().is_ident()) {
-        return warn_expr("expected identifier after '::'", ctx->last().meta);
-      }
-      const std::string enum_variant = ctx->last().value;
-      ctx->next();
-
-      return std::make_unique<DeclRefExpr>(enum_variant, ctx->resolve_type(d->get_name()), token.meta, true);
+  } else if (ctx->last().is_path()) {
+    ctx->next(); // ::
+    if (!ctx->last().is_ident()) {
+      return warn_expr("expected identifier after '::'", ctx->last().meta);
     }
-    return warn_expr("expected enum variant after enum reference", ctx->last().meta);
+    const std::string enum_variant = ctx->last().value;
+    ctx->next();
+
+    return std::make_unique<DeclRefExpr>(enum_variant, ctx->resolve_type(token.value), token.meta, true);
   }
 
   if (ctx->last().is_open_brace()) {

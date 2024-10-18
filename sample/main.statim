@@ -1,9 +1,3 @@
-enum AnEnum {
-  A,
-  B,
-  C,
-}
-
 fn main() {
   let x: AnEnum = AnEnum::A;
 
@@ -14,4 +8,10 @@ fn main() {
   if num == x {
     num += 1;
   }
+}
+
+enum AnEnum {
+  A,
+  B,
+  C,
 }
