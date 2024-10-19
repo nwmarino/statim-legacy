@@ -4,6 +4,8 @@
 /// Suite of logging functions for the compiler.
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
+#include "llvm/IR/Value.h"
+
 #include "../ast/Decl.h"
 #include "../ast/Stmt.h"
 #include "../ast/Unit.h"
@@ -23,7 +25,7 @@ inline void panic(const std::string msg) {
 /// @param data Metadata about the bad input.
 [[noreturn]]
 inline void panic(const std::string msg, const struct Metadata &data) {
-  fprintf(stderr, "statimc: panic: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  fprintf(stderr, "statimc: panic: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   exit(1);
 }
 
@@ -69,7 +71,7 @@ inline void enum_variant_panic(const std::string &ident, const std::string &enum
 /// @param data Metadata about the bad input.
 /// @return     nullptr
 inline std::unique_ptr<Stmt> warn_stmt(std::string msg, const struct Metadata &data) {
-  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
 
@@ -79,7 +81,7 @@ inline std::unique_ptr<Stmt> warn_stmt(std::string msg, const struct Metadata &d
 /// @param data Metadata about the bad input.
 /// @return     nullptr
 inline std::unique_ptr<Expr> warn_expr(std::string msg, const struct Metadata &data) {
-  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
 
@@ -89,7 +91,7 @@ inline std::unique_ptr<Expr> warn_expr(std::string msg, const struct Metadata &d
 /// @param data Metadata about the bad input.
 /// @return     nullptr
 inline std::unique_ptr<Decl> warn_decl(std::string msg, const struct Metadata &data) {
-  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
 
@@ -99,7 +101,7 @@ inline std::unique_ptr<Decl> warn_decl(std::string msg, const struct Metadata &d
 /// @param data Metadata about the bad input.
 /// @return     nullptr
 inline std::unique_ptr<TypeDecl> warn_tydecl(std::string msg, const struct Metadata &data) {
-  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
 
@@ -109,7 +111,7 @@ inline std::unique_ptr<TypeDecl> warn_tydecl(std::string msg, const struct Metad
 /// @param data Metadata about the bad input.
 /// @return     nullptr
 inline std::unique_ptr<FunctionDecl> warn_fn(std::string msg, const struct Metadata &data) {
-  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
 
@@ -119,7 +121,7 @@ inline std::unique_ptr<FunctionDecl> warn_fn(std::string msg, const struct Metad
 /// @param data Metadata about the bad input.
 /// @return     nullptr
 inline std::unique_ptr<EnumDecl> warn_enum(std::string msg, const struct Metadata &data) {
-  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
 
@@ -129,7 +131,7 @@ inline std::unique_ptr<EnumDecl> warn_enum(std::string msg, const struct Metadat
 /// @param data Metadata about the bad input.
 /// @return     nullptr
 inline std::unique_ptr<StructDecl> warn_struct(std::string msg, const struct Metadata &data) {
-  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
 
@@ -139,7 +141,7 @@ inline std::unique_ptr<StructDecl> warn_struct(std::string msg, const struct Met
 /// @param data Metadata about the bad input.
 /// @return     nullptr
 inline std::unique_ptr<TraitDecl> warn_trait(std::string msg, const struct Metadata &data) {
-  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
 
@@ -149,7 +151,7 @@ inline std::unique_ptr<TraitDecl> warn_trait(std::string msg, const struct Metad
 /// @param data Metadata about the bad input.
 /// @return     nullptr
 inline std::unique_ptr<ImplDecl> warn_impl(std::string msg, const struct Metadata &data) {
-  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
 
@@ -159,7 +161,7 @@ inline std::unique_ptr<ImplDecl> warn_impl(std::string msg, const struct Metadat
 /// @param data Metadata about the bad input.
 /// @return     nullptr
 inline std::unique_ptr<Unit> warn_unit(std::string msg, const struct Metadata &data) {
-  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
 
@@ -169,7 +171,27 @@ inline std::unique_ptr<Unit> warn_unit(std::string msg, const struct Metadata &d
 /// @param data Metadata about the bad input.
 /// @return     nullptr
 inline std::unique_ptr<PackageUnit> warn_pkg(std::string msg, const struct Metadata &data) {
-  fprintf(stderr, "statimc: warn: %s\nsee: %s:%zu:%zu\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  return nullptr;
+}
+
+
+/// Warn about an llvm value codegen error.
+/// @param msg  The error message.
+/// @param data Metadata about the bad input.
+/// @return     nullptr
+inline llvm::Value *warn_cg_value(std::string msg, const struct Metadata &data) {
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
+  return nullptr;
+}
+
+
+/// Warn about an llvm basic block codegen error.
+/// @param msg  The error message.
+/// @param data Metadata about the bad input.
+/// @return     nullptr
+inline llvm::BasicBlock *warn_cg_block(std::string msg, const struct Metadata &data) {
+  fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
 
