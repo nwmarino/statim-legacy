@@ -128,17 +128,17 @@ void PassVisitor::visit(FunctionDecl *d) {
   if (d->get_type() && !d->get_type()->is_builtin()) {
     const TypeRef *T = dynamic_cast<const TypeRef *>(d->get_type());
     if (!T) {
-      panic("unresolved return type: " + d->get_name(), d->get_meta());
+      panic("unresolved reference return type: " + d->get_name(), d->get_meta());
     }
 
-    StructDecl *struct_d = dynamic_cast<StructDecl *>(d->get_scope()->get_decl(T->get_ident()));
-    if (!struct_d) {
-      panic("unresolved return type: " + T->get_ident(), d->get_meta());
+    const TypeDecl *td = dynamic_cast<TypeDecl *>(d->get_scope()->get_decl(T->get_ident()));
+    if (!td) {
+      panic("unresolved source defined function return type: " + T->get_ident(), d->get_meta());
     }
 
     // assign real type
-    if (struct_d->get_type()) {
-      d->set_type(struct_d->get_type());
+    if (td->get_type()) {
+      d->set_type(td->get_type());
     }
   }
 
@@ -777,7 +777,7 @@ void PassVisitor::visit(CallExpr *e) {
     // check if the referenced type exists
     StructDecl *struct_d = dynamic_cast<StructDecl *>(pkg_scope->get_decl(T->get_ident()));
     if (!struct_d) {
-      panic("unresolved return type: " + T->get_ident());
+      panic("unresolved reference return type: " + T->get_ident(), e->get_meta());
     }
 
     // assign real type
@@ -785,7 +785,7 @@ void PassVisitor::visit(CallExpr *e) {
       e->set_type(struct_d->get_type());
       return;
     }
-    panic("unresolved return type: " + T->get_ident());
+    panic("unresolved return type: " + T->get_ident(), e->get_meta());
   }
 
   // assign real type
@@ -927,7 +927,7 @@ void PassVisitor::visit(MemberCallExpr *e) {
     // check if the referenced type exists
     StructDecl *struct_d = dynamic_cast<StructDecl *>(pkg_scope->get_decl(T->get_ident()));
     if (!struct_d) {
-      panic("unresolved return type: " + T->get_ident());
+      panic("unresolved return type: " + T->get_ident(), e->get_meta());
     }
 
     // assign real type
@@ -935,7 +935,7 @@ void PassVisitor::visit(MemberCallExpr *e) {
       e->set_type(struct_d->get_type());
       return;
     }
-    panic("unresolved return type: " + T->get_ident());
+    panic("unresolved return type: " + T->get_ident(), e->get_meta());
   }
 
   // assign real type

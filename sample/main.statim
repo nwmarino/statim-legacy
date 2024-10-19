@@ -8,6 +8,14 @@ fn fib(n: i64) -> i64 {
   }
 }
 
+enum MyEnum {
+  A, B, C,
+}
+
+fn foo() -> MyEnum {
+  return MyEnum::A;
+}
+
 fn main() {
   fib(5);
 }
