@@ -348,7 +348,8 @@ const std::string StringLiteral::to_string() {
 
 
 const std::string BinaryExpr::to_string() {
-  std::string result = piping() + MAGENTA + "BinaryExpr" + GREEN + " '" + get_type()->to_string() + "' " + BOLD + CYAN + binary_to_string(op) + RESET + '\n';
+  std::string result = get_type() ? piping() + MAGENTA + "BinaryExpr" + GREEN + " '" + get_type()->to_string() + "' " + BOLD + CYAN + binary_to_string(op) + RESET + '\n' \
+    : piping() + MAGENTA + "BinaryExpr " + BOLD + BLUE + binary_to_string(op) + RESET + '\n';
   indent++;
   place_vert[indent] = 1;
   int s_indent = indent;

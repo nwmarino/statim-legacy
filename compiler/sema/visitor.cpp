@@ -157,6 +157,10 @@ void PassVisitor::visit(ParamVarDecl *d) {
     return;
   }
 
+  if (StructDecl *struct_d = dynamic_cast<StructDecl *>(top_scope->get_decl(d->get_type()->to_string()))) {
+    return;
+  }
+
   // type is a reference
   if (const TypeRef *T = dynamic_cast<const TypeRef *>(d->get_type())) {
     if (!top_scope) {
@@ -741,7 +745,7 @@ void PassVisitor::visit(CallExpr *e) {
 
   if (e->get_num_args() != fn_d->get_num_params()) {
     panic("function " + fn_name + " has " + std::to_string(fn_d->get_num_params()) + " parameters but " + \
-    std::to_string(e->get_num_args()) + " were provided.");
+      std::to_string(e->get_num_args()) + " were provided", e->get_meta());
   }
 
   // type check all arguments
