@@ -22,6 +22,7 @@ class Stmt
 public:
   virtual ~Stmt() = default;
   virtual void pass(ASTVisitor *visitor) = 0;
+  virtual llvm::Value *codegen() const = 0;
   const virtual std::string to_string() = 0;
   virtual const Metadata get_meta() const = 0;
 };
@@ -30,7 +31,7 @@ public:
 /// Declarative statements that mix expressions and declarations.
 ///
 /// In particular, these statements are used to declare variables within a scope.
-class DeclStmt : public Stmt
+class DeclStmt final : public Stmt
 {
 private:
   std::unique_ptr<Decl> decl;
@@ -39,6 +40,7 @@ private:
 public:
   DeclStmt(std::unique_ptr<Decl> decl, const Metadata &meta) : decl(std::move(decl)), meta(meta) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline Decl* get_decl() const { return decl.get(); }
   const Metadata get_meta() const override { return meta; }
 
@@ -59,6 +61,7 @@ public:
   CompoundStmt(std::vector<std::unique_ptr<Stmt>> stmts, std::shared_ptr<Scope> scope, const Metadata &meta)
     : stmts(std::move(stmts)), scope(scope), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline std::vector<Stmt *> get_stmts() const {
     std::vector<Stmt *> stmt_ptrs;
     for (const std::unique_ptr<Stmt> &stmt : stmts) {
@@ -94,6 +97,7 @@ public:
   IfStmt(std::unique_ptr<Expr> cond, std::unique_ptr<Stmt> then_body, const Metadata &meta)
     : cond(std::move(cond)), then_body(std::move(then_body)), else_body(nullptr), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline Expr* get_cond() const { return cond.get(); }
   inline Stmt* get_then_body() const { return then_body ? then_body.get() : nullptr; }
   inline Stmt* get_else_body() const { return else_body ? else_body.get() : nullptr; }
@@ -123,6 +127,7 @@ public:
   MatchCase(std::unique_ptr<Expr> expr, std::unique_ptr<Stmt> body, const Metadata &meta)
     : expr(std::move(expr)), body(std::move(body)), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline Expr* get_expr() const { return expr.get(); }
   inline Stmt* get_body() const { return body.get(); }
   const Metadata get_meta() const override { return meta; }
@@ -144,6 +149,7 @@ public:
   MatchStmt(std::unique_ptr<Expr> expr, std::vector<std::unique_ptr<MatchCase>> cases, const Metadata &meta)
     : expr(std::move(expr)), cases(std::move(cases)), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline Expr* get_expr() const { return expr.get(); }
   inline std::vector<MatchCase *> get_cases() const {
     std::vector<MatchCase *> case_ptrs;
@@ -169,6 +175,7 @@ private:
 public:
   ReturnStmt(std::unique_ptr<Expr> expr, const Metadata &meta) : expr(std::move(expr)), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline Expr* get_expr() const { return expr.get(); }
   const Metadata get_meta() const override { return meta; }
 
@@ -192,6 +199,7 @@ public:
   UntilStmt(std::unique_ptr<Expr> cond, std::unique_ptr<Stmt> body, const Metadata &meta)
     : cond(std::move(cond)), body(std::move(body)), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline Expr* get_cond() const { return cond.get(); }
   inline Stmt* get_body() const { return body.get(); }
   const Metadata get_meta() const override { return meta; }
@@ -212,6 +220,7 @@ private:
 public:
   BreakStmt(const Metadata &meta) : meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   const Metadata get_meta() const override { return meta; }
 
   /// Returns a string representation of this break statement.
@@ -230,6 +239,7 @@ private:
 public:
   ContinueStmt(const Metadata &meta) : meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   const Metadata get_meta() const override { return meta; }
 
   /// Returns a string representation of this continue statement.

@@ -29,45 +29,6 @@ static const std::string piping() {
 }
 
 
-/// Returns the string representation of a unary operator.
-static std::string unary_to_string(UnaryOp op) {
-  switch (op) {
-    case UnaryOp::Bang:           return "!";
-    case UnaryOp::Rune:           return "#";
-    case UnaryOp::Ref:            return "@";
-    case UnaryOp::Access:         return ".";
-    case UnaryOp::UnknownUnaryOp: return "";
-  }
-  return "";
-}
-
-
-/// Returns the string representation of a binary operator.
-static std::string binary_to_string(BinaryOp op) {
-  switch (op) {
-    case BinaryOp::Assign:          return "=";
-    case BinaryOp::AddAssign:       return "+=";
-    case BinaryOp::SubAssign:       return "-=";
-    case BinaryOp::StarAssign:      return "*=";
-    case BinaryOp::SlashAssign:     return "/=";
-    case BinaryOp::IsEq:            return "==";
-    case BinaryOp::IsNotEq:         return "!=";
-    case BinaryOp::LogicAnd:        return "&&";
-    case BinaryOp::LogicOr:         return "||";
-    case BinaryOp::Lt:              return "<";
-    case BinaryOp::LtEquals:        return "<=";
-    case BinaryOp::Gt:              return ">";
-    case BinaryOp::GtEquals:        return ">=";
-    case BinaryOp::Plus:            return "+";
-    case BinaryOp::Minus:           return "-";
-    case BinaryOp::Mult:            return "*";
-    case BinaryOp::Div:             return "/";
-    case BinaryOp::UnknownBinaryOp: return "";
-  }
-  return "";
-}
-
-
 const std::string CrateUnit::to_string() {
   std::string result;
   for (std::unique_ptr<PackageUnit> const &package : packages) {

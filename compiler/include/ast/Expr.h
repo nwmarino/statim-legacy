@@ -85,6 +85,45 @@ typedef enum {
 } BinaryOp;
 
 
+/// Returns the string representation of a unary operator.
+inline std::string unary_to_string(UnaryOp op) {
+  switch (op) {
+    case UnaryOp::Bang:           return "!";
+    case UnaryOp::Rune:           return "#";
+    case UnaryOp::Ref:            return "@";
+    case UnaryOp::Access:         return ".";
+    case UnaryOp::UnknownUnaryOp: return "";
+  }
+  return "";
+}
+
+
+/// Returns the string representation of a binary operator.
+inline std::string binary_to_string(BinaryOp op) {
+  switch (op) {
+    case BinaryOp::Assign:          return "=";
+    case BinaryOp::AddAssign:       return "+=";
+    case BinaryOp::SubAssign:       return "-=";
+    case BinaryOp::StarAssign:      return "*=";
+    case BinaryOp::SlashAssign:     return "/=";
+    case BinaryOp::IsEq:            return "==";
+    case BinaryOp::IsNotEq:         return "!=";
+    case BinaryOp::LogicAnd:        return "&&";
+    case BinaryOp::LogicOr:         return "||";
+    case BinaryOp::Lt:              return "<";
+    case BinaryOp::LtEquals:        return "<=";
+    case BinaryOp::Gt:              return ">";
+    case BinaryOp::GtEquals:        return ">=";
+    case BinaryOp::Plus:            return "+";
+    case BinaryOp::Minus:           return "-";
+    case BinaryOp::Mult:            return "*";
+    case BinaryOp::Div:             return "/";
+    case BinaryOp::UnknownBinaryOp: return "";
+  }
+  return "";
+}
+
+
 /// Returns true if the given binary operator is a (re)assignment operator.
 static bool is_assignment_op(BinaryOp op) {
   return op == BinaryOp::Assign || op == BinaryOp::AddAssign || op == BinaryOp::SubAssign || \
@@ -98,6 +137,7 @@ class Expr : public Stmt
 public:
   virtual ~Expr() = default;
   virtual void pass(ASTVisitor *visitor) = 0;
+  virtual llvm::Value *codegen() const = 0;
   virtual const Type* get_type() const = 0;
   virtual const std::string to_string() = 0;
   virtual const Metadata get_meta() const = 0;
@@ -116,6 +156,7 @@ private:
 public:
   NullExpr(const Type *T, const Metadata &meta) : T(T), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline const Type* get_type() const override { return T; }
   inline void set_type(const Type *T) { this->T = T; }
   const Metadata get_meta() const override { return meta; }
@@ -137,6 +178,7 @@ private:
 public:
   DefaultExpr(const Type *T, const Metadata &meta) : T(T), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline const Type* get_type() const override { return T; }
   const Metadata get_meta() const override { return meta; }
 
@@ -159,6 +201,7 @@ public:
   BooleanLiteral(bool value, const Type *T, const Metadata &meta)
     : value(value ? 1 : 0), T(T), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline const Type* get_type() const override { return T; }
   const Metadata get_meta() const override { return meta; }
 
@@ -185,6 +228,7 @@ public:
   IntegerLiteral(int value, const Type *T, const Metadata &meta) 
     : value(value), signedness(value < 0), T(T), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline const Type* get_type() const override { return T; }
   const Metadata get_meta() const override { return meta; }
 
@@ -210,9 +254,9 @@ private:
   const Metadata meta;
 
 public:
-  FPLiteral(double value, const Type *T, const Metadata &meta) \
-    : value(value), T(T), meta(meta){};
+  FPLiteral(double value, const Type *T, const Metadata &meta) : value(value), T(T), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline const Type* get_type() const override { return T; }
   const Metadata get_meta() const override { return meta; }
 
@@ -238,6 +282,7 @@ public:
   CharLiteral(char value, const Type *T, const Metadata &meta) 
     : value(value), T(T), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline const Type* get_type() const override { return T; }
   const Metadata get_meta() const override { return meta; }
 
@@ -263,6 +308,7 @@ public:
   StringLiteral(const std::string &value, const Type *T, const Metadata &meta) 
     : value(value), T(T), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline const Type* get_type() const override { return T; }
   const Metadata get_meta() const override { return meta; }
 
@@ -291,6 +337,7 @@ public:
     DeclRefExpr(const std::string &ident, const Type *T, const Metadata &meta, const bool is_nested) 
     : ident(ident), T(T), meta(meta), nested(is_nested){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline const Type* get_type() const override { return T; }
   inline void set_type(const Type *T) { this->T = T; }
   const Metadata get_meta() const override { return meta; }
@@ -328,6 +375,7 @@ public:
   BinaryExpr(const BinaryOp op, std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs, const Metadata &meta) 
     : op(op), lhs(std::move(lhs)), rhs(std::move(rhs)), meta(meta), T(this->lhs->get_type()){}
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   const Metadata get_meta() const override { return meta; }
 
   /// Returns the type of this binary expression. Returns `nullptr` if the operand types mismatch.
@@ -365,6 +413,7 @@ public:
   UnaryExpr(const UnaryOp op, std::unique_ptr<Expr> expr, const Metadata &meta) 
     : op(op), expr(std::move(expr)), T(this->expr->get_type()), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline const Type* get_type() const override { return T; }
   inline void set_type(const Type *T) { this->T = T; }
   const Metadata get_meta() const override { return meta; }
@@ -405,6 +454,7 @@ public:
     std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields, const Metadata &meta)
     : ident(ident), T(T), fields(std::move(fields)), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline const Type* get_type() const override { return T; }
   inline void set_type(const Type *T) { this->T = T; }
   inline std::string get_ident() { return ident; }
@@ -442,6 +492,7 @@ public:
   CallExpr(const std::string &callee, std::vector<std::unique_ptr<Expr>> args, const Metadata &meta)
     : callee(callee), args(std::move(args)), T(nullptr), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline int get_num_args() const { return args.size(); }
   inline const Metadata get_meta() const override { return meta; }
 
@@ -484,6 +535,7 @@ public:
   MemberExpr(std::unique_ptr<Expr> base, const std::string &member, const Metadata &meta)
     : base(std::move(base)), member(member), T(nullptr), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   const Metadata get_meta() const override { return meta; }
 
   /// Returns the type of this member access expression. Returns `nullptr` if the member is undefined yet.
@@ -516,6 +568,7 @@ public:
     std::vector<std::unique_ptr<Expr>> args, const Metadata &meta)
     : base(std::move(base)), CallExpr(callee, std::move(args), meta) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   const Metadata get_meta() const override { return meta; }
   
   /// Gets the base of this member call expression.
@@ -541,6 +594,7 @@ private:
 public:
   ThisExpr(const Type *T, const Metadata &meta) : T(T), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline const Type* get_type() const override { return T; }
   inline void set_type(const Type *T) { this->T = T; }
   const Metadata get_meta() const override { return meta; }

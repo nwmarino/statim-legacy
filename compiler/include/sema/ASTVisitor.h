@@ -1,6 +1,8 @@
 #ifndef ASTVISITOR_STATIMC_H
 #define ASTVISITOR_STATIMC_H
 
+#include "llvm/IR/Value.h"
+
 /// Visitor pattern for AST passes.
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
@@ -105,54 +107,6 @@ public:
 /// methods to visit different AST nodes and enforce semantics on each node,
 /// as well as final name resolution and type checking.
 class PassVisitor final : public ASTVisitor
-{
-public:
-  void visit(CrateUnit *u) override;
-  void visit(PackageUnit *u) override;
-
-  void visit(FunctionDecl *d) override;
-  void visit(ParamVarDecl *d) override;
-  void visit(StructDecl *d) override;
-  void visit(FieldDecl *d) override;
-  void visit(TraitDecl *d) override;
-  void visit(ImplDecl *d) override;
-  void visit(EnumDecl *d) override;
-  void visit(EnumVariantDecl *d) override;
-  void visit(VarDecl *d) override;
-
-  void visit(DeclStmt *s) override;
-  void visit(CompoundStmt *s) override;
-  void visit(IfStmt *s) override;
-  void visit(MatchCase *s) override;
-  void visit(MatchStmt *s) override;
-  void visit(UntilStmt *s) override;
-  void visit(ReturnStmt *s) override;
-  void visit(BreakStmt *s) override;
-  void visit(ContinueStmt *s) override;
-
-  void visit(NullExpr *e) override;
-  void visit(DefaultExpr *e) override;
-  void visit(BooleanLiteral *e) override;
-  void visit(IntegerLiteral *e) override;
-  void visit(FPLiteral *e) override;
-  void visit(CharLiteral *e) override;
-  void visit(StringLiteral *e) override;
-  void visit(DeclRefExpr *e) override;
-  void visit(BinaryExpr *e) override;
-  void visit(UnaryExpr *e) override;
-  void visit(InitExpr *e) override;
-  void visit(CallExpr *e) override;
-  void visit(MemberExpr *e) override;
-  void visit(MemberCallExpr *e) override;
-  void visit(ThisExpr *e) override;
-};
-
-
-/// CodegenVisitor - Concrete visitor class for code generation passes.
-///
-/// This class implements the ASTVisitor interface and provides a set of
-/// methods to visit different AST nodes and generate code for each node.
-class CodegenVisitor final : public ASTVisitor
 {
 public:
   void visit(CrateUnit *u) override;

@@ -253,6 +253,7 @@ public:
     std::shared_ptr<Scope> scope, const Metadata &meta)
     : NamedDecl(name), ScopedDecl(scope), T(T), meta(meta), params(std::move(params)), body(std::move(body)), priv(name == "main" ? true : false) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Function *codegen() const;
   inline const Type* get_type() const { return T; }
   inline void set_type(const Type *T) { this->T = T; }
   inline int get_num_params() const { return params.size(); }
