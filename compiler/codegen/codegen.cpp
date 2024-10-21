@@ -1,3 +1,6 @@
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Constants.h>
+#include <llvm/IR/Instructions.h>
 #include <string>
 #include <map>
 
@@ -80,31 +83,106 @@ llvm::Function *FunctionDecl::codegen() const {
 
 /* Statement Codegen */
 
-llvm::Value *DeclStmt::codegen() const {}
+llvm::Value *DeclStmt::codegen() const {
+  return nullptr;
+}
 
 
-llvm::Value *CompoundStmt::codegen() const {}
+llvm::Value *CompoundStmt::codegen() const {
+  for (int i = 0; i < stmts.size(); i++) {
+    llvm::Value *stmt_val = stmts[i]->codegen();
+    if (!stmt_val) {
+      return nullptr;
+    }
+
+    if (llvm::isa<llvm::ReturnInst>(stmt_val)) {
+      return stmt_val;
+    }
+  }
+  return llvm::UndefValue::get(llvm::Type::getVoidTy(*llvm_ctx));
+}
 
 
-llvm::Value *IfStmt::codegen() const {}
+llvm::Value *IfStmt::codegen() const {
+  llvm::Value *cond_val = cond->codegen();
+  if (!cond_val) {
+    return warn_cg_value("bad condition expression", meta);
+  }
+
+  cond_val = builder->CreateFCmpONE(
+    cond_val, llvm::ConstantInt::get(llvm::Type::getInt1Ty(*llvm_ctx), 0), "ifcond");
+
+  llvm::Function *fn = builder->GetInsertBlock()->getParent();
+
+  llvm::BasicBlock *then_bb = llvm::BasicBlock::Create(*llvm_ctx, "then", fn);
+  llvm::BasicBlock *else_bb = llvm::BasicBlock::Create(*llvm_ctx, "else");
+  llvm::BasicBlock *merge_bb = llvm::BasicBlock::Create(*llvm_ctx, "ifcont");
+
+  builder->CreateCondBr(cond_val, then_bb, else_bb);
+
+  builder->SetInsertPoint(then_bb);
+  llvm::Value *then_val = then_body->codegen();
+  if (!then_val) {
+    return warn_cg_value("invalid then clause", meta);
+  }
+
+  builder->CreateBr(merge_bb);
+  then_bb = builder->GetInsertBlock();
+
+  fn->insert(fn->end(), else_bb);
+  builder->SetInsertPoint(else_bb);
+
+  llvm::Value *else_val = else_body->codegen();
+  if (!else_val) {
+    return warn_cg_value("invalid else clause", meta);
+  }
+
+  builder->CreateBr(merge_bb);
+  else_bb = builder->GetInsertBlock();
+
+  fn->insert(fn->end(), merge_bb);
+  builder->SetInsertPoint(merge_bb);
+  llvm::PHINode *pn = builder->CreatePHI(llvm::Type::getInt1Ty(*llvm_ctx), 2, "iftmp");
+
+  pn->addIncoming(then_val, then_bb);
+  pn->addIncoming(else_val, else_bb);
+  return pn;
+}
 
 
-llvm::Value *MatchCase::codegen() const {}
+llvm::Value *MatchCase::codegen() const {
+  return nullptr;
+}
 
 
-llvm::Value *MatchStmt::codegen() const {}
+llvm::Value *MatchStmt::codegen() const {
+  return nullptr;
+}
 
 
-llvm::Value *ReturnStmt::codegen() const {}
+llvm::Value *ReturnStmt::codegen() const {
+  llvm::Value *ret_val = expr->codegen();
+  if (!ret_val) {
+    return warn_cg_value("unresolved return value", expr->get_meta());
+  }
+
+  return llvm::ReturnInst::Create(*llvm_ctx, ret_val);
+}
 
 
-llvm::Value *UntilStmt::codegen() const {}
+llvm::Value *UntilStmt::codegen() const {
+  return nullptr;
+}
 
 
-llvm::Value *BreakStmt::codegen() const {}
+llvm::Value *BreakStmt::codegen() const {
+  return nullptr;
+}
 
 
-llvm::Value *ContinueStmt::codegen() const {}
+llvm::Value *ContinueStmt::codegen() const {
+  return nullptr;
+}
 
 
 /* Expression Codegen */
@@ -115,7 +193,9 @@ llvm::Value *NullExpr::codegen() const {
 
 
 // wait for match
-llvm::Value *DefaultExpr::codegen() const {}
+llvm::Value *DefaultExpr::codegen() const {
+  return nullptr;
+}
 
 
 llvm::Value *BooleanLiteral::codegen() const {
@@ -139,7 +219,8 @@ llvm::Value *CharLiteral::codegen() const {
 
 
 llvm::Value *StringLiteral::codegen() const {
-  return builder->CreateGlobalStringPtr(value);
+  //return builder->CreateGlobalStringPtr(value);
+  return nullptr;
 }
 
 
@@ -170,12 +251,16 @@ llvm::Value *BinaryExpr::codegen() const {
       return builder->CreateMul(l_val, r_val, "multmp");
     case BinaryOp::Div:
       return builder->CreateSDiv(l_val, r_val, "divtmp");
+    case BinaryOp::LogicOr:
+      return builder->CreateLogicalOr(l_val, r_val, "ortmp");
+    case BinaryOp::IsEq:
+      return builder->CreateICmpEQ(l_val, r_val, "eqtmp");
     default:
       return warn_cg_value("unresolved binary operator: " + binary_to_string(op), meta);
   }
 }
 
-`
+
 // needs all operator support
 llvm::Value *UnaryExpr::codegen() const {
   llvm::Value *base_val = expr->codegen();
@@ -221,11 +306,15 @@ llvm::Value *CallExpr::codegen() const {
 
 
 // scoping on base
-llvm::Value *MemberExpr::codegen() const {}
+llvm::Value *MemberExpr::codegen() const {
+  return nullptr;
+}
 
 
 // scoping on base
-llvm::Value *MemberCallExpr::codegen() const {}
+llvm::Value *MemberCallExpr::codegen() const {
+  return nullptr;
+}
 
 
 // handle
