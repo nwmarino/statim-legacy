@@ -42,9 +42,35 @@ static inline llvm::Type *bridge_type(const Type *T) {
 }
 
 
+llvm::Value *CrateUnit::codegen() const {
+  for (int i = 0; i < packages.size(); i++) {
+    llvm::Value *pkg_val = packages[i]->codegen();
+    if (!pkg_val) {
+      return nullptr;
+    }
+  }
+  return llvm::UndefValue::get(llvm::Type::getVoidTy(*llvm_ctx));
+}
+
+
+llvm::Value *PackageUnit::codegen() const {
+  for (int i = 0; i < decls.size(); i++) {
+    llvm::Value *decl_val = decls[i]->codegen();
+    if (!decl_val) {
+      return nullptr;
+    }
+  }
+  return llvm::UndefValue::get(llvm::Type::getVoidTy(*llvm_ctx));
+}
+
 /* Declaration Codegen */
 
-llvm::Function *FunctionDecl::codegen() const {
+llvm::Value *ParamVarDecl::codegen() const {
+  return nullptr;
+}
+
+
+llvm::Value *FunctionDecl::codegen() const {
   std::vector<llvm::Type *> param_types(params.size());
   for (int i = 0; i < params.size(); i++) {
     param_types[i] = bridge_type(params[i]->get_type());
@@ -77,6 +103,41 @@ llvm::Function *FunctionDecl::codegen() const {
   }
 
   fn->eraseFromParent();
+  return nullptr;
+}
+
+
+llvm::Value *TraitDecl::codegen() const {
+  return nullptr;
+}
+
+
+llvm::Value *EnumVariantDecl::codegen() const {
+  return nullptr;
+}
+
+
+llvm::Value *EnumDecl::codegen() const {
+  return nullptr;
+}
+
+
+llvm::Value *ImplDecl::codegen() const {
+  return nullptr;
+}
+
+
+llvm::Value *FieldDecl::codegen() const {
+  return nullptr;
+}
+
+
+llvm::Value *StructDecl::codegen() const {
+  return nullptr;
+}
+
+
+llvm::Value *VarDecl::codegen() const {
   return nullptr;
 }
 
@@ -279,7 +340,9 @@ llvm::Value *UnaryExpr::codegen() const {
 
 
 // scoping on target struct
-llvm::Value *InitExpr::codegen() const {}
+llvm::Value *InitExpr::codegen() const {
+  return nullptr;
+}
 
 
 llvm::Value *CallExpr::codegen() const {

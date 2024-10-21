@@ -5,6 +5,7 @@
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #include <algorithm>
+#include <llvm/IR/Value.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -19,6 +20,7 @@ class Decl
 public:
   virtual ~Decl() = default;
   virtual void pass(ASTVisitor *visitor) = 0;
+  virtual llvm::Value *codegen() const = 0;
   virtual const Metadata get_meta() const = 0;
   virtual bool is_priv() const = 0;
   virtual void set_priv() = 0;
@@ -223,6 +225,7 @@ public:
   ParamVarDecl(const std::string &name, Type *T, const Metadata &meta) 
     : NamedDecl(name), T(T), meta(meta) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline const Metadata get_meta() const override { return meta; }
   inline const Type* get_type() const { return T; }
   inline void set_type(const Type *T) { this->T = T; }
@@ -253,7 +256,7 @@ public:
     std::shared_ptr<Scope> scope, const Metadata &meta)
     : NamedDecl(name), ScopedDecl(scope), T(T), meta(meta), params(std::move(params)), body(std::move(body)), priv(name == "main" ? true : false) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Function *codegen() const;
+  llvm::Value *codegen() const override;
   inline const Type* get_type() const { return T; }
   inline void set_type(const Type *T) { this->T = T; }
   inline int get_num_params() const { return params.size(); }
@@ -311,6 +314,7 @@ public:
   TraitDecl(const std::string &name, std::vector<std::unique_ptr<FunctionDecl>> decls, const Metadata &meta)
     : NamedDecl(name), decls(std::move(decls)), meta(meta), priv(false) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline const Metadata get_meta() const override { return meta; }
   
   // Returns the expected method behaviour of this trait declaration.
@@ -351,6 +355,7 @@ private:
 public:
   EnumVariantDecl(const std::string &name, const Metadata &meta) : NamedDecl(name), meta(meta) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline bool is_priv() const override { return false; }
   inline void set_priv() override {}
   inline void set_pub() override {}
@@ -376,6 +381,7 @@ public:
   EnumDecl(const std::string &name, std::vector<std::unique_ptr<EnumVariantDecl>> variants, const Metadata &meta)
     : TypeDecl(name, nullptr), variants(std::move(variants)), meta(meta), priv(false) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline const Metadata get_meta() const override { return meta; }
 
   /// Gets the variants of this enum declaration.
@@ -421,6 +427,7 @@ public:
     : _trait(_trait), _struct(_struct), methods(std::move(methods)), 
     is_trait_impl(_trait == "" ? false : true), meta(meta){};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline bool is_priv() const override { return false; }
   inline void set_priv() override {}
   inline void set_pub() override {}
@@ -475,6 +482,7 @@ public:
   FieldDecl(const std::string &name, const Type *T, const Metadata &meta) 
     : NamedDecl(name), T(T), meta(meta), priv(false) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline const Type* get_type() const { return T; }
   inline void set_type(const Type *T) { this->T = T; }
   inline const Metadata get_meta() const override { return meta; }
@@ -507,6 +515,7 @@ public:
   StructDecl(const std::string &name, std::vector<std::unique_ptr<FieldDecl>> fields, std::shared_ptr<Scope> scope, const Metadata &meta)
     : ScopedDecl(scope), TypeDecl(name, nullptr), fields(std::move(fields)), priv(false), impls(), meta(meta) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline const Metadata get_meta() const override { return meta; }
 
   /// Returns true if this function declaration is private.
@@ -575,6 +584,7 @@ public:
   VarDecl(const std::string &name, const Type *T, bool mut, bool rune, const Metadata &meta)
     : NamedDecl(name), T(T), expr(nullptr), meta(meta), mut(mut), rune(rune) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
   inline const Type* get_type() const { return T; }
   inline void set_type(const Type *T) { this->T = T; }
   inline bool is_priv() const override { return false; }

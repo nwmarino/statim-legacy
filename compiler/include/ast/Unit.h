@@ -4,7 +4,7 @@
 /// Translation unit related AST nodes.
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
-#include <iostream>
+#include <llvm/IR/Value.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -17,6 +17,7 @@ class Unit
 public:
   virtual ~Unit() = default;
   virtual void pass(ASTVisitor *visitor) = 0;
+  virtual llvm::Value *codegen() const = 0;
   virtual const std::string to_string() = 0;
 };
 
@@ -35,6 +36,7 @@ public:
     : name(name), imports(imports), decls(std::move(decls)), scope(scope) {};
   
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
 
   /// Gets the declarations of this package unit.
   inline std::vector<Decl *> get_decls() const {
@@ -69,6 +71,7 @@ public:
   CrateUnit(std::vector<std::unique_ptr<PackageUnit>> packages) : packages(std::move(packages)) {};
 
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
+  llvm::Value *codegen() const override;
 
   /// Returns the packages of this crate unit.
   inline const std::string pkg_scope_to_string(const std::string &name) const { 
