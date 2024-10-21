@@ -175,18 +175,18 @@ llvm::Value *BinaryExpr::codegen() const {
   }
 }
 
-
+`
 // needs all operator support
 llvm::Value *UnaryExpr::codegen() const {
-  llvm::Value *val = expr->codegen();
+  llvm::Value *base_val = expr->codegen();
 
-  if (!val) {
+  if (!base_val) {
     return nullptr;
   }
 
   switch (op) {
     case UnaryOp::Bang:
-      return builder->CreateNot(val, "nottmp");
+      return builder->CreateNot(base_val, "nottmp");
     default:
       return warn_cg_value("unresolved unary operator: " + unary_to_string(op), meta);
   }
@@ -232,4 +232,3 @@ llvm::Value *MemberCallExpr::codegen() const {}
 llvm::Value *ThisExpr::codegen() const {
   return named_values["this"];
 }
-
