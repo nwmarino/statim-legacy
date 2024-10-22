@@ -134,13 +134,16 @@ static bool is_assignment_op(BinaryOp op) {
 /// Base class for expressions; statements that may have a value and type.
 class Expr : public Stmt
 {
+protected:
+  const Type *T;
+
 public:
-  virtual ~Expr() = default;
+  Expr(const Type *T, const Metadata &meta) : Stmt(meta), T(T) {};
+  inline const Type *get_type() const { return T; }
+  inline void set_type(const Type *T) { this->T = T; }
+
   virtual void pass(ASTVisitor *visitor) = 0;
-  virtual llvm::Value *codegen() const = 0;
-  virtual const Type* get_type() const = 0;
   virtual const std::string to_string() = 0;
-  virtual const Metadata get_meta() const = 0;
 };
 
 
@@ -149,17 +152,9 @@ public:
 /// @example `null`
 class NullExpr final : public Expr
 {
-private:
-  const Type *T;
-  const Metadata meta;
-
 public:
-  NullExpr(const Type *T, const Metadata &meta) : T(T), meta(meta){};
+  NullExpr(const Type *T, const Metadata &meta) : Expr(T, meta) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  inline const Type* get_type() const override { return T; }
-  inline void set_type(const Type *T) { this->T = T; }
-  const Metadata get_meta() const override { return meta; }
 
   /// Returns a string representation of this null expression.
   const std::string to_string() override;
@@ -171,16 +166,9 @@ public:
 /// @example `_`
 class DefaultExpr final : public Expr
 {
-private:
-  const Type *T;
-  const Metadata meta;
-
 public:
-  DefaultExpr(const Type *T, const Metadata &meta) : T(T), meta(meta){};
+  DefaultExpr(const Type *T, const Metadata &meta) : Expr(T, meta) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  inline const Type* get_type() const override { return T; }
-  const Metadata get_meta() const override { return meta; }
 
   /// Returns a string representation of this expression.
   const std::string to_string() override;
@@ -194,16 +182,10 @@ class BooleanLiteral final : public Expr
 {
 private:
   const unsigned int value;
-  const Type *T;
-  const Metadata meta;
 
 public:
-  BooleanLiteral(bool value, const Type *T, const Metadata &meta)
-    : value(value ? 1 : 0), T(T), meta(meta){};
+  BooleanLiteral(bool value, const Type *T, const Metadata &meta) : Expr(T, meta), value(value ? 1 : 0) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  inline const Type* get_type() const override { return T; }
-  const Metadata get_meta() const override { return meta; }
 
   /// Gets the value of this boolean expression.
   inline bool get_value() const { return value; }
@@ -221,16 +203,11 @@ class IntegerLiteral final : public Expr
 private:
   const long value;
   const bool signedness;
-  const Type *T;
-  const Metadata meta;
 
 public:
   IntegerLiteral(int value, const Type *T, const Metadata &meta) 
-    : value(value), signedness(value < 0), T(T), meta(meta){};
+    : Expr(T, meta), value(value), signedness(value < 0) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  inline const Type* get_type() const override { return T; }
-  const Metadata get_meta() const override { return meta; }
 
   /// Gets the value of this integer expression.
   inline int get_value() const { return value; }
@@ -250,15 +227,10 @@ class FPLiteral final : public Expr
 {
 private:
   const double value;
-  const Type *T;
-  const Metadata meta;
 
 public:
-  FPLiteral(double value, const Type *T, const Metadata &meta) : value(value), T(T), meta(meta){};
+  FPLiteral(double value, const Type *T, const Metadata &meta) : Expr(T, meta), value(value) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  inline const Type* get_type() const override { return T; }
-  const Metadata get_meta() const override { return meta; }
 
   /// Gets the value of this floating point expression.
   inline double get_value() const { return value; }
@@ -275,16 +247,10 @@ class CharLiteral final : public Expr
 {
 private:
   const char value;
-  const Type *T;
-  const Metadata meta;
 
 public:
-  CharLiteral(char value, const Type *T, const Metadata &meta) 
-    : value(value), T(T), meta(meta){};
+  CharLiteral(char value, const Type *T, const Metadata &meta)  : Expr(T, meta), value(value) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  inline const Type* get_type() const override { return T; }
-  const Metadata get_meta() const override { return meta; }
 
   /// Gets the value of this character expression.
   inline char get_value() const { return value; }
@@ -301,16 +267,10 @@ class StringLiteral final : public Expr
 {
 private:
   const std::string value;
-  const Type *T;
-  const Metadata meta;
 
 public:
-  StringLiteral(const std::string &value, const Type *T, const Metadata &meta) 
-    : value(value), T(T), meta(meta){};
+  StringLiteral(const std::string &value, const Type *T, const Metadata &meta) : Expr(T, meta), value(value) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  inline const Type* get_type() const override { return T; }
-  const Metadata get_meta() const override { return meta; }
 
   /// Gets the value of this string expression.
   inline const std::string get_value() const { return value; }
@@ -327,25 +287,16 @@ class DeclRefExpr final : public Expr
 {
 private:
   const std::string ident;
-  const Type *T;
-  const Metadata meta;
   const bool nested;
 
 public:
-  DeclRefExpr(const std::string &ident, const Type *T, const Metadata &meta) 
-    : ident(ident), T(T), meta(meta), nested(false){};
-    DeclRefExpr(const std::string &ident, const Type *T, const Metadata &meta, const bool is_nested) 
-    : ident(ident), T(T), meta(meta), nested(is_nested){};
+  DeclRefExpr(const std::string &ident, const Type *T, const Metadata &meta) : Expr(T, meta), ident(ident), nested(false) {};
+  DeclRefExpr(const std::string &ident, const Type *T, const Metadata &meta, const bool is_nested) : Expr(T, meta), ident(ident), nested(is_nested) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  inline const Type* get_type() const override { return T; }
-  inline void set_type(const Type *T) { this->T = T; }
-  const Metadata get_meta() const override { return meta; }
-
 
   /// Returns true if this reference expression is nested, and false otherwise.
   ///
-  /// This is used for enum variant references.
+  /// This exists for enum variant references.
   inline bool is_nested(void) const { return nested; }
 
   /// Gets the identifier of this reference expression.
@@ -368,21 +319,11 @@ private:
   const BinaryOp op;
   std::unique_ptr<Expr> lhs;
   std::unique_ptr<Expr> rhs;
-  const Type *T;
-  const Metadata meta;
 
 public:
   BinaryExpr(const BinaryOp op, std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs, const Metadata &meta) 
-    : op(op), lhs(std::move(lhs)), rhs(std::move(rhs)), meta(meta), T(this->lhs->get_type()){}
+    : Expr( lhs->get_type(), meta), op(op), lhs(std::move(lhs)), rhs(std::move(rhs)) {}
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  const Metadata get_meta() const override { return meta; }
-
-  /// Returns the type of this binary expression. Returns `nullptr` if the operand types mismatch.
-  inline const Type* get_type() const override { return T; }
-
-  /// Sets the type of this binary expression.
-  inline void set_type(const Type *T) { this->T = T; }
 
   /// Gets the operator of this binary expression.
   inline const BinaryOp get_op() const { return op; }
@@ -406,17 +347,11 @@ class UnaryExpr final : public Expr
 private:
   const UnaryOp op;
   std::unique_ptr<Expr> expr;
-  const Type *T;
-  const Metadata meta;
 
 public:
   UnaryExpr(const UnaryOp op, std::unique_ptr<Expr> expr, const Metadata &meta) 
-    : op(op), expr(std::move(expr)), T(this->expr->get_type()), meta(meta){};
+    : Expr(expr->get_type(), meta), op(op), expr(std::move(expr)) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  inline const Type* get_type() const override { return T; }
-  inline void set_type(const Type *T) { this->T = T; }
-  const Metadata get_meta() const override { return meta; }
 
   /// Gets the operator of this unary expression.
   inline const UnaryOp get_op() const { return op; }
@@ -445,20 +380,17 @@ class InitExpr final : public Expr
 {
 private:
   const std::string ident;
-  const Type *T;
   std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields;
-  const Metadata meta;
 
 public:
-  InitExpr(const std::string &ident, const Type *T, 
-    std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields, const Metadata &meta)
-    : ident(ident), T(T), fields(std::move(fields)), meta(meta){};
+  InitExpr(const std::string &ident, const Type *T, std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields, const Metadata &meta)
+    : Expr(T, meta), ident(ident), fields(std::move(fields)) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  inline const Type* get_type() const override { return T; }
-  inline void set_type(const Type *T) { this->T = T; }
+
+  /// Gets the identifier of this initialization expression.
   inline std::string get_ident() { return ident; }
-  const Metadata get_meta() const override { return meta; }
+
+  /// Adds a null field to this initialization expression.
   const void add_implicit_null(const std::string &field, std::unique_ptr<NullExpr> null_expr) {
     fields.push_back(std::make_pair(field, std::move(null_expr)));
   }
@@ -485,16 +417,12 @@ class CallExpr : public Expr
 protected:
   const std::string callee;
   std::vector<std::unique_ptr<Expr>> args;
-  const Type* T;
-  const Metadata meta;
 
 public:
   CallExpr(const std::string &callee, std::vector<std::unique_ptr<Expr>> args, const Metadata &meta)
-    : callee(callee), args(std::move(args)), T(nullptr), meta(meta){};
+    : Expr(nullptr, meta), callee(callee), args(std::move(args)) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
   inline int get_num_args() const { return args.size(); }
-  inline const Metadata get_meta() const override { return meta; }
 
   /// Return the argument at position <n> embedded in this function call.
   inline Expr *get_arg(std::size_t n) {
@@ -506,14 +434,8 @@ public:
     return nullptr;
   }
 
-  /// Returns the type of this function call expression. Returns `nullptr` if the callee is undefined yet.
-  inline const Type* get_type() const override { return T; }
-
   /// Gets the callee of this function call expression.
   inline const std::string get_callee() const { return callee; }
-
-  /// Sets the type of this function call expression.
-  inline void set_type(const Type *T) { this->T = T; }
 
   /// Returns a string representation of this function call expression.
   const std::string to_string() override;
@@ -528,24 +450,14 @@ class MemberExpr final : public Expr
 private:
   std::unique_ptr<Expr> base;
   const std::string member;
-  const Type *T;
-  const Metadata meta;
 
 public:
   MemberExpr(std::unique_ptr<Expr> base, const std::string &member, const Metadata &meta)
-    : base(std::move(base)), member(member), T(nullptr), meta(meta){};
+    : Expr(nullptr, meta), base(std::move(base)), member(member) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  const Metadata get_meta() const override { return meta; }
-
-  /// Returns the type of this member access expression. Returns `nullptr` if the member is undefined yet.
-  inline const Type* get_type() const override { return T; }
 
   /// Gets the base of this member access expression.
   inline Expr *get_base() const { return base.get(); }
-
-  /// Sets the type of this member access expression.
-  inline void set_type(const Type *T) { this->T = T; }
 
   /// Gets the member of this member access expression.
   inline const std::string get_member() const { return member; }
@@ -564,12 +476,9 @@ private:
   std::unique_ptr<Expr> base;
 
 public:
-  MemberCallExpr(std::unique_ptr<Expr> base, const std::string &callee,
-    std::vector<std::unique_ptr<Expr>> args, const Metadata &meta)
-    : base(std::move(base)), CallExpr(callee, std::move(args), meta) {};
+  MemberCallExpr(std::unique_ptr<Expr> base, const std::string &callee, std::vector<std::unique_ptr<Expr>> args, const Metadata &meta)
+    : CallExpr(callee, std::move(args), meta), base(std::move(base)) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  const Metadata get_meta() const override { return meta; }
   
   /// Gets the base of this member call expression.
   inline Expr *get_base() { return base.get(); }
@@ -587,17 +496,9 @@ public:
 /// @example `this`
 class ThisExpr final : public Expr
 {
-private:
-  const Type *T;
-  const Metadata meta;
-
 public:
-  ThisExpr(const Type *T, const Metadata &meta) : T(T), meta(meta){};
+  ThisExpr(const Type *T, const Metadata &meta) : Expr(T, meta) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  inline const Type* get_type() const override { return T; }
-  inline void set_type(const Type *T) { this->T = T; }
-  const Metadata get_meta() const override { return meta; }
 
   /// Returns a string representation of this reference expression.
   const std::string to_string() override;

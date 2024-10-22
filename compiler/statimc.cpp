@@ -2,11 +2,12 @@
 #include <iostream>
 
 #include "include/ast/Builder.h"
-#include "include/token/Token.h"
-#include "include/core/ASTContext.h"
 #include "include/ast/Unit.h"
+#include "include/cgn/codegen.h"
+#include "include/core/ASTContext.h"
 #include "include/core/Utils.h"
 #include "include/core/Logger.h"
+#include "include/token/Token.h"
 
 /// Consume and print out all tokens currently in a lexer stream.
 static void print_tkstream(std::unique_ptr<ASTContext> &Cctx) {
@@ -69,5 +70,5 @@ int main(int argc, char *argv[]) {
   std::unique_ptr<ASTVisitor> visitor = std::make_unique<PassVisitor>();
   crate->pass(visitor.get());
 
-  std::cout << crate->to_string();
+  //std::cout << crate->to_string();
 }

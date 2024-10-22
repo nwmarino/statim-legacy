@@ -85,7 +85,9 @@
         "__verbose_abort": "cpp",
         "execution": "cpp",
         "ios": "cpp",
-        "locale": "cpp"
+        "locale": "cpp",
+        "hash_map": "cpp",
+        "forward_list": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

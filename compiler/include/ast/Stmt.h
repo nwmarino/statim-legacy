@@ -19,12 +19,15 @@ class Expr;
 /// Base class for a statement representation.
 class Stmt
 {
+protected:
+  const Metadata meta;
+
 public:
-  virtual ~Stmt() = default;
+  Stmt(const Metadata &meta) : meta(meta) {};
+  const Metadata get_meta() const { return meta; }
+
   virtual void pass(ASTVisitor *visitor) = 0;
-  virtual llvm::Value *codegen() const = 0;
-  const virtual std::string to_string() = 0;
-  virtual const Metadata get_meta() const = 0;
+  virtual const std::string to_string() = 0;
 };
 
 
@@ -35,16 +38,15 @@ class DeclStmt final : public Stmt
 {
 private:
   std::unique_ptr<Decl> decl;
-  const Metadata meta;
 
 public:
-  DeclStmt(std::unique_ptr<Decl> decl, const Metadata &meta) : decl(std::move(decl)), meta(meta) {};
+  DeclStmt(std::unique_ptr<Decl> decl, const Metadata &meta) : Stmt(meta), decl(std::move(decl)) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  inline Decl* get_decl() const { return decl.get(); }
-  const Metadata get_meta() const override { return meta; }
 
-  /// Returns a string representation of this declaration statement.
+  /// Returns the underlying declaration of this DeclStmt.
+  inline Decl* get_decl() const { return decl.get(); }
+
+  /// Returns a string representation of this AST node.
   const std::string to_string() override;
 };
 
@@ -55,13 +57,22 @@ class CompoundStmt final : public Stmt
 private:
   std::vector<std::unique_ptr<Stmt>> stmts;
   std::shared_ptr<Scope> scope;
-  const Metadata meta;
 
 public:
   CompoundStmt(std::vector<std::unique_ptr<Stmt>> stmts, std::shared_ptr<Scope> scope, const Metadata &meta)
-    : stmts(std::move(stmts)), scope(scope), meta(meta){};
+    : Stmt(meta), stmts(std::move(stmts)), scope(scope) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
+
+  /// Returns true if this compound statement is empty, and false otherwise.
+  inline bool is_empty() const { return stmts.empty(); }
+
+  /// Returns a shared pointer to the scope of this compound statement.
+  inline std::shared_ptr<Scope> get_scope() const { return scope; }
+
+  /// Returns a string representation of this AST node.
+  const std::string to_string() override;
+
+  /// Returns a vector of pointers to the statements in this compound statement.
   inline std::vector<Stmt *> get_stmts() const {
     std::vector<Stmt *> stmt_ptrs;
     for (const std::unique_ptr<Stmt> &stmt : stmts) {
@@ -69,16 +80,6 @@ public:
     }
     return stmt_ptrs;
   }
-  const Metadata get_meta() const override { return meta; }
-
-  /// Determine if the body of this compound statement is empty.
-  inline bool is_empty() const { return stmts.empty(); }
-
-  /// Returns the scope of this compound statement.
-  inline std::shared_ptr<Scope> get_scope() const { return scope; }
-
-  /// Returns a string representation of this compound statement.
-  const std::string to_string() override;
 };
 
 
@@ -89,31 +90,30 @@ private:
   std::unique_ptr<Expr> cond;
   std::unique_ptr<Stmt> then_body;
   std::unique_ptr<Stmt> else_body;
-  const Metadata meta;
 
 public:
   IfStmt(std::unique_ptr<Expr> cond, std::unique_ptr<Stmt> then_body, std::unique_ptr<Stmt> else_body, const Metadata &meta)
-    : cond(std::move(cond)), then_body(std::move(then_body)), else_body(std::move(else_body)), meta(meta){};
+    : Stmt(meta), cond(std::move(cond)), then_body(std::move(then_body)), else_body(std::move(else_body)) {};
   IfStmt(std::unique_ptr<Expr> cond, std::unique_ptr<Stmt> then_body, const Metadata &meta)
-    : cond(std::move(cond)), then_body(std::move(then_body)), else_body(nullptr), meta(meta){};
+    : Stmt(meta), cond(std::move(cond)), then_body(std::move(then_body)), else_body(nullptr) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  inline Expr* get_cond() const { return cond.get(); }
-  inline Stmt* get_then_body() const { return then_body ? then_body.get() : nullptr; }
-  inline Stmt* get_else_body() const { return else_body ? else_body.get() : nullptr; }
-  const Metadata get_meta() const override { return meta; }
 
-  /// Determine if this if statement has an else body.
+  /// Returns the condition expression of this if statement.
+  inline Expr* get_cond() const { return cond.get(); }
+
+  /// Returns the then body of this if statement.
+  inline Stmt* get_then_body() const { return then_body ? then_body.get() : nullptr; }
+
+  /// Returns the else body of this if statement.
+  inline Stmt* get_else_body() const { return else_body ? else_body.get() : nullptr; }
+
+  /// Returns true if this if statement has an else body, and false otherwise.
   inline bool has_else() const { return else_body != nullptr; }
 
-  /// Returns a string representation of this if statement.
+  /// Returns a string representation of this AST node.
   const std::string to_string() override;
 };
 
-
-/// Pattern matching related classes.
-///
-/// These classes are used to represent pattern matching constructs in the AST.
 
 /// This class represents a possible pattern matching class.
 class MatchCase final : public Stmt
@@ -121,18 +121,19 @@ class MatchCase final : public Stmt
 private:
   std::unique_ptr<Expr> expr;
   std::unique_ptr<Stmt> body;
-  const Metadata meta;
 
 public:
   MatchCase(std::unique_ptr<Expr> expr, std::unique_ptr<Stmt> body, const Metadata &meta)
-    : expr(std::move(expr)), body(std::move(body)), meta(meta){};
+    : Stmt(meta), expr(std::move(expr)), body(std::move(body)) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  inline Expr* get_expr() const { return expr.get(); }
-  inline Stmt* get_body() const { return body.get(); }
-  const Metadata get_meta() const override { return meta; }
 
-  /// Returns a string representation of this match case.
+  /// Returns the expression of this match case.
+  inline Expr* get_expr() const { return expr.get(); }
+
+  /// Returns the body of this match case.
+  inline Stmt* get_body() const { return body.get(); }
+
+  /// Returns a string representation of this AST node.
   const std::string to_string() override;
 };
 
@@ -143,25 +144,26 @@ class MatchStmt final : public Stmt
 private:
   std::unique_ptr<Expr> expr;
   std::vector<std::unique_ptr<MatchCase>> cases;
-  const Metadata meta;
 
 public:
   MatchStmt(std::unique_ptr<Expr> expr, std::vector<std::unique_ptr<MatchCase>> cases, const Metadata &meta)
-    : expr(std::move(expr)), cases(std::move(cases)), meta(meta){};
+    : Stmt(meta), expr(std::move(expr)), cases(std::move(cases)) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
+
+  /// Returns the expression of this match statement.
   inline Expr* get_expr() const { return expr.get(); }
+
+  /// Returns a string representation of this AST node.
+  const std::string to_string() override;
+
+  /// Returns a vector of pointers to the cases in this match statement.
   inline std::vector<MatchCase *> get_cases() const {
     std::vector<MatchCase *> case_ptrs;
-    for (auto &c : cases) {
+    for (const std::unique_ptr<MatchCase> &c : cases) {
       case_ptrs.push_back(c.get());
     }
     return case_ptrs;
   }
-  const Metadata get_meta() const override { return meta; }
-
-  /// Returns a string representation of this match statement.
-  const std::string to_string() override;
 };
 
 
@@ -170,19 +172,18 @@ class ReturnStmt final : public Stmt
 {
 private:
   std::unique_ptr<Expr> expr;
-  const Metadata meta;
 
 public:
-  ReturnStmt(std::unique_ptr<Expr> expr, const Metadata &meta) : expr(std::move(expr)), meta(meta){};
+  ReturnStmt(std::unique_ptr<Expr> expr, const Metadata &meta) : Stmt(meta), expr(std::move(expr)) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
+
+  /// Returns the expression of this return statement.
   inline Expr* get_expr() const { return expr.get(); }
-  const Metadata get_meta() const override { return meta; }
 
-  /// Determine if this return statement has an expression.
+  /// Returns true if this return statement has an expression, and false otherwise.
   inline bool has_expr() const { return expr != nullptr; }
-
-  /// Returns a string representation of this return statement.
+  
+  /// Returns a string representation of this AST node.
   const std::string to_string() override;
 };
 
@@ -193,18 +194,19 @@ class UntilStmt final : public Stmt
 private:
   std::unique_ptr<Expr> cond;
   std::unique_ptr<Stmt> body;
-  const Metadata meta;
 
 public:
   UntilStmt(std::unique_ptr<Expr> cond, std::unique_ptr<Stmt> body, const Metadata &meta)
-    : cond(std::move(cond)), body(std::move(body)), meta(meta){};
+    : Stmt(meta), cond(std::move(cond)), body(std::move(body)) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  inline Expr* get_cond() const { return cond.get(); }
-  inline Stmt* get_body() const { return body.get(); }
-  const Metadata get_meta() const override { return meta; }
 
-  /// Returns a string representation of this until statement.
+  /// Returns the condition expression of this until statement.
+  inline Expr* get_cond() const { return cond.get(); }
+
+  /// Returns the body of this until statement.
+  inline Stmt* get_body() const { return body.get(); }
+
+  /// Returns a string representation of this AST node.
   const std::string to_string() override;
 };
 
@@ -214,16 +216,11 @@ public:
 /// Break statements are used to exit a loop statement prematurely.
 class BreakStmt final : public Stmt
 {
-private:
-  const Metadata meta;
-
 public:
-  BreakStmt(const Metadata &meta) : meta(meta){};
+  BreakStmt(const Metadata &meta) : Stmt(meta) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  const Metadata get_meta() const override { return meta; }
 
-  /// Returns a string representation of this break statement.
+  /// Returns a string representation of this AST node.
   const std::string to_string() override;
 };
 
@@ -233,16 +230,12 @@ public:
 /// Continue statements are used to skip the current iteration of a loop statement.
 class ContinueStmt final : public Stmt
 {
-private:
-  const Metadata meta;
 
 public:
-  ContinueStmt(const Metadata &meta) : meta(meta){};
+  ContinueStmt(const Metadata &meta) : Stmt(meta) {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
-  const Metadata get_meta() const override { return meta; }
 
-  /// Returns a string representation of this continue statement.
+  /// Returns a string representation of this AST node.
   const std::string to_string() override;
 };
 

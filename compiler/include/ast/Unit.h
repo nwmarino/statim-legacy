@@ -17,7 +17,6 @@ class Unit
 public:
   virtual ~Unit() = default;
   virtual void pass(ASTVisitor *visitor) = 0;
-  virtual llvm::Value *codegen() const = 0;
   virtual const std::string to_string() = 0;
 };
 
@@ -34,9 +33,7 @@ private:
 public:
   PackageUnit(const std::string &name, std::vector<std::string> imports, std::vector<std::unique_ptr<Decl>> decls, std::shared_ptr<Scope> scope)
     : name(name), imports(imports), decls(std::move(decls)), scope(scope) {};
-  
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
 
   /// Gets the declarations of this package unit.
   inline std::vector<Decl *> get_decls() const {
@@ -69,9 +66,7 @@ private:
 
 public:
   CrateUnit(std::vector<std::unique_ptr<PackageUnit>> packages) : packages(std::move(packages)) {};
-
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  llvm::Value *codegen() const override;
 
   /// Returns the packages of this crate unit.
   inline const std::string pkg_scope_to_string(const std::string &name) const { 
