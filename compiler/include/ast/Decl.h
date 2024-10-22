@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "Expr.h"
-#include "../sema/ASTVisitor.h"
+#include "../core/ASTVisitor.h"
 #include "../token/Token.h"
 
 /// Base class for all AST declarations.
@@ -463,11 +463,10 @@ private:
   std::vector<std::unique_ptr<FieldDecl>> fields;
   std::shared_ptr<Scope> scope;
   std::vector<std::string> impls;
-  bool priv;
 
 public:
   StructDecl(const std::string &name, std::vector<std::unique_ptr<FieldDecl>> fields, std::shared_ptr<Scope> scope, const Metadata &meta)
-    : Decl(meta), NamedDecl(name), ScopedDecl(scope), TypeDecl(nullptr), fields(std::move(fields)), priv(false), impls() {};
+    : Decl(meta), NamedDecl(name), ScopedDecl(scope), TypeDecl(nullptr), fields(std::move(fields)), impls() {};
   void pass(ASTVisitor *visitor) override { visitor->visit(this); }
 
   /// Determine if this struct type has a field by name.
@@ -518,7 +517,6 @@ private:
   std::unique_ptr<Expr> expr;
   bool mut;
   bool rune;
-  
 
 public:
   VarDecl(const std::string &name, const Type *T, std::unique_ptr<Expr> expr, bool mut, bool rune, const Metadata &meta)

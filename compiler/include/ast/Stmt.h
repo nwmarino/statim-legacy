@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include "../sema/ASTVisitor.h"
+#include "../core/ASTVisitor.h"
 #include "../token/Token.h"
 
 class Scope;

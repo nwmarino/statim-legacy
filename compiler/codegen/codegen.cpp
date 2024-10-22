@@ -15,9 +15,10 @@
 #include "../include/ast/Stmt.h"
 #include "../include/ast/Unit.h"
 #include "../include/cgn/codegen.h"
+#include "../include/core/ASTVisitor.h"
 #include "../include/core/Logger.h"
 #include "../include/core/Type.h"
-#include "../include/sema/ASTVisitor.h"
+
 
 static std::unique_ptr<llvm::Module> module = nullptr;
 static std::unique_ptr<llvm::IRBuilder<>> builder = nullptr;

@@ -6,11 +6,16 @@
 
 #include <string>
 
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/DerivedTypes.h"
+
 /// Type - Base class for all types.
 class Type
 {
 public:
   virtual ~Type() = default;
+  virtual llvm::Type *to_llvm_ty(llvm::LLVMContext &ctx) const = 0;
   virtual bool is_bool_evaluable(void) const = 0;
   virtual bool is_null(void) const = 0;
   virtual bool is_void(void) const = 0;
@@ -27,7 +32,7 @@ public:
 
 /// TypeRef - Represents a reference to a possibly undefined type.
 ///
-/// This class represents a reference to an undefined type in the intermediate representation.
+/// This class represents a transient reference to an undefined type in the intermediate representation.
 /// It is used to represent a type that is not yet defined. For example, a struct type that is not yet defined.
 /// In particular, this class sees use in the parsing stage of the compiler.
 class TypeRef final : public Type
@@ -37,10 +42,8 @@ private:
   const Type *T;
 
 public:
-  TypeRef(const std::string &ident) : ident(ident), T(nullptr){};
-  void set_type(Type *T) { this->T = T; }
-  const std::string get_ident(void) const { return ident; }
-  const Type *get_type(void) const { return T; }
+  TypeRef(const std::string &ident) : ident(ident), T(nullptr) {};
+  llvm::Type *to_llvm_ty(llvm::LLVMContext &ctx) const override { return nullptr; }
   bool is_bool_evaluable(void) const override { return false; }
   bool is_null(void) const override { return false; }
   bool is_void(void) const override { return false; }
@@ -51,7 +54,11 @@ public:
   bool is_matchable(void) const override { return false; }
   bool is_char(void) const override { return false; }
   bool is_ref(void) const override { return true; }
-  std::string to_string(void) const override { return ident + " ref"; }
+  std::string to_string(void) const override { return ident; }
+
+  void set_type(Type *T) { this->T = T; }
+  const std::string get_ident(void) const { return ident; }
+  const Type *get_type(void) const { return T; }
 };
 
 
@@ -83,19 +90,6 @@ private:
 
 public:
   PrimitiveType(PrimitiveKind K) : __kind(K){};
-  bool compare(const Type *T) const {
-    if (const PrimitiveType *P = dynamic_cast<const PrimitiveType *>(T)) {
-      if (this->is_integer()) {
-        return T->is_integer();
-      } else if (this->is_float()) {
-        return T->is_float();
-      } else {
-        return this->get_kind() == P->get_kind();
-      }
-    }
-    return false;
-  }
-  PrimitiveKind get_kind(void) const { return __kind; }
   bool is_bool(void) const override { return get_kind() == __UINT1; }
   bool is_integer(void) const override { return get_kind() <= __INT64; }
   bool is_float(void) const override { return get_kind() == __FP32 || get_kind() == __FP64; }
@@ -112,6 +106,34 @@ public:
       default: return "unknown";
     }
   }
+
+  llvm::Type *to_llvm_ty(llvm::LLVMContext &ctx) const override {
+    switch (get_kind()) {
+      case __UINT1: return llvm::Type::getInt1Ty(ctx);
+      case __UINT32: return llvm::Type::getInt32Ty(ctx);
+      case __INT32: return llvm::Type::getInt32Ty(ctx);
+      case __INT64: return llvm::Type::getInt64Ty(ctx);
+      case __FP32: return llvm::Type::getFloatTy(ctx);
+      case __FP64: return llvm::Type::getDoubleTy(ctx);
+      case __CHAR: return llvm::Type::getInt8Ty(ctx);
+      default: return nullptr;
+    }
+  }
+
+  bool compare(const Type *T) const {
+    if (const PrimitiveType *P = dynamic_cast<const PrimitiveType *>(T)) {
+      if (this->is_integer()) {
+        return T->is_integer();
+      } else if (this->is_float()) {
+        return T->is_float();
+      } else {
+        return this->get_kind() == P->get_kind();
+      }
+    }
+    return false;
+  }
+
+  PrimitiveKind get_kind(void) const { return __kind; }
 };
 
 
@@ -147,7 +169,10 @@ private:
 
 public:
   /// @param T The element type of the array.
-  ArrayType(unsigned int size, const Type *T) : __len(size), __type(T){};
+  ArrayType(unsigned int size, const Type *T) : __len(size), __type(T) {};
+  llvm::Type *to_llvm_ty(llvm::LLVMContext &ctx) const override {
+    return llvm::ArrayType::get(__type->to_llvm_ty(ctx), __len);
+  }
   bool is_builtin(void) const override { return false; }
   bool is_valid_element(void) const;
   std::string to_string(void) const override { return __type->to_string() + "[" + std::to_string(__len) + "]"; }
@@ -169,7 +194,10 @@ private:
 
 public:
   /// @param T The type which the rune points to.
-  RuneType(const Type *T) : __type(T){};
+  RuneType(const Type *T) : __type(T) {};
+  llvm::Type *to_llvm_ty(llvm::LLVMContext &ctx) const override {
+    return __type->to_llvm_ty(ctx)->getPointerTo();
+  }
   bool is_builtin(void) const override { return false; }
   bool is_valid_element(void) const;
   std::string to_string(void) const override { return '#' + __type->to_string(); }
@@ -191,7 +219,8 @@ private:
 
 public:
   /// @param name The name of the struct.
-  StructType(const std::string &name) : __struct_name(name){};
+  StructType(const std::string &name) : __struct_name(name) {};
+  llvm::Type *to_llvm_ty(llvm::LLVMContext &ctx) const override { return nullptr; }
   bool is_builtin(void) const override { return false; }
   const std::string get_name(void) const { return __struct_name; }
   std::string to_string(void) const override { return __struct_name; }
@@ -211,7 +240,8 @@ private:
 
 public:
   /// @param name The name of the enum.
-  EnumType(const std::string &name) : __enum_name(name){};
+  EnumType(const std::string &name) : __enum_name(name) {};
+  llvm::Type *to_llvm_ty(llvm::LLVMContext &ctx) const override { return nullptr; }
   bool is_builtin(void) const override { return false; }
   bool is_integer(void) const override { return true; }
   const std::string get_name(void) const { return __enum_name; }
@@ -219,5 +249,39 @@ public:
   bool is_enum(void) const override { return true; }
   bool is_struct(void) const override { return false; }
 };
+
+
+/// Compares two types for equality.
+///
+/// @param T1 The first type.
+/// @param T2 The second type.
+/// @return 0 if types are not equal, 1 if equals, and 2 if types are of the same kind.
+inline unsigned int compare_types(const Type *T1, const Type *T2) {
+  if (T1->is_integer() && T2->is_integer()) {
+    return 2;
+  }
+
+  if (T1->is_builtin() && T2->is_builtin()) {
+    const PrimitiveType *P1 = dynamic_cast<const PrimitiveType *>(T1);
+    const PrimitiveType *P2 = dynamic_cast<const PrimitiveType *>(T2);
+    if (P1 && P2) {
+      return P1->compare(P2) ? 1 : 0;
+    } else {
+      return 0;
+    }
+  }
+
+  if (T1->is_ref() && T2->is_ref()) {
+    const TypeRef *R1 = dynamic_cast<const TypeRef *>(T1);
+    const TypeRef *R2 = dynamic_cast<const TypeRef *>(T2);
+    if (R1 && R2) {
+      return R1->get_ident() == R2->get_ident() ? 2 : 0;
+    } else {
+      return 0;
+    }
+  }
+
+  return 0;
+}
 
 #endif  // TYPE_STATIMC_H

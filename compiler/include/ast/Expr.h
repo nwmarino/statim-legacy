@@ -4,11 +4,11 @@
 /// Expression AST nodes.
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
+#include "../core/ASTVisitor.h"
+
 #include "Stmt.h"
+#include "../core/ASTVisitor.h"
 #include "../core/Type.h"
-#include "../sema/ASTVisitor.h"
-#include <memory>
-#include <utility>
 
 /// UnaryOp - Enumeration of recognized unary operators.
 typedef enum {

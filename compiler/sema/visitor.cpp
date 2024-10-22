@@ -6,8 +6,8 @@
 #include "../include/ast/Decl.h"
 #include "../include/ast/Expr.h"
 #include "../include/ast/Stmt.h"
+#include "../include/core/ASTVisitor.h"
 #include "../include/core/Logger.h"
-#include "../include/sema/ASTVisitor.h"
 
 static std::vector<PackageUnit *> pkgs = {};
 static bool has_entry = false;

@@ -5,6 +5,7 @@
 /// Copyright 2024 Nick Marino (github.com/nwmarino)
 
 #include <llvm/IR/Value.h>
+
 #include <memory>
 #include <string>
 #include <vector>
