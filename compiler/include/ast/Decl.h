@@ -297,6 +297,9 @@ public:
     return params;
   }
 
+  /// Returns the parameter at position i.
+  inline const ParamVarDecl *get_param(int i) const { return params.at(i).get(); }
+
   /// Returns the body of this function declaration.
   inline Stmt *get_body() const { return body.get(); }
 

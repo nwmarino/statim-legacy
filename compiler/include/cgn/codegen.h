@@ -35,7 +35,7 @@ private:
     builder->SetInsertPoint(bb); 
   }
 
-  template<typename T> void eval(const T e) { e->visit(this); }
+  template<typename T> void evalue(const T e) { e->pass(this); }
 
   void visit(CrateUnit *u) override;
   void visit(PackageUnit *u) override;

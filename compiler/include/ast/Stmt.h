@@ -72,6 +72,9 @@ public:
   /// Returns a string representation of this AST node.
   const std::string to_string() override;
 
+  /// Push a new statement onto the list of statements.
+  inline void push_stmt(std::unique_ptr<Stmt> stmt) { stmts.push_back(std::move(stmt)); }
+
   /// Returns a vector of pointers to the statements in this compound statement.
   inline std::vector<Stmt *> get_stmts() const {
     std::vector<Stmt *> stmt_ptrs;

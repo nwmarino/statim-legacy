@@ -434,6 +434,15 @@ public:
     return nullptr;
   }
 
+  /// Return the arguments embedded in this function call.
+  inline std::vector<Expr *> get_args() {
+    std::vector<Expr *> args = {};
+    for (const std::unique_ptr<Expr> &a : this->args) {
+      args.push_back(a.get());
+    }
+    return args;
+  }
+
   /// Gets the callee of this function call expression.
   inline const std::string get_callee() const { return callee; }
 
