@@ -27,14 +27,7 @@ private:
   std::map<std::string, llvm::AllocaInst *> allocas;
 
   llvm::TargetMachine *tm;
-  llvm::Function *parent_fn = nullptr;
-  llvm::BasicBlock *curr_bb = nullptr;
   llvm::Value *temp_val = nullptr;
-
-  void set_curr_bb(llvm::BasicBlock *bb) { 
-    curr_bb = bb; 
-    builder->SetInsertPoint(bb); 
-  }
 
   llvm::AllocaInst *create_entry_alloca(llvm::Function *fn, const std::string &var, llvm::Type *ty);
 

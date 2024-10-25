@@ -1,11 +1,15 @@
-#include "../include/ast/Expr.h"
-#include "../include/cgn/codegen.h"
-#include "../include/core/Logger.h"
-#include <iostream>
 #include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Constants.h>
 #include <llvm/IR/Instructions.h>
+#include <llvm/IR/Type.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/ErrorHandling.h>
+
+#include "../include/ast/Decl.h"
+#include "../include/ast/Expr.h"
+#include "../include/ast/Stmt.h"
+#include "../include/ast/Unit.h"
+#include "../include/cgn/codegen.h"
 
 namespace cgn {
 
@@ -23,8 +27,9 @@ void Codegen::visit(PackageUnit *u) {
       // convert function types (return, arguments) to llvm equivelants
       llvm::Type *ret_type = fn_decl->get_type()->to_llvm_ty(*ctx);
       std::vector<llvm::Type *> arg_types;
-      for (ParamVarDecl *arg : fn_decl->get_params())
+      for (ParamVarDecl *arg : fn_decl->get_params()) {
         arg_types.push_back(arg->get_type()->to_llvm_ty(*ctx));
+      }
 
       // create function type, function
       llvm::FunctionType *fn_type = llvm::FunctionType::get(ret_type, arg_types, false);
@@ -32,8 +37,9 @@ void Codegen::visit(PackageUnit *u) {
 
       // set argument names
       unsigned idx = 0;
-      for (llvm::Argument &arg : fn->args())
+      for (llvm::Argument &arg : fn->args()) {
         arg.setName(fn_decl->get_param(idx++)->get_name());
+      }
       
       // store function in table
       fns[fn_decl->get_name()] = fn;
@@ -54,7 +60,6 @@ void Codegen::visit(FunctionDecl *d) {
   if (!fn)
     llvm_unreachable("undefined function");
 
-  parent_fn = fn;
   llvm::BasicBlock *entry_bb = llvm::BasicBlock::Create(*ctx, "entry", fn);
   builder->SetInsertPoint(entry_bb);
 
@@ -80,7 +85,7 @@ void Codegen::visit(EnumVariantDecl *d) {}
 
 void Codegen::visit(VarDecl *d) {
   codegen(d->get_expr());
-  llvm::AllocaInst *alloca = create_entry_alloca(parent_fn, d->get_name(), d->get_type()->to_llvm_ty(*ctx));
+  llvm::AllocaInst *alloca = create_entry_alloca(builder->GetInsertBlock()->getParent(), d->get_name(), d->get_type()->to_llvm_ty(*ctx));
   builder->CreateStore(temp_val, alloca);
 
   allocas[d->get_name()] = alloca;
@@ -93,8 +98,9 @@ void Codegen::visit(DeclStmt *s) {
 }
 
 void Codegen::visit(CompoundStmt *s) {
-  for (Stmt * &stmt : s->get_stmts())
+  for (Stmt * &stmt : s->get_stmts()) {
     codegen(stmt);
+  }
 }
 
 void Codegen::visit(IfStmt *s) {
@@ -103,45 +109,51 @@ void Codegen::visit(IfStmt *s) {
   if (!cond_val)
     llvm_unreachable("invalid condition");
 
+  cond_val = builder->CreateICmpNE(cond_val, 
+    llvm::ConstantInt::get(llvm::Type::getInt64Ty(*ctx), llvm::APInt(1, 0, true)));
+
   llvm::Function *fn = builder->GetInsertBlock()->getParent();
 
   llvm::BasicBlock *then_bb = llvm::BasicBlock::Create(*ctx, "then", fn);
   llvm::BasicBlock *merge_bb = llvm::BasicBlock::Create(*ctx, "ifcont");
-  llvm::BasicBlock *else_bb = s->has_else() ? llvm::BasicBlock::Create(*ctx, "else") : merge_bb;
+  llvm::BasicBlock *else_bb = llvm::BasicBlock::Create(*ctx, "else");
 
-  builder->CreateCondBr(temp_val, then_bb, else_bb);
+  builder->CreateCondBr(cond_val, then_bb, else_bb);
 
-  set_curr_bb(then_bb);
+  builder->SetInsertPoint(then_bb);
   codegen(s->get_then_body());
+  if (!temp_val)
+    llvm_unreachable("invalid then body");
   llvm::Value *then_val = temp_val;
 
   // check if then block has a terminator
   if (!then_bb->getTerminator())
     builder->CreateBr(merge_bb);
+  then_bb = builder->GetInsertBlock();
   
+  fn->insert(fn->end(), else_bb);
+  builder->SetInsertPoint(else_bb);
+
   llvm::Value *else_val = nullptr;
   if (s->has_else()) {
-    fn->insert(fn->end(), else_bb);
-    set_curr_bb(else_bb);
     codegen(s->get_else_body());
     else_val = temp_val;
-    if (!else_bb->getTerminator())
-      builder->CreateBr(merge_bb);
   }
 
+  if (!else_bb->getTerminator())
+    builder->CreateBr(merge_bb);
+  else_bb = builder->GetInsertBlock();
+
   fn->insert(fn->end(), merge_bb);
-  set_curr_bb(merge_bb);
-
-
-  /*
-  then_bb = builder->GetInsertBlock();
-
-  llvm::PHINode *pn = builder->CreatePHI(cond_val->getType(), 2, "iftmp");
+  builder->SetInsertPoint(merge_bb);
+  
+  llvm::PHINode *pn = builder->CreatePHI(llvm::Type::getInt64Ty(*ctx), 2, "iftmp");
 
   pn->addIncoming(then_val, then_bb);
-  pn->addIncoming(else_val, else_bb);
+  if (s->has_else())
+    pn->addIncoming(else_val, else_bb);
   temp_val = pn;
-  */
+  
 }
 
 void Codegen::visit(MatchCase *s) {}
@@ -150,7 +162,6 @@ void Codegen::visit(UntilStmt *s) {}
 
 void Codegen::visit(ReturnStmt *s) {
   codegen(s->get_expr());
-  
   builder->CreateRet(temp_val);
 }
 
