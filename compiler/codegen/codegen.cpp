@@ -2,7 +2,9 @@
 #include "../include/cgn/codegen.h"
 #include "../include/core/Logger.h"
 #include <iostream>
+#include <llvm/IR/Instructions.h>
 #include <llvm/IR/Verifier.h>
+#include <llvm/Support/ErrorHandling.h>
 
 namespace cgn {
 
@@ -127,7 +129,7 @@ void Codegen::visit(DeclRefExpr *e) {
   llvm::AllocaInst *alloca = allocas[e->get_ident()];
   if (!alloca)
     llvm_unreachable("undefined variable");
-
+  //temp_val = alloca;
   temp_val = builder->CreateLoad(alloca->getAllocatedType(), alloca, e->get_ident().c_str());
 }
 
@@ -143,19 +145,26 @@ void Codegen::visit(BinaryExpr *e) {
   switch (e->get_op()) {
     // lval saw check during sema pass, skip here, assignments valid by now
     case BinaryOp::Assign:
-      builder->CreateStore(rhs, lhs);
-      break;
+      if (DeclRefExpr *lhse = dynamic_cast<DeclRefExpr *>(e->get_lhs())) {
+        llvm::AllocaInst *alloca = allocas[lhse->get_ident()];
+        if (!alloca)
+          llvm_unreachable("undefined variable");
+
+        temp_val = builder->CreateStore(rhs, alloca);
+        break;
+      }
+      llvm_unreachable("invalid lvalue");
     case BinaryOp::AddAssign:
-      builder->CreateStore( builder->CreateAdd(lhs, rhs, "addtmp"), lhs);
+      temp_val = builder->CreateStore( builder->CreateAdd(lhs, rhs, "addtmp"), lhs);
       break;
     case BinaryOp::SubAssign:
-      builder->CreateStore( builder->CreateSub(lhs, rhs, "subtmp"), lhs);
+      temp_val = builder->CreateStore( builder->CreateSub(lhs, rhs, "subtmp"), lhs);
       break;
     case BinaryOp::StarAssign:
-      builder->CreateStore(builder->CreateMul(lhs, rhs, "multmp"), lhs);
+      temp_val = builder->CreateStore(builder->CreateMul(lhs, rhs, "multmp"), lhs);
       break;
     case BinaryOp::SlashAssign:
-      builder->CreateStore(builder->CreateSDiv(lhs, rhs, "divtmp"), lhs);
+      temp_val = builder->CreateStore(builder->CreateSDiv(lhs, rhs, "divtmp"), lhs);
       break;
     case BinaryOp::Plus: 
       temp_val = builder->CreateAdd(lhs, rhs, "addtmp"); 
