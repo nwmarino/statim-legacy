@@ -101,6 +101,7 @@ void Codegen::visit(UntilStmt *s) {}
 
 void Codegen::visit(ReturnStmt *s) {
   codegen(s->get_expr());
+  
   builder->CreateRet(temp_val);
 }
 
@@ -156,10 +157,10 @@ void Codegen::visit(BinaryExpr *e) {
     case BinaryOp::SlashAssign:
       builder->CreateStore(builder->CreateSDiv(lhs, rhs, "divtmp"), lhs);
       break;
-    case BinaryOp::Plus:
-      temp_val = builder->CreateAdd(lhs, rhs, "addtmp");
+    case BinaryOp::Plus: 
+      temp_val = builder->CreateAdd(lhs, rhs, "addtmp"); 
       break;
-    case BinaryOp::Minus:
+    case BinaryOp::Minus: 
       temp_val = builder->CreateSub(lhs, rhs, "subtmp");
       break;
     case BinaryOp::Mult:
@@ -195,7 +196,6 @@ void Codegen::visit(BinaryExpr *e) {
     default:
       llvm_unreachable("unexpected binary expression kind");
   }
-  temp_val = nullptr;
 }
 
 void Codegen::visit(UnaryExpr *e) {}
@@ -218,7 +218,7 @@ void Codegen::visit(CallExpr *e) {
     args.push_back(temp_val);
   }
 
-  builder->CreateCall(callee, args, "calltmp");
+  temp_val = builder->CreateCall(callee, args, "calltmp");
 }
 
 void Codegen::visit(MemberExpr *e) {}
