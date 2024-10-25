@@ -2,6 +2,7 @@
 #include "../include/cgn/codegen.h"
 #include "../include/core/Logger.h"
 #include <iostream>
+#include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/ErrorHandling.h>
@@ -96,7 +97,53 @@ void Codegen::visit(CompoundStmt *s) {
     codegen(stmt);
 }
 
-void Codegen::visit(IfStmt *s) {}
+void Codegen::visit(IfStmt *s) {
+  codegen(s->get_cond());
+  llvm::Value *cond_val = temp_val;
+  if (!cond_val)
+    llvm_unreachable("invalid condition");
+
+  llvm::Function *fn = builder->GetInsertBlock()->getParent();
+
+  llvm::BasicBlock *then_bb = llvm::BasicBlock::Create(*ctx, "then", fn);
+  llvm::BasicBlock *merge_bb = llvm::BasicBlock::Create(*ctx, "ifcont");
+  llvm::BasicBlock *else_bb = s->has_else() ? llvm::BasicBlock::Create(*ctx, "else") : merge_bb;
+
+  builder->CreateCondBr(temp_val, then_bb, else_bb);
+
+  set_curr_bb(then_bb);
+  codegen(s->get_then_body());
+  llvm::Value *then_val = temp_val;
+
+  // check if then block has a terminator
+  if (!then_bb->getTerminator())
+    builder->CreateBr(merge_bb);
+  
+  llvm::Value *else_val = nullptr;
+  if (s->has_else()) {
+    fn->insert(fn->end(), else_bb);
+    set_curr_bb(else_bb);
+    codegen(s->get_else_body());
+    else_val = temp_val;
+    if (!else_bb->getTerminator())
+      builder->CreateBr(merge_bb);
+  }
+
+  fn->insert(fn->end(), merge_bb);
+  set_curr_bb(merge_bb);
+
+
+  /*
+  then_bb = builder->GetInsertBlock();
+
+  llvm::PHINode *pn = builder->CreatePHI(cond_val->getType(), 2, "iftmp");
+
+  pn->addIncoming(then_val, then_bb);
+  pn->addIncoming(else_val, else_bb);
+  temp_val = pn;
+  */
+}
+
 void Codegen::visit(MatchCase *s) {}
 void Codegen::visit(MatchStmt *s) {}
 void Codegen::visit(UntilStmt *s) {}
