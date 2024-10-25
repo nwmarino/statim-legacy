@@ -1,6 +1,7 @@
 #include "../include/ast/Expr.h"
 #include "../include/cgn/codegen.h"
 #include "../include/core/Logger.h"
+#include <iostream>
 #include <llvm/IR/Verifier.h>
 
 namespace cgn {
@@ -25,6 +26,11 @@ void Codegen::visit(PackageUnit *u) {
       // create function type, function
       llvm::FunctionType *fn_type = llvm::FunctionType::get(ret_type, arg_types, false);
       llvm::Function *fn = llvm::Function::Create(fn_type, llvm::Function::ExternalLinkage, fn_decl->get_name(), module.get());
+
+      // set argument names
+      unsigned idx = 0;
+      for (llvm::Argument &arg : fn->args())
+        arg.setName(fn_decl->get_param(idx++)->get_name());
       
       // store function in table
       fns[fn_decl->get_name()] = fn;
@@ -54,6 +60,7 @@ void Codegen::visit(FunctionDecl *d) {
   for (llvm::Argument &arg : fn->args()) {
     llvm::AllocaInst *alloca = create_entry_alloca(fn, arg.getName().str(), arg.getType());
     builder->CreateStore(&arg, alloca);
+
     allocas[arg.getName().str()] = alloca;
   }
   codegen(d->get_body());
@@ -114,7 +121,15 @@ void Codegen::visit(IntegerLiteral *e) {
 void Codegen::visit(FPLiteral *e) {}
 void Codegen::visit(CharLiteral *e) {}
 void Codegen::visit(StringLiteral *e) {}
-void Codegen::visit(DeclRefExpr *e) {}
+
+void Codegen::visit(DeclRefExpr *e) {
+  llvm::AllocaInst *alloca = allocas[e->get_ident()];
+  if (!alloca)
+    llvm_unreachable("undefined variable");
+
+  temp_val = builder->CreateLoad(alloca->getAllocatedType(), alloca, e->get_ident().c_str());
+}
+
 void Codegen::visit(BinaryExpr *e) {
   llvm::Value *lhs = nullptr;
   llvm::Value *rhs = nullptr;
@@ -185,7 +200,27 @@ void Codegen::visit(BinaryExpr *e) {
 
 void Codegen::visit(UnaryExpr *e) {}
 void Codegen::visit(InitExpr *e) {}
-void Codegen::visit(CallExpr *e) {}
+
+void Codegen::visit(CallExpr *e) {
+  llvm::Function *callee = fns[e->get_callee()];
+  if (!callee)
+    llvm_unreachable("unresolved function call");
+
+  if (callee->arg_size() != e->get_args().size())
+    llvm_unreachable("incorrect number of arguments");
+
+  std::vector<llvm::Value *> args;
+  for (Expr *arg : e->get_args()) {
+    codegen(arg);
+    if (!temp_val)
+      llvm_unreachable("invalid argument");
+
+    args.push_back(temp_val);
+  }
+
+  builder->CreateCall(callee, args, "calltmp");
+}
+
 void Codegen::visit(MemberExpr *e) {}
 void Codegen::visit(MemberCallExpr *e) {}
 void Codegen::visit(ThisExpr *e) {}

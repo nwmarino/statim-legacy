@@ -24,7 +24,7 @@ private:
   std::unique_ptr<llvm::Module> module;
   std::unique_ptr<llvm::IRBuilder<>> builder;
   std::map<std::string, llvm::Function *> fns;
-  std::map<std::string, llvm::Value *> allocas;
+  std::map<std::string, llvm::AllocaInst *> allocas;
 
   llvm::TargetMachine *tm;
   llvm::Function *parent_fn = nullptr;

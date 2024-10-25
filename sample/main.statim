@@ -1,4 +1,7 @@
-fn main() -> i64 {
-  let x: i64 = 0;
+fn foo(x: i64) -> i64 {
   return x;
+}
+
+fn main() -> i64 {
+  return foo(0);
 }
