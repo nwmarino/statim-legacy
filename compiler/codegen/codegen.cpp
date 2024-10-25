@@ -155,17 +155,45 @@ void Codegen::visit(BinaryExpr *e) {
       }
       llvm_unreachable("invalid lvalue");
     case BinaryOp::AddAssign:
-      temp_val = builder->CreateStore( builder->CreateAdd(lhs, rhs, "addtmp"), lhs);
-      break;
+      if (DeclRefExpr *lhse = dynamic_cast<DeclRefExpr *>(e->get_lhs())) {
+        llvm::AllocaInst *alloca = allocas[lhse->get_ident()];
+        if (!alloca)
+          llvm_unreachable("undefined variable");
+
+        temp_val = builder->CreateStore( builder->CreateAdd(lhs, rhs, "addtmp"), alloca);
+        break;
+      }
+      llvm_unreachable("invalid lvalue");
     case BinaryOp::SubAssign:
-      temp_val = builder->CreateStore( builder->CreateSub(lhs, rhs, "subtmp"), lhs);
-      break;
+      if (DeclRefExpr *lhse = dynamic_cast<DeclRefExpr *>(e->get_lhs())) {
+        llvm::AllocaInst *alloca = allocas[lhse->get_ident()];
+        if (!alloca)
+          llvm_unreachable("undefined variable");
+
+        temp_val = builder->CreateStore( builder->CreateSub(lhs, rhs, "subtmp"), alloca);
+        break;
+      }
+      llvm_unreachable("invalid lvalue");
     case BinaryOp::StarAssign:
-      temp_val = builder->CreateStore(builder->CreateMul(lhs, rhs, "multmp"), lhs);
-      break;
+      if (DeclRefExpr *lhse = dynamic_cast<DeclRefExpr *>(e->get_lhs())) {
+        llvm::AllocaInst *alloca = allocas[lhse->get_ident()];
+        if (!alloca)
+          llvm_unreachable("undefined variable");
+
+        temp_val = builder->CreateStore(builder->CreateMul(lhs, rhs, "multmp"), alloca);
+        break;
+      }
+      llvm_unreachable("invalid lvalue");
     case BinaryOp::SlashAssign:
-      temp_val = builder->CreateStore(builder->CreateSDiv(lhs, rhs, "divtmp"), lhs);
-      break;
+      if (DeclRefExpr *lhse = dynamic_cast<DeclRefExpr *>(e->get_lhs())) {
+        llvm::AllocaInst *alloca = allocas[lhse->get_ident()];
+        if (!alloca)
+          llvm_unreachable("undefined variable");
+
+        temp_val = builder->CreateStore(builder->CreateSDiv(lhs, rhs, "divtmp"), alloca);
+        break;
+      }
+      llvm_unreachable("invalid lvalue");
     case BinaryOp::Plus: 
       temp_val = builder->CreateAdd(lhs, rhs, "addtmp"); 
       break;
