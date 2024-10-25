@@ -16,10 +16,10 @@
 /// The CFlags struct contains a list of flags that can be set during the compilation process.
 /// These flags are used to control the behavior of the compiler and the output of the program.
 struct CFlags {
-  bool debug;
-  bool emit_llvm_ir;
-  bool emit_asm;
-  bool pass_one;
+  unsigned int debug : 1;
+  unsigned int emit_llvm_ir : 1;
+  unsigned int emit_asm : 1;
+  unsigned int dump_ast : 1;
 };
 
 

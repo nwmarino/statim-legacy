@@ -1,70 +1,66 @@
 #include "../include/ast/Expr.h"
 #include "../include/cgn/codegen.h"
 #include "../include/core/Logger.h"
+#include <llvm/IR/Verifier.h>
 
 namespace cgn {
+
+llvm::AllocaInst *Codegen::create_entry_alloca(llvm::Function *fn, const std::string &var, llvm::Type *ty) {
+  llvm::IRBuilder<> temp_builder(&fn->getEntryBlock(), fn->getEntryBlock().begin());
+  return temp_builder.CreateAlloca(ty, nullptr, var);
+}
 
 void Codegen::visit(CrateUnit *u) {}
 
 void Codegen::visit(PackageUnit *u) {
-  for (Decl *decl : u->get_decls()) {
+  for (Decl * &decl : u->get_decls()) {
+    // forward declare function declarations
     if (FunctionDecl *fn_decl = dynamic_cast<FunctionDecl *>(decl)) {
-      llvm::Type *ret_type = fn_decl->get_type() ? fn_decl->get_type()->to_llvm_ty(*ctx) : llvm::Type::getVoidTy(*ctx);
+      // convert function types (return, arguments) to llvm equivelants
+      llvm::Type *ret_type = fn_decl->get_type()->to_llvm_ty(*ctx);
+      std::vector<llvm::Type *> arg_types;
+      for (ParamVarDecl *arg : fn_decl->get_params())
+        arg_types.push_back(arg->get_type()->to_llvm_ty(*ctx));
 
-      std::vector<llvm::Type *> arg_tys;
-      for (ParamVarDecl *param : fn_decl->get_params()) {
-        arg_tys.push_back(param->get_type()->to_llvm_ty(*ctx));
-      }
-
-      llvm::FunctionType *func_ty = llvm::FunctionType::get(ret_type, arg_tys, false);
-      llvm::Function *func = llvm::Function::Create(func_ty, llvm::Function::ExternalLinkage, fn_decl->get_name(), module.get());
-
-      vtable.insert({fn_decl->get_name(), func});
-    } else {
-      evalue(decl);
-    }
+      // create function type, function
+      llvm::FunctionType *fn_type = llvm::FunctionType::get(ret_type, arg_types, false);
+      llvm::Function *fn = llvm::Function::Create(fn_type, llvm::Function::ExternalLinkage, fn_decl->get_name(), module.get());
+      
+      // store function in table
+      fns[fn_decl->get_name()] = fn;
+    } else
+      codegen(decl);
   }
 
-  for (Decl *decl : u->get_decls()) {
-    evalue(decl);
+  for (Decl * &decl : u->get_decls()) {
+    if (FunctionDecl *fn_decl = dynamic_cast<FunctionDecl *>(decl))
+      codegen(fn_decl);
   }
 }
 
 /// Declaration Codegen
 
 void Codegen::visit(FunctionDecl *d) {
-  llvm::Function *fn = llvm::dyn_cast<llvm::Function>(vtable.find(d->get_name())->second);
+  llvm::Function *fn = fns[d->get_name()];
+  if (!fn)
+    llvm_unreachable("undefined function");
+
   parent_fn = fn;
-
   llvm::BasicBlock *entry_bb = llvm::BasicBlock::Create(*ctx, "entry", fn);
-  set_curr_bb(entry_bb);
+  builder->SetInsertPoint(entry_bb);
 
-  llvm::Argument *llvm_arg = fn->args().begin();
-  for (int i = 0; i < d->get_num_params(); i++) {
-    llvm::IRBuilder<> temp_builder(&parent_fn->getEntryBlock(), parent_fn->getEntryBlock().begin());
-
-    llvm::AllocaInst *alloca = temp_builder.CreateAlloca(llvm_arg->getType(), 0, d->get_param(i)->get_name());
-    temp_builder.CreateStore(llvm_arg, alloca);
-    vtable.insert({d->get_param(i)->get_name(), alloca});
+  // create alloca for each function argument
+  allocas.clear();
+  for (llvm::Argument &arg : fn->args()) {
+    llvm::AllocaInst *alloca = create_entry_alloca(fn, arg.getName().str(), arg.getType());
+    builder->CreateStore(&arg, alloca);
+    allocas[arg.getName().str()] = alloca;
   }
-  evalue(d->get_body());
-
-  // insert void return if function return type is void
-  if (!d->get_type()) {
-    builder->CreateRet(nullptr);
-  }
-
-  if (llvm::verifyFunction(*fn, &llvm::errs())) {
-    panic("bad codegen");
-  }
+  codegen(d->get_body());
+  llvm::verifyFunction(*fn);
 }
 
-void Codegen::visit(ParamVarDecl *d) {
-  llvm::IRBuilder<> temp_builder(&parent_fn->getEntryBlock(), parent_fn->getEntryBlock().begin());
-  llvm::AllocaInst *alloca = temp_builder.CreateAlloca(d->get_type()->to_llvm_ty(*ctx), 0, d->get_name());
-  vtable.insert({d->get_name(), alloca});
-}
-
+void Codegen::visit(ParamVarDecl *d) {}
 void Codegen::visit(StructDecl *d) {}
 void Codegen::visit(FieldDecl *d) {}
 void Codegen::visit(TraitDecl *d) {}
@@ -73,49 +69,31 @@ void Codegen::visit(EnumDecl *d) {}
 void Codegen::visit(EnumVariantDecl *d) {}
 
 void Codegen::visit(VarDecl *d) {
-  llvm::IRBuilder<> temp_builder(&parent_fn->getEntryBlock(), parent_fn->getEntryBlock().begin());
-  llvm::AllocaInst *alloca = temp_builder.CreateAlloca(d->get_type()->to_llvm_ty(*ctx), 0, d->get_name());
-  vtable.insert({d->get_name(), alloca});
+  codegen(d->get_expr());
+  llvm::AllocaInst *alloca = create_entry_alloca(parent_fn, d->get_name(), d->get_type()->to_llvm_ty(*ctx));
+  builder->CreateStore(temp_val, alloca);
+
+  allocas[d->get_name()] = alloca;
 }
 
 /// Statement Codegen
 
-void Codegen::visit(DeclStmt *s) {}
+void Codegen::visit(DeclStmt *s) {
+  codegen(s->get_decl());
+}
 
 void Codegen::visit(CompoundStmt *s) {
-  for (Stmt *stmt : s->get_stmts()) {
-    evalue(stmt);
-  }
+  for (Stmt * &stmt : s->get_stmts())
+    codegen(stmt);
 }
 
-void Codegen::visit(IfStmt *s) {
-  evalue(s->get_cond());
-  llvm::Value *cond = temp_val;
-
-  llvm::BasicBlock *then_bb = llvm::BasicBlock::Create(*ctx, "then_bb", parent_fn);
-  llvm::BasicBlock *merge_bb = llvm::BasicBlock::Create(*ctx, "merge_bb");
-  llvm::BasicBlock *else_bb = s->get_else_body() ? merge_bb : llvm::BasicBlock::Create(*ctx, "else_bb");
-
-  builder->CreateCondBr(cond, then_bb, else_bb);
-  set_curr_bb(then_bb);
-
-  builder->CreateBr(merge_bb);
-  if (s->get_else_body()) {
-    parent_fn->insert(parent_fn->end(), else_bb);
-    set_curr_bb(else_bb);
-    builder->CreateBr(merge_bb);
-  }
-
-  parent_fn->insert(parent_fn->end(), merge_bb);
-  set_curr_bb(merge_bb);
-}
-
+void Codegen::visit(IfStmt *s) {}
 void Codegen::visit(MatchCase *s) {}
 void Codegen::visit(MatchStmt *s) {}
 void Codegen::visit(UntilStmt *s) {}
 
 void Codegen::visit(ReturnStmt *s) {
-  evalue(s->get_expr());
+  codegen(s->get_expr());
   builder->CreateRet(temp_val);
 }
 
@@ -124,66 +102,44 @@ void Codegen::visit(ContinueStmt *s) {}
 
 /// Expression Codegen
 
-void Codegen::visit(NullExpr *e) {
-  temp_val = llvm::Constant::getNullValue(e->get_type()->to_llvm_ty(*ctx));
-}
-
+void Codegen::visit(NullExpr *e) {}
 void Codegen::visit(DefaultExpr *e) {}
-
-void Codegen::visit(BooleanLiteral *e) {
-  temp_val = llvm::ConstantInt::get(e->get_type()->to_llvm_ty(*ctx), 
-    llvm::APInt(1, e->get_value(), false));
-}
+void Codegen::visit(BooleanLiteral *e) {}
 
 void Codegen::visit(IntegerLiteral *e) {
-  temp_val = llvm::ConstantInt::get(e->get_type()->to_llvm_ty(*ctx), 
-    llvm::APInt(64, e->get_value(), e->is_signed()));
+  // check if integer can be 32-bit
+  temp_val = llvm::ConstantInt::get(*ctx, llvm::APInt(64, e->get_value(), true));
 }
 
-void Codegen::visit(FPLiteral *e) {
-  temp_val = llvm::ConstantFP::get(e->get_type()->to_llvm_ty(*ctx), e->get_value());
-}
-
-void Codegen::visit(CharLiteral *e) {
-  temp_val = llvm::ConstantInt::get(e->get_type()->to_llvm_ty(*ctx), 
-    llvm::APInt(8, e->get_value(), false));
-}
-
-void Codegen::visit(StringLiteral *e) {
-  temp_val = builder->CreateGlobalStringPtr(e->get_value());
-}
-
-void Codegen::visit(DeclRefExpr *e) {
-  llvm::Value *alloca = vtable.find(e->get_ident())->second;
-  assert(alloca && "undefined alloca");
-
-  temp_val = alloca;
-}
-
+void Codegen::visit(FPLiteral *e) {}
+void Codegen::visit(CharLiteral *e) {}
+void Codegen::visit(StringLiteral *e) {}
+void Codegen::visit(DeclRefExpr *e) {}
 void Codegen::visit(BinaryExpr *e) {
   llvm::Value *lhs = nullptr;
   llvm::Value *rhs = nullptr;
 
-  evalue(e->get_lhs());
+  codegen(e->get_lhs());
   lhs = temp_val;
-  evalue(e->get_rhs());
+  codegen(e->get_rhs());
   rhs = temp_val;
 
   switch (e->get_op()) {
+    // lval saw check during sema pass, skip here, assignments valid by now
     case BinaryOp::Assign:
-      builder->CreateStore(lhs, rhs);
+      builder->CreateStore(rhs, lhs);
       break;
     case BinaryOp::AddAssign:
-      builder->CreateStore(lhs, builder->CreateAdd(lhs, rhs, "addtmp"));
+      builder->CreateStore( builder->CreateAdd(lhs, rhs, "addtmp"), lhs);
       break;
     case BinaryOp::SubAssign:
-      builder->CreateStore(lhs, builder->CreateSub(lhs, rhs, "subtmp"));
+      builder->CreateStore( builder->CreateSub(lhs, rhs, "subtmp"), lhs);
       break;
     case BinaryOp::StarAssign:
-      builder->CreateStore(lhs, builder->CreateMul(lhs, rhs, "multmp"));
+      builder->CreateStore(builder->CreateMul(lhs, rhs, "multmp"), lhs);
       break;
     case BinaryOp::SlashAssign:
-      builder->CreateStore(lhs, builder->CreateSDiv(lhs, rhs, "divtmp"));
+      builder->CreateStore(builder->CreateSDiv(lhs, rhs, "divtmp"), lhs);
       break;
     case BinaryOp::Plus:
       temp_val = builder->CreateAdd(lhs, rhs, "addtmp");
@@ -227,40 +183,9 @@ void Codegen::visit(BinaryExpr *e) {
   temp_val = nullptr;
 }
 
-void Codegen::visit(UnaryExpr *e) {
-  evalue(e->get_expr());
-
-  switch (e->get_op()) {
-    case UnaryOp::Access:
-      break;
-    case UnaryOp::Bang:
-      temp_val = builder->CreateNot(temp_val, "nottmp");
-    case UnaryOp::Rune:
-      break;
-    case UnaryOp::Ref:
-      break;
-    default:
-      llvm_unreachable("unexpected unary expression kind");
-  }
-}
-
+void Codegen::visit(UnaryExpr *e) {}
 void Codegen::visit(InitExpr *e) {}
-  
-void Codegen::visit(CallExpr *e) {
-  llvm::Function *callee = llvm::dyn_cast<llvm::Function>(vtable.find(e->get_callee())->second);
-  if (!callee) {
-    panic("unresolved function call: " + e->get_callee(), e->get_meta());
-  }
-
-  std::vector<llvm::Value *> args;
-  for (Expr *arg : e->get_args()) {
-    evalue(arg);
-    args.push_back(temp_val);
-  }
-
-  temp_val = builder->CreateCall(callee, args, "calltmp");
-}
-
+void Codegen::visit(CallExpr *e) {}
 void Codegen::visit(MemberExpr *e) {}
 void Codegen::visit(MemberCallExpr *e) {}
 void Codegen::visit(ThisExpr *e) {}

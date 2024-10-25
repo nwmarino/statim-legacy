@@ -540,7 +540,7 @@ public:
   inline bool has_expr() const { return expr != nullptr; }
 
   /// Gets the expression of this variable declaration.
-  inline std::unique_ptr<Expr> &get_expr() { return expr; }
+  inline Expr *get_expr() { return expr.get(); }
 
   /// Determine if this variable declaration is mutable.
   inline bool is_mut() const { return mut; }

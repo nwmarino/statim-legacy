@@ -111,8 +111,8 @@ void PassVisitor::visit(FunctionDecl *d) {
     }
 
     // check return type is void
-    if (d->get_type()) {
-      panic("entry function 'main' must return void", d->get_meta());
+    if (!d->get_type()->is_integer()) {
+      panic("entry function 'main' must return an integer", d->get_meta());
     }
 
     has_entry = true;
@@ -546,6 +546,10 @@ void PassVisitor::visit(StringLiteral *e) {
 /// This check verifies that a DeclRefExpr node is valid. It assigns the real
 /// type of the declaration reference, assuming the node is valid.
 void PassVisitor::visit(DeclRefExpr *e) {
+  if (!e->get_type()) {
+    panic("unresolved reference: " + e->get_ident(), e->get_meta());
+  }
+
   if (!e->get_type()->is_builtin()) {
     const TypeRef *T = dynamic_cast<const TypeRef *>(e->get_type());
     if (!T) {

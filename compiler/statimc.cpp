@@ -43,13 +43,17 @@ static void print_tkstream(std::unique_ptr<ASTContext> &Cctx) {
 
 /// Parse command line arguments.
 static void parse_args(int argc, char *argv[], CFlags &flags) {
-  flags.emit_asm = false;
+  flags.emit_asm = 0;
+  flags.emit_llvm_ir = 0;
+  flags.dump_ast = 0;
   
   for (int i = 1; i < argc; i++) {
     if (std::string(argv[i]) == "-S") {
-      flags.emit_asm = true;
-    } else if (std::string(argv[i]) == "-P1") {
-      flags.pass_one = true;
+      flags.emit_asm = 1;
+    } else if (std::string(argv[i]) == "-ll") {
+      flags.emit_llvm_ir = 1;
+    } else if (std::string(argv[i]) == "-ast") {
+      flags.dump_ast = 1;
     }
   }
 }
@@ -112,11 +116,11 @@ int write_output(CFlags flags, const std::string &pkg, llvm::TargetMachine *tm, 
 
   llvm::ModulePassManager mpm;
 
-  llvm::CodeGenFileType file_type = flags.emit_asm ? llvm::CodeGenFileType::AssemblyFile : \
+  llvm::CodeGenFileType file_type = flags.emit_llvm_ir ? llvm::CodeGenFileType::AssemblyFile : \
     llvm::CodeGenFileType::ObjectFile;
   std::string output;
-  if (flags.emit_asm) {
-    output = pkg + ".s";
+  if (flags.emit_llvm_ir) {
+    output = pkg + ".ll";
   } else {
     output = pkg + ".o";
   }
@@ -140,7 +144,7 @@ int write_output(CFlags flags, const std::string &pkg, llvm::TargetMachine *tm, 
     }
   }
 
-  //mod->print(llvm::errs(), nullptr);
+  mod->print(llvm::errs(), nullptr);
 
   if (llvm::verifyModule(*mod, &llvm::errs())) {
     panic("bad codegen");
@@ -174,6 +178,11 @@ int main(int argc, char *argv[]) {
   std::unique_ptr<CrateUnit> crate = build_ast(ctx);
   crate->pass(new PassVisitor());
 
+  if (flags.dump_ast) {
+    std::cout << crate->to_string() << '\n';
+    exit(EXIT_SUCCESS);
+  }
+
   llvm::TargetMachine *tm = create_tm();
   for (PackageUnit * &pkg : crate->get_packages()) {
     cgn::Codegen cgn(pkg->get_name(), tm);
@@ -181,6 +190,4 @@ int main(int argc, char *argv[]) {
 
     write_output(flags, pkg->get_name(), tm, cgn.get_module());
   }
-
-  //std::cout << crate->to_string();
 }

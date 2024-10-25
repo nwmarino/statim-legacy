@@ -90,5 +90,6 @@
         "forward_list": "cpp",
         "source_location": "cpp"
     },
-    "C_Cpp.errorSquiggles": "disabled"
+    "C_Cpp.errorSquiggles": "disabled",
+    "C_Cpp.default.compilerPath": "/usr/bin/clang++"
 }

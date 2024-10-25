@@ -23,7 +23,8 @@ private:
   std::unique_ptr<llvm::LLVMContext> ctx;
   std::unique_ptr<llvm::Module> module;
   std::unique_ptr<llvm::IRBuilder<>> builder;
-  std::map<std::string, llvm::Value *> vtable;
+  std::map<std::string, llvm::Function *> fns;
+  std::map<std::string, llvm::Value *> allocas;
 
   llvm::TargetMachine *tm;
   llvm::Function *parent_fn = nullptr;
@@ -35,7 +36,9 @@ private:
     builder->SetInsertPoint(bb); 
   }
 
-  template<typename T> void evalue(const T e) { e->pass(this); }
+  llvm::AllocaInst *create_entry_alloca(llvm::Function *fn, const std::string &var, llvm::Type *ty);
+
+  template<typename T> void codegen(const T e) { e->pass(this); }
 
   void visit(CrateUnit *u) override;
   void visit(PackageUnit *u) override;
