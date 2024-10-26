@@ -144,7 +144,7 @@ int write_output(CFlags flags, const std::string &pkg, llvm::TargetMachine *tm, 
     }
   }
 
-  mod->print(llvm::errs(), nullptr);
+  //mod->print(llvm::errs(), nullptr);
 
   if (llvm::verifyModule(*mod, &llvm::errs())) {
     panic("bad codegen");
@@ -185,9 +185,20 @@ int main(int argc, char *argv[]) {
 
   llvm::TargetMachine *tm = create_tm();
   for (PackageUnit * &pkg : crate->get_packages()) {
+    flags.emit_llvm_ir = 0;
     cgn::Codegen cgn(pkg->get_name(), tm);
     pkg->pass(&cgn);
 
+    write_output(flags, pkg->get_name(), tm, cgn.get_module());
+
+    // debugging llvm ir //
+
+    // compile object to exe
+    system("clang -o main main.o");
+    // delete the old object file
+    system("rm main.o");
+
+    flags.emit_llvm_ir = 1;
     write_output(flags, pkg->get_name(), tm, cgn.get_module());
   }
 }

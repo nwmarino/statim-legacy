@@ -199,7 +199,20 @@ void Codegen::visit(BreakStmt *s) {
   builder->CreateBr(loop_bb);
 }
 
-void Codegen::visit(ContinueStmt *s) {}
+void Codegen::visit(ContinueStmt *s) {
+  llvm::Function *fn = builder->GetInsertBlock()->getParent();
+  llvm::BasicBlock *loop_bb = nullptr;
+  for (llvm::BasicBlock &bb : *fn) {
+    if (bb.getName().starts_with("until")) {
+      loop_bb = &bb;
+      break;
+    }
+  }
+  if (!loop_bb)
+    llvm_unreachable("continue statement outside of loop");
+
+  builder->CreateBr(loop_bb);
+}
 
 /// Expression Codegen
 
