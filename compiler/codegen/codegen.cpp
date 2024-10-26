@@ -109,51 +109,44 @@ void Codegen::visit(IfStmt *s) {
   if (!cond_val)
     llvm_unreachable("invalid condition");
 
-  cond_val = builder->CreateICmpNE(cond_val, 
-    llvm::ConstantInt::get(llvm::Type::getInt64Ty(*ctx), llvm::APInt(1, 0, true)));
-
   llvm::Function *fn = builder->GetInsertBlock()->getParent();
 
-  llvm::BasicBlock *then_bb = llvm::BasicBlock::Create(*ctx, "then", fn);
-  llvm::BasicBlock *merge_bb = llvm::BasicBlock::Create(*ctx, "ifcont");
-  llvm::BasicBlock *else_bb = llvm::BasicBlock::Create(*ctx, "else");
+  llvm::BasicBlock *then_bb = llvm::BasicBlock::Create(*ctx, "cond_then", fn);
+  llvm::BasicBlock *merge_bb = llvm::BasicBlock::Create(*ctx, "cond_post");
+  llvm::BasicBlock *else_bb = //!s->has_else() ? merge_bb :
+   llvm::BasicBlock::Create(*ctx, "cond_else");
 
   builder->CreateCondBr(cond_val, then_bb, else_bb);
 
   builder->SetInsertPoint(then_bb);
   codegen(s->get_then_body());
-  if (!temp_val)
-    llvm_unreachable("invalid then body");
   llvm::Value *then_val = temp_val;
-
+  if (!then_val)
+    llvm_unreachable("invalid then body");
+  
+  then_bb = builder->GetInsertBlock();
   // check if then block has a terminator
   if (!then_bb->getTerminator())
     builder->CreateBr(merge_bb);
-  then_bb = builder->GetInsertBlock();
   
-  fn->insert(fn->end(), else_bb);
   builder->SetInsertPoint(else_bb);
-
   llvm::Value *else_val = nullptr;
   if (s->has_else()) {
+    fn->insert(fn->end(), else_bb);
+
     codegen(s->get_else_body());
     else_val = temp_val;
+
+    else_bb = builder->GetInsertBlock();
   }
 
-  if (!else_bb->getTerminator())
+  if (!s->has_else() || !else_bb->getTerminator())
     builder->CreateBr(merge_bb);
-  else_bb = builder->GetInsertBlock();
 
-  fn->insert(fn->end(), merge_bb);
-  builder->SetInsertPoint(merge_bb);
-  
-  llvm::PHINode *pn = builder->CreatePHI(llvm::Type::getInt64Ty(*ctx), 2, "iftmp");
-
-  pn->addIncoming(then_val, then_bb);
-  if (s->has_else())
-    pn->addIncoming(else_val, else_bb);
-  temp_val = pn;
-  
+  if (merge_bb->hasNPredecessorsOrMore(1)) {
+    fn->insert(fn->end(), merge_bb);
+    builder->SetInsertPoint(merge_bb);
+  }
 }
 
 void Codegen::visit(MatchCase *s) {}
