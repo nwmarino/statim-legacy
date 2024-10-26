@@ -18,7 +18,7 @@ llvm::AllocaInst *Codegen::create_entry_alloca(llvm::Function *fn, const std::st
   return temp_builder.CreateAlloca(ty, nullptr, var);
 }
 
-void Codegen::visit(CrateUnit *u) {}
+void Codegen::visit(CrateUnit *u) { /* unused for driver */ }
 
 void Codegen::visit(PackageUnit *u) {
   for (Decl * &decl : u->get_decls()) {
@@ -75,7 +75,7 @@ void Codegen::visit(FunctionDecl *d) {
   llvm::verifyFunction(*fn);
 }
 
-void Codegen::visit(ParamVarDecl *d) {}
+void Codegen::visit(ParamVarDecl *d) { /* unused */ }
 void Codegen::visit(StructDecl *d) {}
 void Codegen::visit(FieldDecl *d) {}
 void Codegen::visit(TraitDecl *d) {}
