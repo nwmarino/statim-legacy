@@ -1,14 +1,12 @@
-fn fib(n: i64) -> i64 {
-  if n == 0 {
-    return 0;
-  } else if n == 1 || n == 2 {
-    return 1;
-  } else {
-    return fib(n - 1) + fib(n - 2);
+fn foo(n: i64) -> i64 {
+  let mut i: i64 = 0;
+  until n == 5 {
+    n += 1;
+    i += 1;
   }
+  return i;
 }
 
 fn main() -> i64 {
-  return fib(1);
+  return foo(1);
 }
- 

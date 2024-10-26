@@ -113,8 +113,7 @@ void Codegen::visit(IfStmt *s) {
 
   llvm::BasicBlock *then_bb = llvm::BasicBlock::Create(*ctx, "cond_then", fn);
   llvm::BasicBlock *merge_bb = llvm::BasicBlock::Create(*ctx, "cond_post");
-  llvm::BasicBlock *else_bb = //!s->has_else() ? merge_bb :
-   llvm::BasicBlock::Create(*ctx, "cond_else");
+  llvm::BasicBlock *else_bb = llvm::BasicBlock::Create(*ctx, "cond_else");
 
   builder->CreateCondBr(cond_val, then_bb, else_bb);
 
@@ -151,7 +150,31 @@ void Codegen::visit(IfStmt *s) {
 
 void Codegen::visit(MatchCase *s) {}
 void Codegen::visit(MatchStmt *s) {}
-void Codegen::visit(UntilStmt *s) {}
+
+void Codegen::visit(UntilStmt *s) {
+  llvm::Function *fn = builder->GetInsertBlock()->getParent();
+
+  llvm::BasicBlock *cond_bb = llvm::BasicBlock::Create(*ctx, "until_cond", fn);
+  llvm::BasicBlock *body_bb = llvm::BasicBlock::Create(*ctx, "until_body");
+  llvm::BasicBlock *merge_bb = llvm::BasicBlock::Create(*ctx, "until_post");
+
+  builder->CreateBr(cond_bb);
+  builder->SetInsertPoint(cond_bb);
+
+  codegen(s->get_cond());
+  llvm::Value *cond_val = temp_val;
+  if (!cond_val)
+    llvm_unreachable("invalid condition");
+
+  builder->CreateCondBr(cond_val, merge_bb, body_bb);
+  fn->insert(fn->end(), body_bb);
+  builder->SetInsertPoint(body_bb);
+  codegen(s->get_body());
+  builder->CreateBr(cond_bb);
+
+  fn->insert(fn->end(), merge_bb);
+  builder->SetInsertPoint(merge_bb);
+}
 
 void Codegen::visit(ReturnStmt *s) {
   codegen(s->get_expr());
@@ -165,7 +188,10 @@ void Codegen::visit(ContinueStmt *s) {}
 
 void Codegen::visit(NullExpr *e) {}
 void Codegen::visit(DefaultExpr *e) {}
-void Codegen::visit(BooleanLiteral *e) {}
+
+void Codegen::visit(BooleanLiteral *e) {
+  temp_val = llvm::ConstantInt::get(*ctx, llvm::APInt(1, e->get_value(), false));
+}
 
 void Codegen::visit(IntegerLiteral *e) {
   // check if integer can be 32-bit
