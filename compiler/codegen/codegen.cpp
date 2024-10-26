@@ -115,7 +115,10 @@ void Codegen::visit(IfStmt *s) {
   llvm::BasicBlock *merge_bb = llvm::BasicBlock::Create(*ctx, "cond_post");
   llvm::BasicBlock *else_bb = llvm::BasicBlock::Create(*ctx, "cond_else");
 
-  builder->CreateCondBr(cond_val, then_bb, else_bb);
+  if (s->has_else())
+    builder->CreateCondBr(cond_val, then_bb, else_bb);
+  else
+    builder->CreateCondBr(cond_val, then_bb, merge_bb);
 
   builder->SetInsertPoint(then_bb);
   codegen(s->get_then_body());
@@ -154,9 +157,9 @@ void Codegen::visit(MatchStmt *s) {}
 void Codegen::visit(UntilStmt *s) {
   llvm::Function *fn = builder->GetInsertBlock()->getParent();
 
-  llvm::BasicBlock *cond_bb = llvm::BasicBlock::Create(*ctx, "until_cond", fn);
+  llvm::BasicBlock *cond_bb = llvm::BasicBlock::Create(*ctx, "loop_cond", fn);
   llvm::BasicBlock *body_bb = llvm::BasicBlock::Create(*ctx, "until_body");
-  llvm::BasicBlock *merge_bb = llvm::BasicBlock::Create(*ctx, "until_post");
+  llvm::BasicBlock *merge_bb = llvm::BasicBlock::Create(*ctx, "loop_post");
 
   builder->CreateBr(cond_bb);
   builder->SetInsertPoint(cond_bb);
@@ -181,7 +184,21 @@ void Codegen::visit(ReturnStmt *s) {
   builder->CreateRet(temp_val);
 }
 
-void Codegen::visit(BreakStmt *s) {}
+void Codegen::visit(BreakStmt *s) {
+  llvm::Function *fn = builder->GetInsertBlock()->getParent();
+  llvm::BasicBlock *loop_bb = nullptr;
+  for (llvm::BasicBlock &bb : *fn) {
+    if (bb.getName().starts_with("until")) {
+      loop_bb = &bb;
+      break;
+    }
+  }
+  if (!loop_bb)
+    llvm_unreachable("break statement outside of loop");
+
+  builder->CreateBr(loop_bb);
+}
+
 void Codegen::visit(ContinueStmt *s) {}
 
 /// Expression Codegen
