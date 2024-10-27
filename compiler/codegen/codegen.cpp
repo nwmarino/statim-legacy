@@ -3,6 +3,7 @@
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Verifier.h>
+#include <llvm/Support/Casting.h>
 #include <llvm/Support/ErrorHandling.h>
 
 #include "../include/ast/Decl.h"
@@ -151,8 +152,59 @@ void Codegen::visit(IfStmt *s) {
   }
 }
 
-void Codegen::visit(MatchCase *s) {}
-void Codegen::visit(MatchStmt *s) {}
+void Codegen::visit(MatchCase *s) { 
+  codegen(s->get_body());
+}
+
+// uses llvm switch instruction
+void Codegen::visit(MatchStmt *s) {
+  codegen(s->get_expr());
+  llvm::Value *match_val = temp_val;
+  if (!match_val)
+    llvm_unreachable("invalid match expression");
+
+  llvm::Function *fn = builder->GetInsertBlock()->getParent();
+
+  llvm::BasicBlock *merge_bb = llvm::BasicBlock::Create(*ctx, "match_post");
+  llvm::BasicBlock *default_bb = llvm::BasicBlock::Create(*ctx, "match_default");
+  llvm::SwitchInst *switch_inst = builder->CreateSwitch(match_val, default_bb, s->get_cases().size());
+
+  for (MatchCase *c : s->get_cases_no_default()) {
+    llvm::BasicBlock *case_bb = llvm::BasicBlock::Create(*ctx, "match_case");
+
+    codegen(c->get_expr());
+    if (!temp_val)
+      llvm_unreachable("invalid case expression");
+
+    llvm::ConstantInt *case_val = llvm::dyn_cast<llvm::ConstantInt>(temp_val);
+    if (!case_val)
+      llvm_unreachable("invalid case value");
+
+    switch_inst->addCase(case_val, case_bb);
+
+    builder->SetInsertPoint(case_bb);
+    codegen(c);
+
+    fn->insert(fn->end(), case_bb);
+    if (!case_bb->getTerminator())
+      builder->CreateBr(merge_bb);
+  }
+
+  if (default_bb->hasNPredecessorsOrMore(1)) {
+    fn->insert(fn->end(), default_bb);
+    builder->SetInsertPoint(default_bb);
+    codegen(s->get_default());
+    if (!default_bb->getTerminator())
+      builder->CreateBr(merge_bb);
+  }
+
+  if (merge_bb->hasNPredecessorsOrMore(1)) {
+    fn->insert(fn->end(), merge_bb);
+    builder->SetInsertPoint(merge_bb);
+  }
+
+  builder->SetInsertPoint(merge_bb);
+}
 
 void Codegen::visit(UntilStmt *s) {
   llvm::Function *fn = builder->GetInsertBlock()->getParent();
@@ -217,7 +269,10 @@ void Codegen::visit(ContinueStmt *s) {
 /// Expression Codegen
 
 void Codegen::visit(NullExpr *e) {}
-void Codegen::visit(DefaultExpr *e) {}
+
+void Codegen::visit(DefaultExpr *e) {
+
+}
 
 void Codegen::visit(BooleanLiteral *e) {
   temp_val = llvm::ConstantInt::get(*ctx, llvm::APInt(1, e->get_value(), false));

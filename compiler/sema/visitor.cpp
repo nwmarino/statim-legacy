@@ -407,6 +407,10 @@ void PassVisitor::visit(MatchStmt *s) {
   for (MatchCase *c : s->get_cases()) {
     c->pass(this);
 
+    if (has_default) {
+      panic("default must be the last case in match statement", s->get_meta());
+    }
+
     if (!c->get_expr()->get_type()) {
       has_default = true;
     }

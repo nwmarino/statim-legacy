@@ -156,6 +156,9 @@ public:
   /// Returns the expression of this match statement.
   inline Expr* get_expr() const { return expr.get(); }
 
+  /// Returns the number of cases in this match case.
+  inline std::size_t get_num_cases() const { return cases.size(); }
+
   /// Returns a string representation of this AST node.
   const std::string to_string() override;
 
@@ -166,6 +169,22 @@ public:
       case_ptrs.push_back(c.get());
     }
     return case_ptrs;
+  }
+
+  /// Returns a vector pointers to all cases but the default case.
+  inline std::vector<MatchCase *> get_cases_no_default() const {
+    std::vector<MatchCase *> case_ptrs;
+    for (const std::unique_ptr<MatchCase> &c : cases) {
+      if (get_default() != c.get()) {
+        case_ptrs.push_back(c.get());
+      }
+    }
+    return case_ptrs;
+  }
+
+  /// Returns the default match case of this match statement.
+  inline MatchCase* get_default() const {
+    return cases.back().get();
   }
 };
 

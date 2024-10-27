@@ -1,15 +1,10 @@
 fn foo(n: i64) -> i64 {
-  let mut i: i64 = 0;
-  until n == 5 {
-    n += 1;
-
-    if n == 3 {
-      continue;
-    }
-    
-    i += 1;
+  match n {
+    1 => { return 1; },
+    2 => { return 2; },
+    _ => return 0,
   }
-  return i;
+  return 2;
 }
 
 fn main() -> i64 {

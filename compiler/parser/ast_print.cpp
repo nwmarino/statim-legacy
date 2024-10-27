@@ -274,7 +274,7 @@ const std::string ContinueStmt::to_string() {
 
 
 const std::string DefaultExpr::to_string() {
-  return piping() + MAGENTA + "DefaultExpr" + GREEN + " '" + get_type()->to_string() + "' " + BOLD + CYAN + "_" + RESET + '\n';
+  return piping() + MAGENTA + "DefaultExpr" + BOLD + CYAN + " _" + RESET + '\n';
 }
 
 

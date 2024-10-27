@@ -144,7 +144,7 @@ int write_output(CFlags flags, const std::string &pkg, llvm::TargetMachine *tm, 
     }
   }
 
-  //mod->print(llvm::errs(), nullptr);
+  mod->print(llvm::errs(), nullptr);
 
   if (llvm::verifyModule(*mod, &llvm::errs())) {
     panic("bad codegen");
