@@ -21,10 +21,6 @@ static UnaryOp get_unary_op(TokenKind op) {
   switch (op) {
     case TokenKind::Not:
       return UnaryOp::Bang;
-    case TokenKind::Hash:
-      return UnaryOp::Rune;
-    case TokenKind::At:
-      return UnaryOp::Ref;
     case TokenKind::Dot:
       return UnaryOp::Access;
     default:
@@ -254,55 +250,6 @@ static std::unique_ptr<Expr> parse_init_expr(std::unique_ptr<ASTContext> &ctx, c
 }
 
 
-/// Parses a struct function call expression from the given context.
-static std::unique_ptr<Expr> parse_member_call_expr(std::unique_ptr<ASTContext> &ctx, std::unique_ptr<Expr> base, const std::string &callee, const Metadata &callee_meta) {
-  ctx->next(); // (
-
-  // parse arguments
-  std::vector<std::unique_ptr<Expr>> args;
-  while (!ctx->last().is_close_paren()) {
-    if (std::unique_ptr<Expr> arg = parse_expr(ctx)) {
-      args.push_back(std::move(arg));
-    } else {
-      return warn_expr("expected expression in function call", ctx->last().meta);
-    }
-
-    if (ctx->last().is_comma()) {
-      ctx->next(); // ,
-    } else if (!ctx->last().is_close_paren()) {
-      return warn_expr("expected ','", ctx->last().meta);
-    }
-  }
-  ctx->next(); // )
-  return std::make_unique<MemberCallExpr>(std::move(base), callee, std::move(args), callee_meta);
-  /*
-  Decl *d = curr_scope->get_decl(base);
-  if (!d && base != "this") {
-    return warn_expr("unresolved identifier: " + base, ctx->last().meta);
-  }
-
-  VarDecl *str_decl = dynamic_cast<VarDecl *>(d);
-  if (!str_decl && base != "this") {
-    return warn_expr("expected struct type", ctx->last().meta);
-  }
-
-  if (base == "this") {
-    if (ctx->top_impl() == "") {
-      return warn_expr("'this' reference invalid outside impl", ctx->last().meta);
-    }
-
-    return std::make_unique<MemberCallExpr>(
-      std::make_unique<ThisExpr>(ctx->resolve_type(ctx->top_impl()), base_meta), callee, std::move(args),
-      callee_meta);
-  }
-
-  return std::make_unique<MemberCallExpr>(
-    std::make_unique<DeclRefExpr>(base, str_decl->get_type(), base_meta), callee, std::move(args),
-    callee_meta);
-    */
-}
-
-
 /// Parses a struct member access expression from the given context.
 static std::unique_ptr<Expr> parse_member_expr(std::unique_ptr<ASTContext> &ctx, std::unique_ptr<Expr> base) {
   ctx->next(); // .
@@ -325,11 +272,6 @@ static std::unique_ptr<Expr> parse_member_expr(std::unique_ptr<ASTContext> &ctx,
   const Metadata member_meta = ctx->last().meta;
   ctx->next(); // member identifier
 
-  // check if the member access is a method call
-  if (ctx->last().is_open_paren()) {
-    return parse_member_call_expr(ctx, std::move(base), member, member_meta);
-  }
-
   // check if the member access is a nested member access
   if (ctx->last().is_dot()) {
     return parse_member_expr(ctx, std::make_unique<MemberExpr>(std::move(base), member, member_meta));
@@ -349,12 +291,6 @@ static std::unique_ptr<Expr> parse_identifier_expr(std::unique_ptr<ASTContext> &
   if (ctx->last().is_open_paren()) {
     return parse_call_expr(ctx, token.value, token.meta);
   } else if (ctx->last().is_dot()) {
-    if (token.is_kw("this")) {
-      if (ctx->top_impl().empty()) {
-        return warn_expr("'this' reference outside impl", ctx->last().meta);
-      }
-      return parse_member_expr(ctx, std::make_unique<ThisExpr>(ctx->resolve_type(ctx->top_impl()), token.meta));
-    }
     if (VarDecl *vd = dynamic_cast<VarDecl *>(curr_scope->get_decl(token.value))) {
       return parse_member_expr(ctx, std::make_unique<DeclRefExpr>(token.value, vd->get_type(), token.meta));
     }
@@ -769,63 +705,6 @@ static std::unique_ptr<Stmt> parse_var_decl(std::unique_ptr<ASTContext> &ctx) {
 }
 
 
-/// Parses an enum declaration from the given context.
-///
-/// Enum declarations are in the form of `enum <identifier> { <variants> }`.
-static std::unique_ptr<TypeDecl> parse_enum_decl(std::unique_ptr<ASTContext> &ctx) {
-  ctx->next();  // eat enum keyword
-
-  if (!ctx->last().is_ident()) {
-    return warn_enum("expected identifier after 'enum'", ctx->last().meta);
-  }
-
-  const std::string name = ctx->last().value;
-  const Metadata meta = ctx->last().meta;
-  ctx->next();  // eat enum name
-
-  if (!ctx->last().is_open_brace()) {
-    return warn_enum("expected '{' after enum identifier", ctx->last().meta);
-  }
-  ctx->next();  // eat open brace
-
-  std::vector<std::unique_ptr<EnumVariantDecl>> variants;
-  while (!ctx->last().is_close_brace()) {
-    if (!ctx->last().is_ident()) {
-      return warn_enum("expected identifier in enum variant list", ctx->last().meta);
-    }
-
-    const std::string variant_name = ctx->last().value;
-    const Metadata variant_meta = ctx->last().meta;
-    ctx->next();  // eat variant name
-    
-    // verify the variant does not already exist
-    for (const std::unique_ptr<EnumVariantDecl> &v : variants) {
-      if (v->get_name() == variant_name) {
-        return warn_enum("variant already exists: " + variant_name + " in " + name, ctx->last().meta);
-      }
-    }
-
-    variants.push_back(std::make_unique<EnumVariantDecl>(variant_name, variant_meta));
-    if (ctx->last().is_close_brace()) {
-      break;
-    }
-    
-    if (!ctx->last().is_comma()) {
-      return warn_enum("expected ','", ctx->last().meta);
-    }
-    ctx->next();  // eat comma
-  }
-  ctx->next();  // eat close brace
-
-  std::unique_ptr<EnumDecl> enumeration = std::make_unique<EnumDecl>(name, std::move(variants), meta);
-  enumeration->set_type(new EnumType(enumeration->get_name()));
-
-  // add declaration to parent scope
-  curr_scope->add_decl(enumeration.get());
-  return enumeration;
-}
-
-
 /// Parses a function declaration from the given context.
 ///
 /// Function declarations are in the form of `fn <identifier>(<args>) -> <return_ty> { <body> }`.
@@ -1016,120 +895,6 @@ static std::unique_ptr<TypeDecl> parse_struct_decl(std::unique_ptr<ASTContext> &
 }
 
 
-/// Parses a trait declaration from the given context.
-///
-/// Trait declarations are in the form of `trait <identifier> { <methods> }`.
-static std::unique_ptr<NamedDecl> parse_trait_decl(std::unique_ptr<ASTContext> &ctx) {
-  ctx->next();  // eat trait keyword
-
-  if (!ctx->last().is_ident()) {
-    return warn_trait("expected identifier after 'trait'", ctx->last().meta);
-  }
-
-  const std::string name = ctx->last().value;
-  const Metadata meta = ctx->last().meta;
-  ctx->next();  // eat trait name
-
-  if (!ctx->last().is_open_brace()) {
-    return warn_trait("expected '{' after trait identifier", ctx->last().meta);
-  }
-  ctx->next();  // eat open brace
-
-  std::vector<std::unique_ptr<FunctionDecl>> methods;
-  while (!ctx->last().is_close_brace()) {
-    if (ctx->last().is_kw("priv")) {
-      return warn_trait("method cannot be declared private in trait '" + name + "'", ctx->last().meta);
-    }
-
-    std::unique_ptr<NamedDecl> method = parse_fn_decl(ctx);
-    if (!method) {
-      return warn_trait("expected method in trait declaration", ctx->last().meta);
-    }
-
-    std::unique_ptr<FunctionDecl> fn = std::unique_ptr<FunctionDecl>(dynamic_cast<FunctionDecl *>(method.release()));
-
-    if (fn->has_body()) {
-      return warn_trait("method '" + method->get_name() + "' cannot have a body in trait declaration", ctx->last().meta);
-    }
-
-    methods.push_back(std::move(fn));
-  }
-  ctx->next();  // eat close brace
-
-  std::unique_ptr<TraitDecl> trait = std::make_unique<TraitDecl>(name, std::move(methods), meta);
-
-  // add trait declaration to parent scope
-  curr_scope->add_decl(trait.get());
-  return trait;
-}
-
-
-/// Parses an impl declaration from the given context.
-///
-/// Impl declarations are in the form of `impl <struct> { <methods> }` or `impl <trait> for <struct> { <methods> }`.
-static std::unique_ptr<Decl> parse_impl_decl(std::unique_ptr<ASTContext> &ctx) {
-  ctx->next();  // eat impl keyword
-
-  if (!ctx->last().is_ident()) {
-    return warn_impl("expected identifier after 'impl'", ctx->last().meta);
-  }
-
-  std::string target = ctx->last().value;
-  std::string trait = "";
-  const Metadata meta = ctx->last().meta;
-  ctx->next();  // eat first name
-  if (ctx->last().is_kw("for")) {
-    ctx->next();  // eat for keyword
-
-    if (!ctx->last().is_ident()) {
-      return warn_impl("expected identifier after 'for'", ctx->last().meta);
-    }
-
-    trait = target;
-    target = ctx->last().value;
-    ctx->next();  // eat second name
-  }
-
-  if (!ctx->last().is_open_brace()) {
-    return warn_impl("expected '{'", ctx->last().meta);
-  }
-  ctx->next();  // eat open brace
-
-  ctx->set_top_impl(target);
-  std::vector<std::unique_ptr<FunctionDecl>> methods;
-  while (!ctx->last().is_close_brace()) {
-    bool is_private = false;
-    if (ctx->last().is_kw("priv")) {
-      is_private = true;
-      ctx->next();  // eat priv keyword
-    }
-
-    ctx->set_add_next_to_scope(false);
-    std::unique_ptr<NamedDecl> method = parse_fn_decl(ctx);
-    
-    if (!method) {
-      return warn_impl("expected method in impl declaration", ctx->last().meta);
-    }
-
-    // check that method was not already implemented
-    for (const std::unique_ptr<FunctionDecl> &m : methods) {
-      if (m->get_name() == method->get_name()) {
-        return warn_impl("method already exists: " + method->get_name() + " in " + target, ctx->last().meta);
-      }
-    }
-
-    if (is_private) {
-      method->set_priv();
-    }
-    methods.push_back(std::move(std::unique_ptr<FunctionDecl>(dynamic_cast<FunctionDecl *>(method.release()))));
-  }
-  ctx->next();  // eat close brace
-  ctx->set_top_impl("");
-  ctx->set_add_next_to_scope(true);
-  return std::make_unique<ImplDecl>(trait, target, std::move(methods), meta);
-}
-
-
 /// Parses a declaration from the given context.
 ///
 /// Declarations are the top-level constructs in a package.
@@ -1154,35 +919,6 @@ static std::unique_ptr<Decl> parse_decl(std::unique_ptr<ASTContext> &ctx, bool i
       return warn_decl("expected struct declaration", ctx->last().meta);
     }
     return parse_struct_decl(ctx);
-  }
-
-  if (ctx->last().is_kw("trait")) {
-    if (is_private) {
-      if (std::unique_ptr<NamedDecl> decl = parse_trait_decl(ctx)) {
-        decl->set_priv();
-        return decl;
-      }
-      return warn_decl("expected trait declaration", ctx->last().meta);
-    }
-    return parse_trait_decl(ctx);
-  }
-
-  if (ctx->last().is_kw("impl")) {
-    if (is_private) {
-      return warn_decl("impl cannot be declared private", ctx->last().meta);
-    }
-    return parse_impl_decl(ctx);
-  }
-
-  if (ctx->last().is_kw("enum")) {
-    if (is_private) {
-      if (std::unique_ptr<TypeDecl> decl = parse_enum_decl(ctx)) {
-        decl->set_priv();
-        return decl;
-      }
-      return warn_decl("expected enum declaration", ctx->last().meta);
-    }
-    return parse_enum_decl(ctx);
   }
 
   return warn_decl("unknown identifier: " + ctx->last().value, ctx->last().meta);

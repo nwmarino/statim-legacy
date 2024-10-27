@@ -16,10 +16,6 @@ class FunctionDecl;
 class ParamVarDecl;
 class StructDecl;
 class FieldDecl;
-class TraitDecl;
-class ImplDecl;
-class EnumDecl;
-class EnumVariantDecl;
 class VarDecl;
 
 class DeclStmt;
@@ -45,8 +41,6 @@ class UnaryExpr;
 class InitExpr;
 class CallExpr;
 class MemberExpr;
-class MemberCallExpr;
-class ThisExpr;
 
 /// ASTVisitor - Base class to all ASt visitors.
 ///
@@ -65,10 +59,6 @@ public:
   virtual void visit(ParamVarDecl *d) = 0;
   virtual void visit(StructDecl *d) = 0;
   virtual void visit(FieldDecl *d) = 0;
-  virtual void visit(TraitDecl *d) = 0;
-  virtual void visit(ImplDecl *d) = 0;
-  virtual void visit(EnumDecl *d) = 0;
-  virtual void visit(EnumVariantDecl *d) = 0;
   virtual void visit(VarDecl *d) = 0;
 
   virtual void visit(DeclStmt *s) = 0;
@@ -94,8 +84,6 @@ public:
   virtual void visit(InitExpr *e) = 0;
   virtual void visit(CallExpr *e) = 0;
   virtual void visit(MemberExpr *e) = 0;
-  virtual void visit(MemberCallExpr *e) = 0;
-  virtual void visit(ThisExpr *e) = 0;
 };
 
 
@@ -114,10 +102,6 @@ public:
   void visit(ParamVarDecl *d) override;
   void visit(StructDecl *d) override;
   void visit(FieldDecl *d) override;
-  void visit(TraitDecl *d) override;
-  void visit(ImplDecl *d) override;
-  void visit(EnumDecl *d) override;
-  void visit(EnumVariantDecl *d) override;
   void visit(VarDecl *d) override;
 
   void visit(DeclStmt *s) override;
@@ -143,8 +127,6 @@ public:
   void visit(InitExpr *e) override;
   void visit(CallExpr *e) override;
   void visit(MemberExpr *e) override;
-  void visit(MemberCallExpr *e) override;
-  void visit(ThisExpr *e) override;
 };
 
 #endif  // ASTVISITOR_STATIMC_H

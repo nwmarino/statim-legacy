@@ -1,5 +1,5 @@
 
-# statimc: phase zero
+# statim: p0
 
 ### Operations
 
@@ -11,7 +11,7 @@
 | `<`, `<=`, `>`, `>=` | 4 | Inequalities
 | `+`, `-` | 5 | Additive Ops
 | `*`, `/` | 6 | Multiplicative Ops
-| `!`, `#`, `@` | 7 | Unary (not, hash, ref)
+| `!` | 7 | Unary (not)
 | `f()`, `.` | 8 | Calls, Member Access
 
 ### Types
@@ -19,13 +19,8 @@
 | Symbol | Type | Example Literal
 |--------|------|----------------
 | `bool` | boolean | `true`, `false`
-| `uint` | unsigned integer (32-bit) | `0`, `1`, `2147483648`
-| `i32`  | signed integer (32-bit) | `-1`, `0`, `2147483648`
 | `i64`  | signed integer (64-bit) | `9.223372e+18`
-| `float` | floating point (32/64-bit) | `0.25`, `3.14`
 | `char` | base character | `'s'`, `'t'`, `'a'`, `'T'`, `'i'`, `'m'`
-| `str` | character sequence | `"staTim"` 
-| `#Type` | rune (ptr) | ...
 
 ### Variables
 
@@ -92,59 +87,6 @@ let mut fishy: Shark = Shark {
   age: 5,
 }
 ```
-Define common behaviours using `trait`:
-```
-trait CanSwim {
-  fn swim() -> void;
-}
-```
-Implement methods to a struct using `impl`:
-```
-impl Shark {
-  fn bite() -> bool {
-    ...
-  }
-}
-```
-Implement common behaviour to a struct using `impl`:
-```
-impl CanSwim for Shark {
-  fn swim() -> str { 
-    ...
-  }
-}
-```
-Declare an enumerated type using `enum`:
-```
-enum Operation {
-  Plus,
-  Minus,
-  ...
-}
-```
-Declare a variable of an `enum` type:
-```
-let op: Operation = Operation::Plus;
-```
-
-### Runes (unimplemented)
-
-Declare a rune with the `#` hash unary, and reference its position with `@` ref unary:
-```
-struct Tree {
-  child: #Tree
-}
-
-...
-
-let mut Leaf: #Tree = Tree {
-  child: null
-}
-
-let mut Root: #Tree = Tree {
-  child: @Leaf
-}
-```
 
 ### Packages
 
@@ -153,11 +95,7 @@ Import another source file using `pkg`:
 pkg file;
 ...
 ```
-Import packages from other programs and libraries:
-```
-pkg prog::file;
-...
-```
+
 Keep declarations private to their parent scope using the `priv` keyword:
 ```
 priv fn secret_function() -> bool {

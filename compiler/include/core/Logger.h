@@ -19,7 +19,6 @@ inline void panic(const std::string msg) {
   exit(1);
 }
 
-
 /// Stop the compiler and print an error message with location information.
 /// @param m    The error message.
 /// @param data Metadata about the bad input.
@@ -29,7 +28,6 @@ inline void panic(const std::string msg, const struct Metadata &data) {
   exit(1);
 }
 
-
 /// Panic about an unexpected token.
 /// @param expected The expected token kind.
 /// @param data     Metadata about the bad token.
@@ -38,14 +36,12 @@ inline void token_panic(const std::string &expected, const struct Metadata &data
   panic("expected token " + expected, data);
 }
 
-
 /// Panic about a missing match expression.
 /// @param data Metadata about the bad token.
 [[noreturn]]
 inline void match_panic(const struct Metadata &data) { 
   panic("match statement is missing an expression", data);
 }
-
 
 /// Panic about a missing trait implementation.
 /// @param expected The name of the expected method.
@@ -54,7 +50,6 @@ inline void match_panic(const struct Metadata &data) {
 inline void impl_panic(const std::string &expected, const struct Metadata &data) { 
   panic("expected function implementation for " + expected, data); 
 }
-
 
 /// Panic about a duplicate enum variant.
 /// @param ident   The variant name.
@@ -65,7 +60,6 @@ inline void enum_variant_panic(const std::string &ident, const std::string &enum
   panic("enum variant already exists: " + ident + " in " + enumer, data);
 }
 
-
 /// Warn about a statement parsing error.
 /// @param msg  The error message.
 /// @param data Metadata about the bad input.
@@ -74,7 +68,6 @@ inline std::unique_ptr<Stmt> warn_stmt(std::string msg, const struct Metadata &d
   fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
-
 
 /// Warn about an expression parsing error.
 /// @param msg  The error message.
@@ -85,7 +78,6 @@ inline std::unique_ptr<Expr> warn_expr(std::string msg, const struct Metadata &d
   return nullptr;
 }
 
-
 /// Warn about a declaration parsing error.
 /// @param msg  The error message.
 /// @param data Metadata about the bad input.
@@ -94,7 +86,6 @@ inline std::unique_ptr<Decl> warn_decl(std::string msg, const struct Metadata &d
   fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
-
 
 /// Warn about a type declaration parsing error.
 /// @param msg  The error message.
@@ -105,7 +96,6 @@ inline std::unique_ptr<TypeDecl> warn_tydecl(std::string msg, const struct Metad
   return nullptr;
 }
 
-
 /// Warn about a function parsing error.
 /// @param msg  The error message.
 /// @param data Metadata about the bad input.
@@ -114,17 +104,6 @@ inline std::unique_ptr<FunctionDecl> warn_fn(std::string msg, const struct Metad
   fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
-
-
-/// Warn about an enum parsing error.
-/// @param msg  The error message.
-/// @param data Metadata about the bad input.
-/// @return     nullptr
-inline std::unique_ptr<EnumDecl> warn_enum(std::string msg, const struct Metadata &data) {
-  fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
-  return nullptr;
-}
-
 
 /// Warn about a struct parsing error.
 /// @param msg  The error message.
@@ -135,27 +114,6 @@ inline std::unique_ptr<StructDecl> warn_struct(std::string msg, const struct Met
   return nullptr;
 }
 
-
-/// Warn about a trait parsing error.
-/// @param msg  The error message.
-/// @param data Metadata about the bad input.
-/// @return     nullptr
-inline std::unique_ptr<TraitDecl> warn_trait(std::string msg, const struct Metadata &data) {
-  fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
-  return nullptr;
-}
-
-
-/// Warn about an impl parsing error.
-/// @param msg  The error message.
-/// @param data Metadata about the bad input.
-/// @return     nullptr
-inline std::unique_ptr<ImplDecl> warn_impl(std::string msg, const struct Metadata &data) {
-  fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
-  return nullptr;
-}
-
-
 /// Warn about a unit parsing error.
 /// @param msg  The error message.
 /// @param data Metadata about the bad input.
@@ -164,7 +122,6 @@ inline std::unique_ptr<Unit> warn_unit(std::string msg, const struct Metadata &d
   fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
-
 
 /// Warn about a package unit parsing error.
 /// @param msg  The error message.
@@ -175,7 +132,6 @@ inline std::unique_ptr<PackageUnit> warn_pkg(std::string msg, const struct Metad
   return nullptr;
 }
 
-
 /// Warn about an llvm value codegen error.
 /// @param msg  The error message.
 /// @param data Metadata about the bad input.
@@ -184,7 +140,6 @@ inline llvm::Value *warn_cg_value(std::string msg, const struct Metadata &data) 
   fprintf(stderr, "statimc: warn: %s\nsee: %s:%u:%u\n", msg.c_str(), data.filename.c_str(), data.line_n, data.col_n);
   return nullptr;
 }
-
 
 /// Warn about an llvm basic block codegen error.
 /// @param msg  The error message.

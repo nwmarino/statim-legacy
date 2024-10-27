@@ -79,10 +79,6 @@ void Codegen::visit(FunctionDecl *d) {
 void Codegen::visit(ParamVarDecl *d) { /* unused */ }
 void Codegen::visit(StructDecl *d) {}
 void Codegen::visit(FieldDecl *d) {}
-void Codegen::visit(TraitDecl *d) {}
-void Codegen::visit(ImplDecl *d) {}
-void Codegen::visit(EnumDecl *d) {}
-void Codegen::visit(EnumVariantDecl *d) {}
 
 void Codegen::visit(VarDecl *d) {
   codegen(d->get_expr());
@@ -421,7 +417,5 @@ void Codegen::visit(CallExpr *e) {
 }
 
 void Codegen::visit(MemberExpr *e) {}
-void Codegen::visit(MemberCallExpr *e) {}
-void Codegen::visit(ThisExpr *e) {}
 
 } // namespace cgn

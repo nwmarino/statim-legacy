@@ -246,10 +246,7 @@ const struct Token Tokenizer::advance_token() {
         kind = Literal;
         lit_kind = Integer;
 
-        while (isdigit(src[iter]) || src[iter] == '.') {
-          if (src[iter] == '.' && lit_kind == Integer) {
-            lit_kind = Float;
-          }
+        while (isdigit(src[iter])) {
           value.push_back(src[iter]);
           iter++;
           col++;

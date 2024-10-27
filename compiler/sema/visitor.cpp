@@ -220,85 +220,6 @@ void PassVisitor::visit(FieldDecl *d) {
 }
 
 
-/// This check verifies that a trait declaration is valid. It passes on all
-/// function declarations within the trait declaration.
-void PassVisitor::visit(TraitDecl *d) {
-  for (FunctionDecl *fn : d->get_decls()) {
-    fn->pass(this);
-  }
-}
-
-
-/// This check verifies that both the target struct and trait exist in the
-/// scope of the declaration. Then, it asserts that all trait behaviour is
-/// implemented to the target struct.
-void PassVisitor::visit(ImplDecl *d) {
-  // check that the target struct exists
-  NamedDecl *decl = pkg_scope->get_decl(d->get_struct_name());
-  if (!decl) {
-    panic("unresolved decl: " + d->get_struct_name(), d->get_meta());
-  }
-  StructDecl *struct_d = dynamic_cast<StructDecl *>(decl);
-  if (!struct_d) {
-    panic("unresolved struct target: " + d->get_struct_name(), d->get_meta());
-  }
-  
-  if (d->is_trait()) {
-    // check that the trait exists
-    Decl *gen_d = pkg_scope->get_decl(d->trait());
-    if (!gen_d) {
-      panic("unresolved trait: " + d->trait(), d->get_meta());
-    }
-
-    TraitDecl *trait_d = dynamic_cast<TraitDecl *>(gen_d);
-    if (!trait_d) {
-      panic("expected trait: " + d->trait(), d->get_meta());
-    }
-
-    // ensure that all methods are implemented
-    for (FunctionDecl *fn : trait_d->get_decls()) {
-      bool found = false;
-      for (FunctionDecl *impl_fn : d->get_methods()) {
-        if (fn->get_name() == impl_fn->get_name() && fn->get_type() == impl_fn->get_type()) {
-          found = true;
-          break;
-        }
-      }
-
-      if (!found) {
-        panic("missing trait implementation: " + fn->get_name(), d->get_meta());
-      }
-    }
-  }
-
-  for (FunctionDecl *fn : d->get_methods()) {
-    // add the function to the struct scope
-    struct_d->get_scope()->add_decl(fn);
-  }
-
-  impl_scope = struct_d->get_scope();
-  for (FunctionDecl *fn : d->get_methods()) {
-    fn->pass(this);
-  }
-  impl_scope = nullptr;
-}
-
-
-/// This check verifies that an enum declaration is valid. It passes on
-/// all enum variants within the enum declaration.
-void PassVisitor::visit(EnumDecl *d) {
-  for (EnumVariantDecl *ev : d->get_variants()) {
-    ev->pass(this);
-  }
-}
-
-
-/// Empty pass on an enum variant declaration.
-void PassVisitor::visit(EnumVariantDecl *d) {
-  return;
-}
-
-
 /// This check verifies that a variable declaration has a valid type, and that
 /// its type matches with that of the assigned expression, if it is not empty.
 void PassVisitor::visit(VarDecl *d) {
@@ -317,12 +238,6 @@ void PassVisitor::visit(VarDecl *d) {
         // assign real type
         if (struct_d->get_type()) {
           d->set_type(struct_d->get_type());
-          return;
-        }
-      } else if (EnumDecl *enum_d = dynamic_cast<EnumDecl *>(top_scope->get_decl(T->get_ident()))){
-        // assign real type
-        if (enum_d->get_type()) {
-          d->set_type(enum_d->get_type());
           return;
         }
       } else {
@@ -565,26 +480,6 @@ void PassVisitor::visit(DeclRefExpr *e) {
       StructDecl *struct_d = dynamic_cast<StructDecl *>(top_scope->get_decl(T->get_ident()));
       if (!struct_d) {
         panic("unresolved struct type reference: " + T->get_ident(), e->get_meta());
-      }
-    } else if (type_d->get_type()->is_enum()) {
-      EnumDecl *enum_d = dynamic_cast<EnumDecl *>(top_scope->get_decl(T->get_ident()));
-      if (!enum_d) {
-        panic("unresolved enum type reference: " + T->get_ident(), e->get_meta());
-      }
-
-      if (e->is_nested()) {
-        // check that the enum variant exists
-        bool found = false;
-        for (EnumVariantDecl *ev : enum_d->get_variants()) {
-          if (ev->get_name() == e->get_ident()) {
-            found = true;
-            break;
-          }
-        }
-
-        if (!found) {
-          panic("unresolved enum variant reference: " + e->get_ident(), e->get_meta());
-        }
       }
     }
     
@@ -846,128 +741,4 @@ void PassVisitor::visit(MemberExpr *e) {
 
   // assign real type
   e->set_type(fd->get_type());
-}
-
-
-/// This check verifies that a member call expression is valid. It checks that
-/// the base expression is a struct, and that the methods exists in the struct.
-void PassVisitor::visit(MemberCallExpr *e) {
-  // null base validation
-  if (!e->get_base()) {
-    panic("member access on null expression", e->get_meta());
-  }
-  e->get_base()->pass(this);
-
-  // resolve base type
-  const Type *base_type = e->get_base()->get_type();
-  if (base_type->is_builtin()) {
-    panic("member access on non-struct type", e->get_meta());
-  }
-
-  // resolve struct type from base type
-  const StructType *st = dynamic_cast<const StructType *>(base_type);
-  if (!st) {
-    panic("expected struct type", e->get_meta());
-  }
-
-  // resolve generic struct declaration from package scope
-  const std::string struct_name = st->get_name();
-  Decl *d = pkg_scope->get_decl(struct_name);
-  if (!d) {
-    panic("unresolved declaration type: " + struct_name, e->get_meta());
-  }
-
-  // resolve specific struct declaration from package scope
-  StructDecl *struct_d = dynamic_cast<StructDecl *>(d);
-  if (!struct_d) {
-    panic("expected struct: " + struct_name, e->get_meta());
-  }
-
-  // resolve target generic declaration from struct scope
-  NamedDecl *md = struct_d->get_scope()->get_decl(e->get_callee());
-  if (!md) {
-    panic("unresolved method: " + e->get_callee(), e->get_meta());
-  }
-
-  // resolve target specific method declaration from struct scope
-  FunctionDecl *method_decl = dynamic_cast<FunctionDecl *>(md);
-  if (!method_decl) {
-    panic("expected function: " + e->get_callee());
-  }
-
-  // access level check
-  if (method_decl->is_priv() && impl_scope != struct_d->get_scope()) {
-    panic("attempted to access private method: " + e->get_callee(), e->get_meta());
-  }
-
-  // param count check
-  if (e->get_num_args() != method_decl->get_num_params()) {
-    panic("function " + e->get_callee() + " has " + std::to_string(method_decl->get_num_params()) + " parameters but " + \
-    std::to_string(e->get_num_args()) + " were provided.");
-  }
-
-  // type check all arguments
-  if (method_decl->has_params()) {
-    std::size_t pos = 0;
-    for (ParamVarDecl *param : method_decl->get_params()) {
-      param->pass(this);
-      Expr *arg = e->get_arg(pos);
-      if (!arg) {
-        panic("missing argument in function call: " + param->get_name());
-      }
-      arg->pass(this);
-
-      if (param->get_type()->is_builtin()) {
-        const PrimitiveType *pt = dynamic_cast<const PrimitiveType *>(param->get_type());
-        if (!pt->compare(arg->get_type())) {
-          panic("type mismatch in function call: " + param->get_name());
-        }
-      } else if (param->get_type() != arg->get_type()) {
-        panic("type mismatch in function call: " + param->get_name());
-      }
-
-      pos += 1;
-    }
-  }
-
-  // check if the function return is a type reference
-  if (const TypeRef *T = dynamic_cast<const TypeRef *>(method_decl->get_type())) {
-    // check if the referenced type exists
-    StructDecl *struct_d = dynamic_cast<StructDecl *>(pkg_scope->get_decl(T->get_ident()));
-    if (!struct_d) {
-      panic("unresolved return type: " + T->get_ident(), e->get_meta());
-    }
-
-    // assign real type
-    if (struct_d->get_type()) {
-      e->set_type(struct_d->get_type());
-      return;
-    }
-    panic("unresolved return type: " + T->get_ident(), e->get_meta());
-  }
-
-  // assign real type
-  e->set_type(method_decl->get_type());
-}
-
-
-/// This check resolves the real type of a this expression.
-void PassVisitor::visit(ThisExpr *e) {
-  if (!top_scope) {
-    panic("this expression outside of struct scope", e->get_meta());
-  }
-
-  const TypeRef *RT = dynamic_cast<const TypeRef *>(e->get_type());
-  if (!RT) {
-    panic("unresolved 'this' type", e->get_meta());
-  }
-
-  StructDecl *struct_d = dynamic_cast<StructDecl *>(top_scope->get_decl(RT->get_ident()));
-  if (!struct_d) {
-    panic("unresolved 'this' type", e->get_meta());
-  }
-
-  if (struct_d->get_type()) {
-    e->set_type(struct_d->get_type());
-  }
 }

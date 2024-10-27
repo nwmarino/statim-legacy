@@ -15,12 +15,6 @@ typedef enum {
   /// `!`
   Bang,
 
-  /// `#`
-  Rune,
-
-  /// `@`
-  Ref,
-
   /// `.`
   Access,
 
@@ -89,8 +83,6 @@ typedef enum {
 inline std::string unary_to_string(UnaryOp op) {
   switch (op) {
     case UnaryOp::Bang:           return "!";
-    case UnaryOp::Rune:           return "#";
-    case UnaryOp::Ref:            return "@";
     case UnaryOp::Access:         return ".";
     case UnaryOp::UnknownUnaryOp: return "";
   }
@@ -359,12 +351,6 @@ public:
   /// Returns true if this unary expression is a bang operator.
   inline bool is_bang() const { return op == UnaryOp::Bang; }
 
-  /// Returns true if this unary expression is a rune operator.
-  inline bool is_rune() const { return op == UnaryOp::Rune; }
-
-  /// Returns true if this unary expression is a reference operator.
-  inline bool is_ref() const { return op == UnaryOp::Ref; }
-
   /// Gets the expr of this unary expression.
   inline Expr *get_expr() { return expr.get(); }
 
@@ -472,44 +458,6 @@ public:
   inline const std::string get_member() const { return member; }
 
   /// Returns a string representation of this member access expression.
-  const std::string to_string() override;
-};
-
-
-/// MemberCallExpr - Represents a member call expression.
-///
-/// @example `foo.bar()`, `baz.qux()`
-class MemberCallExpr final : public CallExpr
-{
-private:
-  std::unique_ptr<Expr> base;
-
-public:
-  MemberCallExpr(std::unique_ptr<Expr> base, const std::string &callee, std::vector<std::unique_ptr<Expr>> args, const Metadata &meta)
-    : CallExpr(callee, std::move(args), meta), base(std::move(base)) {};
-  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-  
-  /// Gets the base of this member call expression.
-  inline Expr *get_base() { return base.get(); }
-
-  /// Gets the callee of this member call expression.
-  inline const std::string get_callee() const { return callee; }
-
-  /// Returns a string representation of this member call expression.
-  const std::string to_string() override;
-};
-
-
-/// ThisExpr - Represents a reference to the current instance.
-///
-/// @example `this`
-class ThisExpr final : public Expr
-{
-public:
-  ThisExpr(const Type *T, const Metadata &meta) : Expr(T, meta) {};
-  void pass(ASTVisitor *visitor) override { visitor->visit(this); }
-
-  /// Returns a string representation of this reference expression.
   const std::string to_string() override;
 };
 

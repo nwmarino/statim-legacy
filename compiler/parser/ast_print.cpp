@@ -106,53 +106,6 @@ const std::string StructDecl::to_string() {
 }
 
 
-const std::string ImplDecl::to_string() {
-  std::string result = piping() + BOLD + RED + "ImplDecl" + RESET;
-  if (is_trait()) {
-    result += YELLOW + " '" + trait() + "'" + RESET;
-  }
-  result += BLUE + " '" + _struct + "' " + RESET + '\n';
-  indent++;
-  for (std::unique_ptr<FunctionDecl> const &method : methods) {
-    at_last_child = method == methods.back();
-    result += method->to_string();
-  }
-  indent = 0;
-  return result;
-}
-
-
-const std::string EnumVariantDecl::to_string() {
-  return piping() + RED + "EnumVariantDecl " + BLUE + name + RESET + '\n';
-}
-
-
-const std::string EnumDecl::to_string() {
-  std::string result = is_priv() ? piping() + BOLD + RED + "EnumDecl " + RESET + BLUE + name + RESET + " private\n" : \
-    piping() + BOLD + RED + "EnumDecl " + RESET + BLUE + name + RESET + '\n';
-  indent++;
-  for (const std::unique_ptr<EnumVariantDecl> &variant : variants) {
-    at_last_child = &variant == &variants.back();
-    result += variant->to_string();
-  }
-  indent = 0;
-  return result;
-}
-
-
-const std::string TraitDecl::to_string() {
-  std::string result = is_priv() ? piping() + BOLD + RED + "TraitDecl " + RESET + BLUE + name + RESET + " private\n" : \
-    piping() + BOLD + RED + "TraitDecl " + RESET + BLUE + name + RESET + '\n';
-  indent++;
-  for (std::unique_ptr<FunctionDecl> &decl : decls) {
-    at_last_child = decl == decls.back();
-    result += decl->to_string();
-  }
-  indent = 0;
-  return result;
-}
-
-
 const std::string VarDecl::to_string() {
   std::string result = piping() + RED + "VarDecl" + GREEN + " '" + get_type()->to_string() + "' " + BLUE + name + RESET; 
   result = is_mut() ? result + " mutable" : result;
@@ -383,25 +336,4 @@ const std::string MemberExpr::to_string() {
   result += base->to_string();
   at_last_child = false;
   return result;
-}
-
-
-const std::string MemberCallExpr::to_string() {
-  std::string result = get_type() ? piping() + MAGENTA + "MemberCallExpr" + GREEN + " '" + get_type()->to_string() + "' " + BLUE + '\'' + callee + '\'' + RESET + '\n' \
-    : piping() + MAGENTA + "MemberCallExpr " + BLUE + '\'' + callee + '\'' + RESET + '\n';
-  indent++;
-  at_last_child = args.empty() ? true : false;
-  result += base->to_string();
-  for (std::unique_ptr<Expr> const &arg : args) {
-    at_last_child = arg == args.back();
-    result += arg->to_string();
-  }
-  at_last_child = false;
-  return result;
-}
-
-
-const std::string ThisExpr::to_string() {
-  return get_type() ? piping() + MAGENTA + "ThisExpr" + GREEN + " '" + get_type()->to_string() + "' " + BOLD + CYAN + "this" + RESET + '\n' \
-    : piping() + MAGENTA + "ThisExpr" + GREEN + " 'unknown' " + BOLD + CYAN + "this" + RESET + '\n';
 }

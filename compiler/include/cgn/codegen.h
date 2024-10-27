@@ -40,10 +40,6 @@ private:
   void visit(ParamVarDecl *d) override;
   void visit(StructDecl *d) override;
   void visit(FieldDecl *d) override;
-  void visit(TraitDecl *d) override;
-  void visit(ImplDecl *d) override;
-  void visit(EnumDecl *d) override;
-  void visit(EnumVariantDecl *d) override;
   void visit(VarDecl *d) override;
 
   void visit(DeclStmt *s) override;
@@ -69,8 +65,6 @@ private:
   void visit(InitExpr *e) override;
   void visit(CallExpr *e) override;
   void visit(MemberExpr *e) override;
-  void visit(MemberCallExpr *e) override;
-  void visit(ThisExpr *e) override;
 
 public:
   Codegen(const std::string &pkg, llvm::TargetMachine *tm) : tm(tm) {
